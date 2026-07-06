@@ -1,0 +1,829 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id               String         @id @default(cuid())
+  name             String
+  email            String         @unique
+  password         String
+  avatar           String?
+  headline         String?
+  bio              String?
+  location         String?
+  resumeUrl        String?
+  phone            String?
+  source           String?        // provenance: "indeed", "signup", null=organic
+  role             String         @default("JOBSEEKER")
+  paid             Boolean        @default(false)
+  paidAt           DateTime?
+  paymentId        String?
+  twoFactorEnabled Boolean        @default(false)
+  twoFactorSecret  String?
+  faceVector           String?
+  faceVectorUpdatedAt  DateTime?
+  faceChangeReported   Boolean   @default(false)
+  faceChangeReason     String?
+  faceChangeDate       DateTime?
+  idType               String?
+  idVerified       Boolean        @default(false)
+  banned           Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  profile          Profile?
+  jobs             Job[]
+  applications     Application[]
+  notifications    Notification[]
+  connections      Connection[]   @relation("UserConnections")
+  connectedTo      Connection[]   @relation("ConnectedToUser")
+  education        Education[]
+  experience       Experience[]
+  skills           UserSkill[]
+  loginAttempts    LoginAttempt[]
+  sessions         Session[]
+  employerGuarantee  EmployerGuarantee?
+  applicantGuarantee ApplicantGuarantee?
+  activityLogs       ActivityLog[]
+  conversations      ConversationParticipant[]
+  sentMessages       Message[]
+  mailSent           Mail[]             @relation("MailFrom")
+  mailReceived       Mail[]             @relation("MailTo")
+  channelsCreated    Channel[]          @relation("ChannelCreator")
+  channelMemberships ChannelMember[]
+  channelPosts       ChannelPost[]
+  channelReplies          ChannelReply[]
+  jobCommunityMemberships JobCommunityMember[]
+  jobCommunityPosts       JobCommunityPost[]
+  jobCommunityReplies     JobCommunityReply[]
+  professionalSpaces      ProfessionalSpaceMember[]
+  spacePostsAuthored      ProfessionalSpacePost[]
+  spaceRepliesAuthored    ProfessionalSpaceReply[]
+  professionalPage        ProfessionalPage?
+  pageFollows             PageFollow[]
+  pagePostReplies         PagePostReply[]
+  spacesCreated           ProfessionalSpace[]  @relation("SpaceCreator")
+  testsCreated            Test[]               @relation("TestCreator")
+  testAttempts            TestAttempt[]
+  faceVectorHistory    FaceVectorHistory[]
+  hostedInterviews     Interview[]            @relation("InterviewHost")
+  interviewParticipations InterviewParticipant[]
+  identityVerification IdentityVerification?
+  webauthnCredentials  WebAuthnCredential[]
+  emailDomains         EmailDomain[]
+  ownedWorkspaces      Workspace[]          @relation("WorkspaceOwner")
+  workspaceMemberships WorkspaceMember[]
+}
+
+// ===================== Vrittih CRM (Phase 0) =====================
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  ownerId   String
+  plan      String   @default("free")   // free/pro/agency/enterprise
+  timezone  String   @default("Asia/Kolkata")
+  country   String   @default("IN")
+  settings  String   @default("{}")     // JSON
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+  owner     User              @relation("WorkspaceOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members   WorkspaceMember[]
+  contacts  Contact[]
+  activities Activity[]
+  messages  ContactMessage[]
+  forms     Form[]
+}
+
+model WorkspaceMember {
+  id          String    @id @default(cuid())
+  workspaceId String
+  userId      String
+  role        String    @default("member") // owner/admin/member/viewer
+  joinedAt    DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([workspaceId, userId])
+}
+
+model Contact {
+  id             String    @id @default(cuid())
+  workspaceId    String
+  createdById    String
+  firstName      String
+  lastName       String
+  email          String?
+  phone          String?
+  avatar         String?
+  company        String?
+  jobTitle       String?
+  industry       String?
+  website        String?
+  city           String?
+  country        String?
+  stage          String    @default("LEAD") // LEAD/QUALIFIED/PROPOSAL/WON/LOST
+  value          Float     @default(0)
+  currency       String    @default("CHF")
+  source         String?
+  tags           String    @default("[]")   // JSON array
+  notes          String?
+  lastActivityAt DateTime  @default(now())
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  deletedAt      DateTime?
+  workspace      Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  activities     Activity[]
+  messages       ContactMessage[]
+  @@index([workspaceId])
+  @@index([workspaceId, stage])
+}
+
+model Activity {
+  id          String    @id @default(cuid())
+  workspaceId String
+  contactId   String
+  actorId     String?
+  type        String    // contact.created, stage.changed, message.sent, note.added, ...
+  payload     String    @default("{}") // JSON
+  createdAt   DateTime  @default(now())
+  workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  @@index([contactId, createdAt])
+}
+
+model ContactMessage {
+  id           String    @id @default(cuid())
+  workspaceId  String
+  contactId    String
+  senderId     String?
+  direction    String    // in/out
+  body         String
+  status       String    @default("sent") // sending/sent/delivered/partial/read/failed
+  readDepthPct Int       @default(0)
+  createdAt    DateTime  @default(now())
+  workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  contact      Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  @@index([contactId, createdAt])
+}
+
+model Form {
+  id          String           @id @default(cuid())
+  workspaceId String
+  createdById String
+  slug        String           @unique
+  name        String
+  fields      String           @default("[]") // JSON: [{id,type,label,placeholder,required,options}]
+  settings    String           @default("{}") // JSON: {successMessage, redirectUrl}
+  isLive      Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  deletedAt   DateTime?
+  workspace   Workspace        @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  submissions FormSubmission[]
+  @@index([workspaceId])
+}
+
+model FormSubmission {
+  id          String   @id @default(cuid())
+  formId      String
+  workspaceId String
+  data        String   // JSON map of fieldId -> value
+  contactId   String?
+  ipHash      String?
+  submittedAt DateTime @default(now())
+  form        Form     @relation(fields: [formId], references: [id], onDelete: Cascade)
+  @@index([formId, submittedAt])
+}
+
+model EmailDomain {
+  id            String    @id @default(cuid())
+  userId        String
+  domain        String    @unique
+  selector      String    @default("vrittih")
+  dkimPrivateKey String   // PKCS8 PEM
+  dkimPublicKey String    // base64 SPKI DER (published in DNS)
+  verifyToken   String    // random token published as a TXT record to prove ownership
+  verified      Boolean   @default(false)
+  verifiedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AuthChallenge {
+  key       String   @id // e.g. "reg_<userId>" / "auth_<userId>"
+  challenge String
+  expiresAt DateTime
+}
+
+// In-house durable job queue (no Redis/BullMQ). Claimed + processed by server/worker.js.
+model BackgroundJob {
+  id          String    @id @default(cuid())
+  type        String    // handler key, e.g. "notification.create", "email.send"
+  payload     String    @default("{}") // JSON
+  status      String    @default("queued") // queued | active | done | failed | dead
+  attempts    Int       @default(0)
+  maxAttempts Int       @default(5)
+  priority    Int       @default(0)
+  runAt       DateTime  @default(now())
+  lockedAt    DateTime?
+  lastError   String?
+  result      String?   // JSON
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@index([status, runAt])
+}
+
+// ---------- Professional feed ----------
+model Post {
+  id        String        @id @default(cuid())
+  authorId  String
+  content   String
+  createdAt DateTime      @default(now())
+  likes     PostLike[]
+  comments  PostComment[]
+  @@index([createdAt])
+}
+
+model PostLike {
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@id([postId, userId])
+}
+
+model PostComment {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  @@index([postId, createdAt])
+}
+
+model ProfileView {
+  id        String   @id @default(cuid())
+  viewerId  String
+  profileId String
+  createdAt DateTime @default(now())
+  @@index([profileId, createdAt])
+}
+
+// In-house product analytics event stream.
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  name      String   // e.g. "job.apply", "contact.created", "signin.succeeded"
+  userId    String?
+  props     String   @default("{}") // JSON
+  createdAt DateTime @default(now())
+  @@index([name, createdAt])
+  @@index([createdAt])
+}
+
+model WebAuthnCredential {
+  id           String    @id @default(cuid())
+  userId       String
+  credentialId String    @unique // base64url
+  publicKey    String    // JWK as JSON
+  alg          Int       // COSE alg: -7 ES256, -257 RS256
+  counter      Int       @default(0)
+  name         String?   // user-visible label, e.g. "Windows Hello"
+  createdAt    DateTime  @default(now())
+  lastUsedAt   DateTime?
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  ip        String?
+  userAgent String?
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model LoginAttempt {
+  id        String   @id @default(cuid())
+  userId    String?
+  email     String
+  ip        String?
+  success   Boolean
+  createdAt DateTime @default(now())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+model Profile {
+  id       String  @id @default(cuid())
+  userId   String  @unique
+  website  String?
+  github   String?
+  linkedin String?
+  twitter  String?
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Job {
+  id           String        @id @default(cuid())
+  title        String
+  description  String
+  company      String
+  industry     String
+  location     String
+  type         String
+  salary       String?
+  remote       Boolean       @default(false)
+  active        Boolean       @default(true)
+  views         Int           @default(0)
+  postedById   String
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  postedBy     User          @relation(fields: [postedById], references: [id])
+  applications Application[]
+  skills        JobSkill[]
+  community     JobCommunity?
+}
+
+model Application {
+  id          String        @id @default(cuid())
+  userId      String
+  jobId       String
+  status      String        @default("APPLIED")
+  coverLetter String?
+  appliedAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  interview   DateTime?
+  notes       String?
+  source      String?       // "indeed" for imported applications, else null
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  job         Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  timeline    StatusEvent[]
+  @@index([jobId, status])
+}
+
+model StatusEvent {
+  id            String      @id @default(cuid())
+  applicationId String
+  status        String
+  note          String?
+  createdAt     DateTime    @default(now())
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  body      String
+  read      Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Connection {
+  id          String   @id @default(cuid())
+  userId      String
+  connectedId String
+  status      String   @default("PENDING")
+  user        User     @relation("UserConnections", fields: [userId], references: [id])
+  connected   User     @relation("ConnectedToUser", fields: [connectedId], references: [id])
+}
+
+model Education {
+  id        String  @id @default(cuid())
+  userId    String
+  school    String
+  degree    String
+  field     String
+  startYear Int
+  endYear   Int?
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Experience {
+  id          String    @id @default(cuid())
+  userId      String
+  company     String
+  title       String
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+  description String?
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Skill {
+  id    String      @id @default(cuid())
+  name  String      @unique
+  users UserSkill[]
+  jobs  JobSkill[]
+}
+
+model UserSkill {
+  userId  String
+  skillId String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  skill   Skill  @relation(fields: [skillId], references: [id])
+  @@id([userId, skillId])
+}
+
+model JobSkill {
+  jobId   String
+  skillId String
+  job     Job    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  skill   Skill  @relation(fields: [skillId], references: [id])
+  @@id([jobId, skillId])
+}
+
+model EmployerGuarantee {
+  id              String   @id @default(cuid())
+  employerId      String   @unique
+  freePostUsed    Boolean  @default(false)
+  freePostJobId   String?
+  totalHired      Int      @default(0)
+  createdAt       DateTime @default(now())
+  employer        User     @relation(fields: [employerId], references: [id], onDelete: Cascade)
+}
+
+model ApplicantGuarantee {
+  id                  String   @id @default(cuid())
+  applicantId         String   @unique
+  totalApplications   Int      @default(0)
+  failedAttempts      Int      @default(0)
+  supportTriggeredAt  DateTime?
+  supportStatus       String   @default("NONE")
+  supportNote         String?
+  createdAt           DateTime @default(now())
+  applicant           User     @relation(fields: [applicantId], references: [id], onDelete: Cascade)
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  userId    String
+  action    String
+  meta      String?
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model Conversation {
+  id           String    @id @default(cuid())
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  participants ConversationParticipant[]
+  messages     Message[]
+}
+
+model ConversationParticipant {
+  id             String       @id @default(cuid())
+  conversationId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  lastReadAt     DateTime?
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([conversationId, userId])
+}
+
+model Message {
+  id             String       @id @default(cuid())
+  conversationId String
+  senderId       String
+  content        String
+  type           String       @default("TEXT")
+  read           Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
+
+// Platform-wide key/value settings, controlled from the super-admin panel.
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}
+
+
+
+model Mail {
+  id          String   @id @default(cuid())
+  fromId      String
+  toId        String
+  subject     String
+  body        String
+  read        Boolean  @default(false)
+  starred     Boolean  @default(false)
+  archived    Boolean  @default(false)
+  deletedAt   DateTime?
+  createdAt   DateTime @default(now())
+  from        User     @relation("MailFrom", fields: [fromId], references: [id], onDelete: Cascade)
+  to          User     @relation("MailTo", fields: [toId], references: [id], onDelete: Cascade)
+}
+
+
+model Channel {
+  id          String          @id @default(cuid())
+  name        String          @unique
+  description String?
+  type        String          @default("PUBLIC")
+  createdById String
+  createdAt   DateTime        @default(now())
+  createdBy   User            @relation("ChannelCreator", fields: [createdById], references: [id])
+  members     ChannelMember[]
+  posts       ChannelPost[]
+}
+
+model ChannelMember {
+  id        String   @id @default(cuid())
+  channelId String
+  userId    String
+  role      String   @default("MEMBER")
+  joinedAt  DateTime @default(now())
+  channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([channelId, userId])
+}
+
+model ChannelPost {
+  id        String        @id @default(cuid())
+  channelId String
+  userId    String
+  content   String
+  pinned    Boolean       @default(false)
+  createdAt DateTime      @default(now())
+  channel   Channel       @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies   ChannelReply[]
+}
+
+model ChannelReply {
+  id        String      @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime    @default(now())
+  post      ChannelPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model FaceVectorHistory {
+  id               String   @id @default(cuid())
+  userId           String
+  vector           String
+  reason           String?
+  createdAt        DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model IdentityVerification {
+  id               String   @id @default(cuid())
+  userId           String   @unique
+  idType           String
+  idNumberHash     String
+  nameOnDoc        String
+  nameMatchScore   Float
+  faceMatchScore   Float
+  verifiedAt       DateTime @default(now())
+  user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+model Interview {
+  id            String    @id @default(cuid())
+  title         String
+  type          String    @default("ONE_ON_ONE")
+  status        String    @default("SCHEDULED")
+  scheduledAt   DateTime
+  duration      Int       @default(60)
+  hostId        String
+  applicationId String?
+  roomCode      String    @unique
+  recordingUrl  String?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  host          User      @relation("InterviewHost", fields: [hostId], references: [id])
+  participants  InterviewParticipant[]
+}
+
+model InterviewParticipant {
+  id          String    @id @default(cuid())
+  interviewId String
+  userId      String
+  role        String    @default("CANDIDATE")
+  joinedAt    DateTime?
+  leftAt      DateTime?
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([interviewId, userId])
+}
+
+
+model JobCommunity {
+  id          String              @id @default(cuid())
+  jobId       String              @unique
+  name        String
+  description String?
+  createdAt   DateTime            @default(now())
+  job         Job                 @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  members     JobCommunityMember[]
+  posts       JobCommunityPost[]
+}
+
+model JobCommunityMember {
+  id          String       @id @default(cuid())
+  communityId String
+  userId      String
+  role        String       @default("MEMBER")
+  joinedAt    DateTime     @default(now())
+  community   JobCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([communityId, userId])
+}
+
+model JobCommunityPost {
+  id          String       @id @default(cuid())
+  communityId String
+  userId      String
+  content     String
+  pinned      Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  community   JobCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies     JobCommunityReply[]
+}
+
+model JobCommunityReply {
+  id        String           @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime         @default(now())
+  post      JobCommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProfessionalSpace {
+  id          String                  @id @default(cuid())
+  name        String                  @unique
+  slug        String                  @unique
+  description String?
+  category    String
+  icon        String?
+  verified    Boolean                 @default(false)
+  createdById String
+  createdAt   DateTime                @default(now())
+  createdBy   User                    @relation("SpaceCreator", fields: [createdById], references: [id])
+  members     ProfessionalSpaceMember[]
+  posts       ProfessionalSpacePost[]
+}
+
+model ProfessionalSpaceMember {
+  id        String            @id @default(cuid())
+  spaceId   String
+  userId    String
+  role      String            @default("MEMBER")
+  badge     String?
+  joinedAt  DateTime          @default(now())
+  space     ProfessionalSpace @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([spaceId, userId])
+}
+
+model ProfessionalSpacePost {
+  id        String            @id @default(cuid())
+  spaceId   String
+  userId    String
+  content   String
+  pinned    Boolean           @default(false)
+  createdAt DateTime          @default(now())
+  space     ProfessionalSpace @relation(fields: [spaceId], references: [id], onDelete: Cascade)
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replies   ProfessionalSpaceReply[]
+}
+
+model ProfessionalSpaceReply {
+  id        String                @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime              @default(now())
+  post      ProfessionalSpacePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ProfessionalPage {
+  id          String              @id @default(cuid())
+  userId      String              @unique
+  title       String
+  bio         String?
+  badge       String?
+  verified    Boolean             @default(false)
+  followers   Int                 @default(0)
+  createdAt   DateTime            @default(now())
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  pageFollows PageFollow[]
+  pagePosts   PagePost[]
+}
+
+model PageFollow {
+  id        String           @id @default(cuid())
+  pageId    String
+  userId    String
+  createdAt DateTime         @default(now())
+  page      ProfessionalPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([pageId, userId])
+}
+
+model PagePost {
+  id        String           @id @default(cuid())
+  pageId    String
+  content   String
+  createdAt DateTime         @default(now())
+  page      ProfessionalPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  replies   PagePostReply[]
+}
+
+model PagePostReply {
+  id        String   @id @default(cuid())
+  postId    String
+  userId    String
+  content   String
+  createdAt DateTime @default(now())
+  post      PagePost @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+
+
+model Test {
+  id           String       @id @default(cuid())
+  title        String
+  description  String?
+  type         String
+  duration     Int          @default(60)
+  passingScore Int          @default(70)
+  createdById  String
+  jobId        String?
+  active        Boolean       @default(true)
+  views         Int           @default(0)
+  createdAt    DateTime     @default(now())
+  createdBy    User         @relation("TestCreator", fields: [createdById], references: [id])
+  questions    Question[]
+  attempts     TestAttempt[]
+}
+
+model Question {
+  id            String   @id @default(cuid())
+  testId        String
+  type          String
+  text          String
+  options       String?
+  correctAnswer String?
+  points        Int      @default(10)
+  order         Int      @default(0)
+  test          Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
+  answers       Answer[]
+}
+
+model TestAttempt {
+  id          String    @id @default(cuid())
+  testId      String
+  userId      String
+  status      String    @default("IN_PROGRESS")
+  score       Int?
+  passed      Boolean?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  proctored   Boolean   @default(false)
+  tabSwitches Int       @default(0)
+  test        Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers     Answer[]
+}
+
+model Answer {
+  id          String      @id @default(cuid())
+  attemptId   String
+  questionId  String
+  value       String
+  correct     Boolean?
+  points      Int         @default(0)
+  attempt     TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question    Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+

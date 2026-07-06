@@ -1,0 +1,57 @@
+/* ============================================================
+   Vrittih design system — single source of truth.
+   Calm, professional, indigo accent (spec §3.7 focus ring #534AB7).
+   ============================================================ */
+:root {
+  /* surfaces */
+  --v-bg:        #F6F6FA;
+  --v-surface:   #FFFFFF;
+  --v-surface-2: #F3F3F8;
+  --v-sidebar:   #FFFFFF;
+  --v-topbar:    rgba(246,246,250,.82);
+
+  /* ink */
+  --v-ink:   #17161F;
+  --v-ink-2: #56535F;
+  --v-ink-3: #8B8896;
+
+  /* lines */
+  --v-line:   #ECEBF1;
+  --v-line-2: #E0DFE7;
+
+  /* accent (indigo) */
+  --v-accent:      #534AB7;
+  --v-accent-2:    #443AA3;
+  --v-accent-soft: #EEEDF9;
+  --v-accent-ink:  #FFFFFF;
+
+  /* semantic */
+  --v-green:  #0E9F6E;
+  --v-green-soft: #E7F7F0;
+  --v-amber:  #B45309;
+  --v-blue:   #2563EB;
+  --v-red:    #DC2626;
+  --v-chat-out: #D7F0DD;   /* WhatsApp-familiar outgoing bubble */
+
+  /* radii */
+  --v-r:    12px;
+  --v-r-sm: 9px;
+  --v-r-lg: 16px;
+  --v-r-pill: 999px;
+
+  /* shadow / motion */
+  --v-shadow-sm: 0 1px 2px rgba(23,18,45,.05);
+  --v-shadow:    0 1px 2px rgba(23,18,45,.04), 0 10px 30px rgba(23,18,45,.06);
+  --v-ease: cubic-bezier(.22,1,.36,1);
+
+  /* type */
+  --v-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --v-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+}
+
+/* Vrittih app surface reset applied under the shell */
+.v-app { font-family: var(--v-sans); color: var(--v-ink); }
+.v-app *::selection { background: #DCD9F5; }
+@media (prefers-reduced-motion: reduce) {
+  .v-app *, .v-app *::before, .v-app *::after { transition-duration: .01ms !important; }
+}

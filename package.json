@@ -1,24 +1,45 @@
 {
-  "name": "edurankai-jobs",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint"
-  },
-  "dependencies": {
-    "next": "16.2.9",
-    "react": "19.2.4",
-    "react-dom": "19.2.4"
-  },
-  "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "eslint": "^9",
-    "eslint-config-next": "16.2.9",
-    "typescript": "^5"
-  }
+    "name": "vrittih",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev",
+        "dev:all": "node scripts/dev-all.mjs",
+        "dev:chat": "node server/chat.js",
+        "dev:signal": "node server/signal.js",
+        "dev:worker": "node server/worker.js",
+        "build": "next build",
+        "start": "next start",
+        "lint": "eslint",
+        "seed:admin": "node prisma/seed-admin.mjs"
+    },
+    "dependencies": {
+        "@prisma/client": "^5.22.0",
+        "bcryptjs": "^3.0.3",
+        "face-api.js": "^0.20.0",
+        "multer": "^2.1.1",
+        "next": "^14.2.29",
+        "pg": "^8.21.0",
+        "prisma": "^5.22.0",
+        "razorpay": "^2.9.6",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+        "socket.io": "^4.8.3",
+        "socket.io-client": "^4.8.3",
+        "tesseract.js": "^7.0.0",
+        "ws": "^8.21.0",
+        "zod": "^4.4.3"
+    },
+    "devDependencies": {
+        "@types/bcryptjs": "^2.4.6",
+        "@types/multer": "^2.1.0",
+        "@types/node": "^20",
+        "@types/pg": "^8.20.0",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "@types/ws": "^8.18.1",
+        "eslint": "^9",
+        "eslint-config-next": "16.2.9",
+        "typescript": "^5"
+    }
 }

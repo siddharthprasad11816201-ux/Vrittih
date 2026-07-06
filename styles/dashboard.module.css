@@ -1,0 +1,41 @@
+.shell { display: grid; grid-template-columns: 240px 1fr; min-height: 100vh; background: #F7F7FA; }
+.sidebar { background: #fff; border-right: 0.5px solid rgba(0,0,0,0.07); display: flex; flex-direction: column; position: sticky; top: 0; height: 100vh; overflow-y: auto; }
+.sideTop { padding: 1.5rem 1.25rem 1rem; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
+.sideAvatar { width: 44px; height: 44px; border-radius: 50%; background: #0F0A1E; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 500; margin-bottom: 10px; }
+.sideName { font-size: 14px; font-weight: 500; color: #0A0A0F; }
+.sideRole { font-size: 11px; color: #7B7B8F; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 2px; }
+.sideNav { padding: 1rem 0.75rem; flex: 1; display: flex; flex-direction: column; gap: 2px; }
+.navItem { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: #3D3D4E; text-decoration: none; transition: all 0.15s; }
+.navItem:hover { background: #F7F7FA; color: #0A0A0F; }
+.navActive { background: #F5F3FF; color: #7C3AED; font-weight: 500; }
+.sideBottom { padding: 1rem 0.75rem; border-top: 0.5px solid rgba(0,0,0,0.06); }
+.logoutBtn { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px; font-size: 13px; color: #7B7B8F; background: none; border: none; cursor: pointer; width: 100%; transition: all 0.15s; }
+.logoutBtn:hover { background: #FEF2F2; color: #B91C1C; }
+.main { flex: 1; padding: 0; overflow-y: auto; }
+.topBar { display: flex; justify-content: space-between; align-items: center; padding: 1.5rem 2rem; border-bottom: 0.5px solid rgba(0,0,0,0.07); background: #fff; }
+.greeting { font-size: 20px; font-weight: 500; color: #0A0A0F; letter-spacing: -0.3px; }
+.greetingSub { font-size: 13px; color: #7B7B8F; margin-top: 2px; }
+.payBanner { background: #FEF3C7; border: 0.5px solid #FCD34D; border-radius: 8px; padding: 8px 14px; font-size: 13px; color: #92400E; text-decoration: none; font-weight: 500; transition: background 0.15s; }
+.payBanner:hover { background: #FDE68A; }
+.content { padding: 1.5rem 2rem; }
+.statsRow { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 1.25rem; }
+.statCard { background: #fff; border: 0.5px solid rgba(0,0,0,0.07); border-radius: 12px; padding: 1.1rem 1.25rem; }
+.statNum { font-size: 28px; font-weight: 500; color: #0A0A0F; letter-spacing: -0.5px; }
+.statLabel { font-size: 12px; color: #7B7B8F; margin-top: 3px; }
+.twoCol { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.panel { background: #fff; border: 0.5px solid rgba(0,0,0,0.07); border-radius: 12px; padding: 1.25rem; }
+.panelHead { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 10px; border-bottom: 0.5px solid rgba(0,0,0,0.06); }
+.panelHead h2 { font-size: 14px; font-weight: 500; color: #0A0A0F; }
+.panelLink { font-size: 12px; color: #7C3AED; text-decoration: none; }
+.empty { text-align: center; padding: 1.5rem 0; }
+.empty p { font-size: 13px; color: #7B7B8F; }
+.emptyAction { display: inline-block; margin-top: 10px; background: #0F0A1E; color: #fff; padding: 7px 16px; border-radius: 8px; font-size: 13px; text-decoration: none; transition: background 0.15s; }
+.emptyAction:hover { background: #2D2D4A; }
+.progBar { background: #F3F4F6; border-radius: 999px; height: 6px; margin-bottom: 1rem; overflow: hidden; }
+.progFill { height: 6px; border-radius: 999px; background: #7C3AED; transition: width 0.3s; }
+.todoList { display: flex; flex-direction: column; gap: 6px; }
+.todoItem { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; font-size: 13px; color: #3D3D4E; text-decoration: none; transition: background 0.15s; }
+.todoItem:hover { background: #F7F7FA; }
+.todoCircle { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.15); flex-shrink: 0; }
+.loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 14px; color: #7B7B8F; gap: 8px; }
+

@@ -1,0 +1,17 @@
+.wrap { min-height: 100vh; background: #F7F7FA; padding: 2rem; display: flex; justify-content: center; }
+.card { background: #fff; border: 0.5px solid rgba(0,0,0,0.07); border-radius: 16px; padding: 2.25rem; width: 100%; max-width: 680px; height: fit-content; }
+.card h1 { font-size: 22px; font-weight: 500; color: #0A0A0F; letter-spacing: -0.3px; margin-bottom: 4px; }
+.sub { font-size: 13px; color: #7B7B8F; margin-bottom: 1.75rem; }
+.errorBox { background: #FEF2F2; border: 0.5px solid #FECACA; border-radius: 8px; padding: 10px 14px; font-size: 13px; color: #B91C1C; margin-bottom: 1rem; }
+.fg { margin-bottom: 1rem; display: flex; flex-direction: column; }
+.fg label { font-size: 12px; font-weight: 500; color: #7B7B8F; margin-bottom: 5px; }
+.fg input, .fg select, .fg textarea { border: 0.5px solid rgba(0,0,0,0.13); border-radius: 8px; padding: 9px 12px; font-size: 14px; color: #0A0A0F; background: #fff; font-family: inherit; transition: border-color 0.15s; }
+.fg input:focus, .fg select:focus, .fg textarea:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+.fg textarea { resize: vertical; }
+.checkLabel { display: flex; align-items: center; gap: 8px; font-size: 13px; color: #3D3D4E; cursor: pointer; }
+.checkLabel input { width: 15px; height: 15px; accent-color: #2563EB; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.err { font-size: 11px; color: #B91C1C; margin-top: 4px; }
+.btn { width: 100%; padding: 11px; background: #1A1A2E; color: #fff; border: none; border-radius: 8px; font-size: 14px; font-weight: 500; cursor: pointer; margin-top: 8px; transition: background 0.15s; }
+.btn:hover { background: #2D2D4A; }
+.btn:disabled { background: #9ca3af; cursor: not-allowed; }

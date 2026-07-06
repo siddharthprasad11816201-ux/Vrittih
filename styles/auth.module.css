@@ -1,0 +1,76 @@
+.shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: #F7F7FA;
+}
+.card {
+  background: #fff;
+  border: 0.5px solid rgba(0,0,0,0.08);
+  border-radius: 16px;
+  padding: 2.25rem 2rem;
+  width: 100%;
+  max-width: 400px;
+}
+.brand { text-align: center; margin-bottom: 1.75rem; }
+.brandMark {
+  width: 42px; height: 42px; border-radius: 12px;
+  background: #0F0A1E;
+  display: flex; align-items: center; justify-content: center;
+  margin: 0 auto 12px;
+}
+.brand h1 { font-size: 20px; font-weight: 500; color: #0A0A0F; letter-spacing: -0.3px; }
+.brand p { font-size: 13px; color: #7B7B8F; margin-top: 3px; }
+.errorBox {
+  background: #FEF2F2; border: 0.5px solid #FECACA;
+  border-radius: 8px; padding: 10px 12px;
+  font-size: 13px; color: #B91C1C; margin-bottom: 1rem;
+}
+.fg { margin-bottom: 1rem; }
+.fg label { display: block; font-size: 12px; font-weight: 500; color: #7B7B8F; margin-bottom: 5px; }
+.fg input {
+  width: 100%; border: 0.5px solid rgba(0,0,0,0.13);
+  border-radius: 8px; padding: 9px 12px; font-size: 14px;
+  color: #0A0A0F; background: #fff; transition: border-color 0.15s;
+}
+.fg input:focus { outline: none; border-color: #7C3AED; box-shadow: 0 0 0 3px rgba(37,99,235,0.08); }
+.labelRow { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; }
+.labelRow label { margin-bottom: 0; }
+.forgot { font-size: 12px; color: #7C3AED; text-decoration: none; }
+.fieldErr { font-size: 11px; color: #B91C1C; margin-top: 4px; display: block; }
+.btn {
+  width: 100%; padding: 10px; background: #0F0A1E; color: #fff;
+  border: none; border-radius: 8px; font-size: 14px; font-weight: 500;
+  cursor: pointer; letter-spacing: -0.1px; transition: all 0.15s;
+  margin-top: 4px;
+}
+.btn:hover { background: #2D2D4A; }
+.btn:disabled { background: #9ca3af; cursor: not-allowed; }
+.divider {
+  display: flex; align-items: center; gap: 10px;
+  margin: 1.25rem 0; color: #7B7B8F; font-size: 12px;
+}
+.divider::before, .divider::after { content: ""; flex: 1; height: 0.5px; background: rgba(0,0,0,0.08); }
+.roleTog { display: flex; gap: 6px; margin-bottom: 1.25rem; }
+.roleOn {
+  flex: 1; padding: 8px; border: 0.5px solid #7C3AED;
+  border-radius: 8px; background: #F5F3FF; color: #7C3AED;
+  font-size: 13px; font-weight: 500; cursor: pointer;
+}
+.roleOff {
+  flex: 1; padding: 8px; border: 0.5px solid rgba(0,0,0,0.1);
+  border-radius: 8px; background: #fff; color: #7B7B8F;
+  font-size: 13px; cursor: pointer;
+}
+.twoFaNote {
+  display: flex; align-items: center; gap: 7px;
+  background: #FFFBEB; border: 0.5px solid #FCD34D;
+  border-radius: 8px; padding: 9px 12px;
+  font-size: 12px; color: #92400E; margin-top: 1rem;
+}
+.switch { text-align: center; font-size: 13px; color: #7B7B8F; margin-top: 1.25rem; }
+.switch a { color: #7C3AED; font-weight: 500; }
+
+
