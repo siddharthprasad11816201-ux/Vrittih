@@ -170,7 +170,7 @@ export default function SettingsPage() {
               <h3 style={S.cardTitle}>Account information</h3>
               <div style={S.infoGrid}>
                 <div style={S.infoRow}><span style={S.infoLabel}>Email</span><span style={S.infoVal}>{user.email}</span></div>
-                <div style={S.infoRow}><span style={S.infoLabel}>Role</span><span style={{...S.pill,background:"#EEEDF9",color:"#534AB7"}}>{user.role}</span></div>
+                <div style={S.infoRow}><span style={S.infoLabel}>Role</span><span style={{...S.pill,background:"#E1F5EE",color:"#0F6E56"}}>{user.role}</span></div>
                 <div style={S.infoRow}><span style={S.infoLabel}>Paid</span><span style={{...S.pill,background:user.paid?"#ECFDF5":"#FEF2F2",color:user.paid?"#047857":"#B91C1C"}}>{user.paid?"Active":"Pending"}</span></div>
                 <div style={S.infoRow}><span style={S.infoLabel}>ID Verified</span><span style={{...S.pill,background:user.idVerified?"#ECFDF5":"#F3F4F6",color:user.idVerified?"#047857":"#6b7280"}}>{user.idVerified?"Verified":"Not verified"}</span></div>
                 <div style={S.infoRow}><span style={S.infoLabel}>Member since</span><span style={S.infoVal}>{new Date(user.createdAt).toLocaleDateString("en-IN",{year:"numeric",month:"long",day:"numeric"})}</span></div>
@@ -228,7 +228,7 @@ export default function SettingsPage() {
                       </div>
                     </div>
                     <p style={{fontSize:12.5,color:"#6b7280",marginBottom:6}}>Can&apos;t scan? Enter this setup key manually (time-based, account: your email):</p>
-                    <div style={{fontFamily:"monospace",fontSize:16,letterSpacing:1,background:"#fff",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:8,padding:"12px 14px",color:"#534AB7",fontWeight:700,wordBreak:"break-all" as const}}>
+                    <div style={{fontFamily:"monospace",fontSize:16,letterSpacing:1,background:"#fff",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:8,padding:"12px 14px",color:"#0F6E56",fontWeight:700,wordBreak:"break-all" as const}}>
                       {totpSetup.secretFormatted}
                     </div>
                   </div>
@@ -329,7 +329,7 @@ export default function SettingsPage() {
                                 <tr key={i} style={{borderTop:"0.5px solid rgba(0,0,0,.06)",verticalAlign:"top"}}>
                                   <td style={{padding:"8px",fontFamily:"monospace",color:"#0A0A0F"}}>{rec.type}</td>
                                   <td style={{padding:"8px",fontFamily:"monospace",color:"#0A0A0F",wordBreak:"break-all"}}>{rec.host}</td>
-                                  <td style={{padding:"8px",fontFamily:"monospace",color:"#443AA3",wordBreak:"break-all",maxWidth:340}}>{rec.value}</td>
+                                  <td style={{padding:"8px",fontFamily:"monospace",color:"#0B5A46",wordBreak:"break-all",maxWidth:340}}>{rec.value}</td>
                                 </tr>
                               ))}
                             </tbody>
@@ -404,7 +404,7 @@ const S: Record<string,any> = {
   sidebar:{ height:"fit-content",position:"sticky" as const,top:72 },
   sideTitle:{ fontSize:16,fontWeight:600,color:"#0A0A0F",marginBottom:12,paddingBottom:10,borderBottom:"0.5px solid rgba(0,0,0,.07)" },
   tabBtn:{ display:"block",width:"100%",background:"none",border:"none",padding:"9px 12px",borderRadius:8,fontSize:13,color:"#7B7B8F",textAlign:"left" as const,cursor:"pointer",marginBottom:2 },
-  tabBtnOn:{ background:"#EEEDF9",color:"#534AB7",fontWeight:500 },
+  tabBtnOn:{ background:"#E1F5EE",color:"#0F6E56",fontWeight:500 },
   main:{ display:"flex",flexDirection:"column" as const,gap:12 },
   msg:{ borderRadius:8,padding:"10px 14px",fontSize:13 },
   msgOk:{ background:"#ECFDF5",border:"0.5px solid #A7F3D0",color:"#047857" },
@@ -423,15 +423,15 @@ const S: Record<string,any> = {
   fg:{ flex:1,display:"flex",flexDirection:"column" as const,gap:5,marginBottom:12 },
   label:{ fontSize:12,fontWeight:500,color:"#7B7B8F" },
   input:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"8px 11px",fontSize:13,color:"#0A0A0F",outline:"none",fontFamily:"inherit" },
-  saveBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  saveBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",fontSize:13,fontWeight:500,cursor:"pointer" },
   dangerBtn:{ background:"none",border:"0.5px solid rgba(220,38,38,.3)",color:"#DC2626",borderRadius:8,padding:"9px 18px",fontSize:13,cursor:"pointer" },
   cancelBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.1)",color:"#6b7280",borderRadius:8,padding:"9px 18px",fontSize:13,cursor:"pointer" },
   deleteBox:{ background:"#FEF2F2",border:"0.5px solid #FECACA",borderRadius:10,padding:"1rem" },
-  billingCard:{ background:"linear-gradient(135deg,#0F0A1E,#1E1040)",borderRadius:14,padding:"1.5rem",marginBottom:"1rem" },
+  billingCard:{ background:"linear-gradient(135deg,#04342C,#1E1040)",borderRadius:14,padding:"1.5rem",marginBottom:"1rem" },
   billingTop:{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem" },
   billingPlan:{ fontSize:12,fontWeight:600,color:"rgba(255,255,255,.5)",textTransform:"uppercase" as const,letterSpacing:".08em" },
   billingPrice:{ fontSize:28,fontWeight:700,color:"#fff",letterSpacing:"-1px" },
   billingFeatures:{ display:"flex",flexDirection:"column" as const,gap:6 },
   billingFeature:{ fontSize:13,color:"rgba(255,255,255,.6)" },
-  payBtn:{ display:"inline-block",background:"#534AB7",color:"#fff",padding:"10px 22px",borderRadius:9,fontSize:14,fontWeight:500,textDecoration:"none" },
+  payBtn:{ display:"inline-block",background:"#0F6E56",color:"#fff",padding:"10px 22px",borderRadius:9,fontSize:14,fontWeight:500,textDecoration:"none" },
 }

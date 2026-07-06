@@ -7,7 +7,7 @@ import { IconFileText, IconCalendar } from "@/components/ui/Icons"
 const STATUSES = ["APPLIED", "REVIEWED", "SHORTLISTED", "INTERVIEW", "ASSESSMENT", "OFFERED", "HIRED"]
 
 const STATUS_COLORS: Record<string, { bg: string; color: string }> = {
-  APPLIED:     { bg: "#EEEDF9", color: "#534AB7" },
+  APPLIED:     { bg: "#E1F5EE", color: "#0F6E56" },
   REVIEWED:    { bg: "#EFF4FF", color: "#1D4ED8" },
   SHORTLISTED: { bg: "#ECFDF5", color: "#047857" },
   INTERVIEW:   { bg: "#FFF7ED", color: "#B45309" },
@@ -34,9 +34,9 @@ function ProgressBar({ status }: { status: string }) {
           const done = !rejected && i <= idx
           return (
             <div key={s} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              <div style={{ width: "100%", height: 4, background: done ? "#534AB7" : "#ECEBF1", borderRadius: i === 0 ? "4px 0 0 4px" : i === STATUSES.length - 1 ? "0 4px 4px 0" : 0 }} />
-              <div style={{ width: 8, height: 8, borderRadius: "50%", background: done ? "#534AB7" : "#DCDAE6", border: s === status ? "2px solid #443AA3" : "none" }} />
-              <span style={{ fontSize: 9, color: done ? "#534AB7" : "#A5A1AE", textAlign: "center", lineHeight: 1.2 }}>{label(s)}</span>
+              <div style={{ width: "100%", height: 4, background: done ? "#0F6E56" : "#ECEBF1", borderRadius: i === 0 ? "4px 0 0 4px" : i === STATUSES.length - 1 ? "0 4px 4px 0" : 0 }} />
+              <div style={{ width: 8, height: 8, borderRadius: "50%", background: done ? "#0F6E56" : "#DCDAE6", border: s === status ? "2px solid #0B5A46" : "none" }} />
+              <span style={{ fontSize: 9, color: done ? "#0F6E56" : "#A5A1AE", textAlign: "center", lineHeight: 1.2 }}>{label(s)}</span>
             </div>
           )
         })}
@@ -65,10 +65,10 @@ export default function ApplicationsPage() {
           <div style={card()}>Loading…</div>
         ) : apps.length === 0 ? (
           <div style={{ ...card(), textAlign: "center", padding: "3.5rem 2rem" }}>
-            <span style={{ display: "grid", placeItems: "center", width: 52, height: 52, borderRadius: 14, background: "#EEEDF9", color: "#534AB7", margin: "0 auto 12px" }}><IconFileText size={22} /></span>
+            <span style={{ display: "grid", placeItems: "center", width: 52, height: 52, borderRadius: 14, background: "#E1F5EE", color: "#0F6E56", margin: "0 auto 12px" }}><IconFileText size={22} /></span>
             <p style={{ fontSize: 15, fontWeight: 650, color: "#16151D" }}>No applications yet</p>
             <p style={{ fontSize: 13, color: "#8A8595", marginTop: 4 }}>Apply to a role and track every stage here in real time.</p>
-            <Link href="/jobs" style={{ display: "inline-block", marginTop: 14, background: "#534AB7", color: "#fff", padding: "9px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Browse jobs</Link>
+            <Link href="/jobs" style={{ display: "inline-block", marginTop: 14, background: "#0F6E56", color: "#fff", padding: "9px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Browse jobs</Link>
           </div>
         ) : (
           <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
@@ -100,7 +100,7 @@ export default function ApplicationsPage() {
                       {timeline.map((ev: any, i: number) => (
                         <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-                            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#534AB7", marginTop: 5, flexShrink: 0 }} />
+                            <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#0F6E56", marginTop: 5, flexShrink: 0 }} />
                             {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, minHeight: 22, background: "#ECEBF1" }} />}
                           </div>
                           <div style={{ flex: 1 }}>

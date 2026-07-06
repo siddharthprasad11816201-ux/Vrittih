@@ -49,7 +49,7 @@ export default function NotificationsPage() {
 
   function getIcon(title: string) {
     const t = title.toLowerCase()
-    if (t.includes("application") || t.includes("applied")) return { icon: <IconFileText size={17} />, color: "#534AB7" }
+    if (t.includes("application") || t.includes("applied")) return { icon: <IconFileText size={17} />, color: "#0F6E56" }
     if (t.includes("interview")) return { icon: <IconTarget size={17} />, color: "#B45309" }
     if (t.includes("message")) return { icon: <IconMessage size={17} />, color: "#0891B2" }
     if (t.includes("offer") || t.includes("hired")) return { icon: <IconAward size={17} />, color: "#059669" }
@@ -116,26 +116,26 @@ export default function NotificationsPage() {
 }
 
 const S: Record<string,any> = {
-  page: { background:"#F7F7FA", minHeight:"calc(100vh - 60px)", padding:"2rem" },
+  page: { background:"#FAF8F2", minHeight:"calc(100vh - 60px)", padding:"2rem" },
   wrap: { maxWidth:680, margin:"0 auto" },
   header: { display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:"1.5rem" },
   title: { fontSize:22, fontWeight:600, color:"#0A0A0F", letterSpacing:"-.3px" },
   sub: { fontSize:13, color:"#7B7B8F", marginTop:3 },
   actions: { display:"flex", gap:8 },
-  btn: { background:"#534AB7", color:"#fff", border:"none", borderRadius:8, padding:"8px 16px", fontSize:13, fontWeight:500, cursor:"pointer" },
+  btn: { background:"#0F6E56", color:"#fff", border:"none", borderRadius:8, padding:"8px 16px", fontSize:13, fontWeight:500, cursor:"pointer" },
   filters: { display:"flex", gap:8, marginBottom:"1.25rem" },
   filterBtn: { background:"none", border:"0.5px solid rgba(0,0,0,.1)", borderRadius:8, padding:"6px 14px", fontSize:13, color:"#7B7B8F", cursor:"pointer", transition:"all .15s" },
-  filterOn: { background:"#534AB7", color:"#fff", border:"0.5px solid #534AB7", fontWeight:500 },
+  filterOn: { background:"#0F6E56", color:"#fff", border:"0.5px solid #0F6E56", fontWeight:500 },
   list: { display:"flex", flexDirection:"column" as const, gap:8 },
   empty: { display:"flex", flexDirection:"column" as const, alignItems:"center", justifyContent:"center", padding:"4rem", background:"#fff", borderRadius:14, border:"0.5px solid rgba(0,0,0,.07)" },
   item: { display:"flex", alignItems:"flex-start", gap:12, padding:"1rem 1.25rem", background:"#fff", border:"0.5px solid rgba(0,0,0,.07)", borderRadius:12, cursor:"pointer", transition:"all .15s" },
-  itemUnread: { background:"rgba(83,74,183,.03)", borderColor:"rgba(83,74,183,.15)" },
+  itemUnread: { background:"rgba(15,110,86,.03)", borderColor:"rgba(15,110,86,.15)" },
   icon: { width:34, height:34, borderRadius:9, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 },
   body: { flex:1, minWidth:0 },
   ntitle: { fontSize:14, fontWeight:500, color:"#0A0A0F", marginBottom:3 },
   ntext: { fontSize:13, color:"#6b7280", lineHeight:1.55 },
   ntime: { fontSize:12, color:"#9ca3af", marginTop:5 },
   itemRight: { display:"flex", flexDirection:"column" as const, alignItems:"center", gap:8, flexShrink:0 },
-  dot: { width:8, height:8, borderRadius:"50%", background:"#534AB7" },
+  dot: { width:8, height:8, borderRadius:"50%", background:"#0F6E56" },
   del: { background:"none", border:"none", fontSize:18, color:"#9ca3af", cursor:"pointer", lineHeight:1, padding:0 },
 }

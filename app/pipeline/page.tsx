@@ -92,7 +92,7 @@ const S: Record<string, any> = {
   sub: { fontSize: 13.5, color: "#8A8595", marginTop: 3 },
   board: { display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 14, alignItems: "start" },
   col: { background: "#F0F0F4", borderRadius: 14, padding: 12, minHeight: 200, border: "2px solid transparent", transition: "border-color .12s, background .12s" },
-  colOver: { borderColor: "#534AB7", background: "#EEEDF9" },
+  colOver: { borderColor: "#0F6E56", background: "#E1F5EE" },
   colHead: { display: "flex", alignItems: "center", gap: 8, padding: "2px 4px" },
   colDot: { width: 8, height: 8, borderRadius: "50%" },
   colName: { fontSize: 13.5, fontWeight: 700, color: "#2A2A3E" },

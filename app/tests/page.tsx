@@ -8,7 +8,7 @@ const TYPE_META: Record<string,{label:string,color:string,bg:string,icon:React.R
   APTITUDE:    { label:"Aptitude",    color:"#1D4ED8", bg:"#EFF4FF", icon:<IconActivity size={20} /> },
   TECHNICAL:   { label:"Technical",  color:"#047857", bg:"#ECFDF5", icon:<IconMonitor size={20} /> },
   PSYCHOMETRIC:{ label:"Personality",color:"#B45309", bg:"#FFFBEB", icon:<IconTarget size={20} /> },
-  CODING:      { label:"Coding",     color:"#534AB7", bg:"#EEEDF9", icon:<IconClipboard size={20} /> },
+  CODING:      { label:"Coding",     color:"#0F6E56", bg:"#E1F5EE", icon:<IconClipboard size={20} /> },
 }
 
 export default function TestsPage() {
@@ -44,7 +44,7 @@ export default function TestsPage() {
           {loading ? <div style={S.empty}><p style={{color:"#9ca3af"}}>Loading...</p></div> : (
             <div style={S.grid}>
               {tests.map(t => {
-                const meta = TYPE_META[t.type] || { label:t.type,color:"#534AB7",bg:"#EEEDF9",icon:<IconFileText size={20} /> }
+                const meta = TYPE_META[t.type] || { label:t.type,color:"#0F6E56",bg:"#E1F5EE",icon:<IconFileText size={20} /> }
                 return (
                   <div key={t.id} style={S.card}>
                     <div style={S.cardTop}>
@@ -78,12 +78,12 @@ export default function TestsPage() {
 }
 
 const S: Record<string,any> = {
-  page:{ background:"#F7F7FA",minHeight:"calc(100vh - 60px)",padding:"2rem" },
+  page:{ background:"#FAF8F2",minHeight:"calc(100vh - 60px)",padding:"2rem" },
   wrap:{ maxWidth:1100,margin:"0 auto" },
   header:{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem" },
   title:{ fontSize:22,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px" },
   sub:{ fontSize:13,color:"#7B7B8F",marginTop:4,maxWidth:520 },
-  createBtn:{ background:"#534AB7",color:"#fff",padding:"9px 18px",borderRadius:9,fontSize:13,fontWeight:500,textDecoration:"none" },
+  createBtn:{ background:"#0F6E56",color:"#fff",padding:"9px 18px",borderRadius:9,fontSize:13,fontWeight:500,textDecoration:"none" },
   grid:{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12 },
   card:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.5rem",display:"flex",flexDirection:"column" as const,gap:10 },
   cardTop:{ display:"flex",justifyContent:"space-between",alignItems:"center" },
@@ -92,6 +92,6 @@ const S: Record<string,any> = {
   cardTitle:{ fontSize:16,fontWeight:600,color:"#0A0A0F" },
   cardDesc:{ fontSize:13,color:"#7B7B8F",lineHeight:1.6 },
   cardMeta:{ display:"flex",gap:12,fontSize:12,color:"#9ca3af",flexWrap:"wrap" as const },
-  startBtn:{ background:"#534AB7",color:"#fff",padding:"10px 0",borderRadius:9,fontSize:14,fontWeight:500,textDecoration:"none",textAlign:"center" as const,marginTop:4 },
+  startBtn:{ background:"#0F6E56",color:"#fff",padding:"10px 0",borderRadius:9,fontSize:14,fontWeight:500,textDecoration:"none",textAlign:"center" as const,marginTop:4 },
   empty:{ display:"flex",flexDirection:"column" as const,alignItems:"center",justifyContent:"center",padding:"4rem",background:"#fff",borderRadius:14,border:"0.5px solid rgba(0,0,0,.07)",textAlign:"center" as const },
 }

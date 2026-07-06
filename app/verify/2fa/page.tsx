@@ -83,7 +83,7 @@ function TwoFAContent() {
   return (
     <div style={S.page}>
       <div style={S.card}>
-        <div style={{...S.icon,color:"#534AB7",display:"flex",justifyContent:"center"}}><IconLock size={42} /></div>
+        <div style={{...S.icon,color:"#0F6E56",display:"flex",justifyContent:"center"}}><IconLock size={42} /></div>
         <h1 style={S.title}>
           {mode === "injury" ? "Identity verification" : "Two-factor authentication"}
         </h1>
@@ -135,14 +135,14 @@ function TwoFAContent() {
 
 export default function TwoFAPage() {
   return (
-    <Suspense fallback={<div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#0F0A1E",color:"#fff",fontSize:14}}>Loading...</div>}>
+    <Suspense fallback={<div style={{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#04342C",color:"#fff",fontSize:14}}>Loading...</div>}>
       <TwoFAContent />
     </Suspense>
   )
 }
 
 const S: Record<string,any> = {
-  page:{ minHeight:"100vh",background:"#0F0A1E",display:"flex",alignItems:"center",justifyContent:"center",padding:"2rem" },
+  page:{ minHeight:"100vh",background:"#04342C",display:"flex",alignItems:"center",justifyContent:"center",padding:"2rem" },
   card:{ background:"#fff",borderRadius:20,padding:"2.5rem",width:"100%",maxWidth:420,textAlign:"center" as const },
   icon:{ fontSize:48,marginBottom:16 },
   title:{ fontSize:20,fontWeight:700,color:"#0A0A0F",letterSpacing:"-.3px",marginBottom:8 },
@@ -151,9 +151,9 @@ const S: Record<string,any> = {
   injuryNote:{ display:"flex",gap:10,background:"#FFFBEB",border:"0.5px solid #FCD34D",borderRadius:10,padding:"12px",marginBottom:"1.25rem",textAlign:"left" as const },
   otpRow:{ display:"flex",gap:10,justifyContent:"center",marginBottom:"1.5rem" },
   otpInput:{ width:48,height:56,borderRadius:12,border:"1.5px solid rgba(0,0,0,.15)",textAlign:"center" as const,fontSize:24,fontWeight:700,color:"#0A0A0F",outline:"none",transition:"border-color .15s,box-shadow .15s" },
-  otpInputFilled:{ borderColor:"#534AB7",boxShadow:"0 0 0 3px rgba(83,74,183,.1)" },
-  verifyBtn:{ width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:"1rem" },
+  otpInputFilled:{ borderColor:"#0F6E56",boxShadow:"0 0 0 3px rgba(15,110,86,.1)" },
+  verifyBtn:{ width:"100%",background:"#0F6E56",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:"1rem" },
   resend:{ marginBottom:"1rem" },
-  resendBtn:{ background:"none",border:"none",color:"#534AB7",fontSize:13,fontWeight:500,cursor:"pointer" },
+  resendBtn:{ background:"none",border:"none",color:"#0F6E56",fontSize:13,fontWeight:500,cursor:"pointer" },
   backBtn:{ background:"none",border:"none",color:"#9ca3af",fontSize:13,cursor:"pointer" },
 }

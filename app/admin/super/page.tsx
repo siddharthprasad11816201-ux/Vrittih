@@ -22,7 +22,7 @@ export default function SuperAdmin() {
       <AdminShell>
         <div style={S.center}>
           <div style={S.lock}>
-            <div style={{ color:"#534AB7", display:"flex", justifyContent:"center" }}><IconLock size={28} /></div>
+            <div style={{ color:"#0F6E56", display:"flex", justifyContent:"center" }}><IconLock size={28} /></div>
             <h2 style={{ fontSize: 18, fontWeight: 600, margin: "10px 0 4px" }}>Super-admin only</h2>
             <p style={{ fontSize: 13, color: "#6b7280" }}>This control center requires the SUPER_ADMIN role. Your role: {me?.role || "guest"}.</p>
           </div>
@@ -304,10 +304,10 @@ function ActivityPanel() {
 const S: Record<string, any> = {
   center: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", fontSize: 14, color: "#9ca3af" },
   lock: { textAlign: "center" as const, background: "#fff", border: "0.5px solid rgba(0,0,0,.08)", borderRadius: 16, padding: "2.5rem 3rem" },
-  badge: { background: "#534AB7", color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "5px 12px", borderRadius: 999 },
+  badge: { background: "#0F6E56", color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "5px 12px", borderRadius: 999 },
   tabBar: { display: "flex", gap: 4, padding: "0 2rem", background: "#fff", borderBottom: "0.5px solid rgba(0,0,0,.07)" },
   tab: { background: "none", border: "none", padding: "12px 16px", fontSize: 13, color: "#7B7B8F", cursor: "pointer", borderBottom: "2px solid transparent", marginBottom: -1 },
-  tabOn: { color: "#534AB7", fontWeight: 600, borderBottom: "2px solid #534AB7" },
+  tabOn: { color: "#0F6E56", fontWeight: 600, borderBottom: "2px solid #0F6E56" },
   body: { padding: "1.5rem 2rem" },
   toolbar: { display: "flex", gap: 10, marginBottom: 12 },
   input: { flex: 1, maxWidth: 320, border: "0.5px solid rgba(0,0,0,.13)", borderRadius: 8, padding: "7px 12px", fontSize: 13, outline: "none" },
@@ -329,8 +329,8 @@ const S: Record<string, any> = {
   pNeutral: { background: "#F3F4F6", color: "#6b7280" },
   pBan: { background: "#FEE2E2", color: "#991B1B" },
   actions: { display: "flex", gap: 6, flexWrap: "wrap" as const, maxWidth: 360 },
-  btn: { background: "#F3F0FF", color: "#443AA3", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontWeight: 500 },
-  btnAlt: { background: "#0F0A1E", color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontWeight: 500 },
+  btn: { background: "#F3F0FF", color: "#0B5A46", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontWeight: 500 },
+  btnAlt: { background: "#04342C", color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontWeight: 500 },
   btnWarn: { background: "#FEF3C7", color: "#92400E", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontWeight: 500 },
   btnDanger: { background: "none", border: "0.5px solid rgba(220,38,38,.3)", color: "#DC2626", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer" },
   empty: { padding: "2rem", textAlign: "center" as const, color: "#9ca3af" },
@@ -342,12 +342,12 @@ const S: Record<string, any> = {
   notice: { background: "#EFF4FF", border: "0.5px solid #C7D2FE", borderRadius: 8, padding: "8px 12px", fontSize: 13, color: "#3730A3", marginBottom: 14 },
   label: { display: "block", fontSize: 12, fontWeight: 500, color: "#7B7B8F", margin: "10px 0 5px" },
   input2: { width: "100%", border: "0.5px solid rgba(0,0,0,.13)", borderRadius: 8, padding: "8px 11px", fontSize: 13, color: "#0A0A0F", outline: "none", fontFamily: "inherit" },
-  saveBtn: { background: "#534AB7", color: "#fff", border: "none", padding: "9px 20px", borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: "pointer", marginTop: 16 },
+  saveBtn: { background: "#0F6E56", color: "#fff", border: "none", padding: "9px 20px", borderRadius: 8, fontSize: 13, fontWeight: 500, cursor: "pointer", marginTop: 16 },
   settingRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16, padding: "14px 0", borderBottom: "0.5px solid rgba(0,0,0,.06)" },
   settingLabel: { fontSize: 14, fontWeight: 500, color: "#0A0A0F" },
   settingDesc: { fontSize: 12, color: "#9ca3af", marginTop: 2, maxWidth: 420 },
   toggle: { width: 44, height: 26, borderRadius: 999, border: "none", background: "#D1D5DB", position: "relative" as const, cursor: "pointer", flexShrink: 0, transition: "background .15s" },
-  toggleOn: { background: "#534AB7" },
+  toggleOn: { background: "#0F6E56" },
   knob: { position: "absolute" as const, top: 3, left: 3, width: 20, height: 20, borderRadius: "50%", background: "#fff", transition: "transform .15s" },
   knobOn: { transform: "translateX(18px)" },
   smallInput: { width: 120, border: "0.5px solid rgba(0,0,0,.13)", borderRadius: 8, padding: "7px 11px", fontSize: 13, outline: "none", textAlign: "right" as const },

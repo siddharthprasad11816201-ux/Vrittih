@@ -79,8 +79,8 @@ const S: Record<string, any> = {
   label: { fontSize: 13.5, fontWeight: 600, color: "#3A3752" },
   input: { border: "1px solid #DAD8E2", borderRadius: 10, padding: "11px 13px", fontSize: 14.5, color: "#1A1A2E", outline: "none", fontFamily: "inherit", background: "#fff" },
   checkRow: { display: "inline-flex", alignItems: "center", gap: 8, fontSize: 14, color: "#3A3752" },
-  submit: { marginTop: 6, background: "#534AB7", color: "#fff", border: "none", borderRadius: 11, padding: "13px", fontSize: 15, fontWeight: 600, cursor: "pointer" },
+  submit: { marginTop: 6, background: "#0F6E56", color: "#fff", border: "none", borderRadius: 11, padding: "13px", fontSize: 15, fontWeight: 600, cursor: "pointer" },
   err: { background: "#FEF2F2", border: "1px solid #FECACA", color: "#B91C1C", borderRadius: 9, padding: "10px 13px", fontSize: 13 },
-  check: { width: 56, height: 56, borderRadius: "50%", background: "#534AB7", display: "grid", placeItems: "center", margin: "0 auto 6px" },
+  check: { width: 56, height: 56, borderRadius: "50%", background: "#0F6E56", display: "grid", placeItems: "center", margin: "0 auto 6px" },
   brand: { textAlign: "center", fontSize: 12, color: "#A5A1AE", marginTop: 4 },
 }

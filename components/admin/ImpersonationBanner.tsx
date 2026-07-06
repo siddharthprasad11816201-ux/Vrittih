@@ -35,10 +35,10 @@ export default function ImpersonationBanner() {
 const bar: React.CSSProperties = {
   position: "fixed", top: 0, left: 0, right: 0, zIndex: 9999,
   display: "flex", alignItems: "center", justifyContent: "center", gap: 14,
-  background: "#534AB7", color: "#fff", padding: "8px 16px",
+  background: "#0F6E56", color: "#fff", padding: "8px 16px",
   boxShadow: "0 2px 10px rgba(0,0,0,.2)",
 }
 const btn: React.CSSProperties = {
-  background: "#fff", color: "#534AB7", border: "none", borderRadius: 7,
+  background: "#fff", color: "#0F6E56", border: "none", borderRadius: 7,
   padding: "5px 14px", fontSize: 12, fontWeight: 600, cursor: "pointer",
 }

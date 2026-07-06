@@ -115,7 +115,7 @@ export default function MessagesPage() {
               const last = c.messages?.[0]
               return (
                 <div key={c.id} onClick={() => openConvo(c)} style={{...S.convoItem, ...(active?.id===c.id?S.convoItemOn:{})}}>
-                  <div style={{...S.avatar, background:"#534AB7"}}>{initials(other?.name||"?")}</div>
+                  <div style={{...S.avatar, background:"#0F6E56"}}>{initials(other?.name||"?")}</div>
                   <div style={S.convoInfo}>
                     <div style={S.convoName}>{other?.name || "Unknown"}</div>
                     <div style={S.convoLast}>{last?.content ? (last.content.length>35?last.content.slice(0,35)+"...":last.content) : "Start a conversation"}</div>
@@ -139,7 +139,7 @@ export default function MessagesPage() {
             <>
               {/* Chat header */}
               <div style={S.chatHead}>
-                <div style={{...S.avatar, background:"#534AB7", width:38, height:38, fontSize:14}}>{initials(getOther(active)?.name||"?")}</div>
+                <div style={{...S.avatar, background:"#0F6E56", width:38, height:38, fontSize:14}}>{initials(getOther(active)?.name||"?")}</div>
                 <div>
                   <div style={{fontSize:14,fontWeight:600,color:"#0A0A0F"}}>{getOther(active)?.name || "Unknown"}</div>
                   <div style={{fontSize:12,color: wsReady?"#059669":"#9ca3af"}}>{wsReady?"Online":"Connecting..."}</div>
@@ -155,7 +155,7 @@ export default function MessagesPage() {
                     <div key={m.id}>
                       {showDate && <div style={S.dateSep}>{new Date(m.createdAt).toLocaleDateString("en-IN",{weekday:"long",month:"long",day:"numeric"})}</div>}
                       <div style={{...S.msgRow, justifyContent: isMe?"flex-end":"flex-start"}}>
-                        {!isMe && <div style={{...S.avatar, width:28,height:28,fontSize:11,background:"#534AB7",flexShrink:0}}>{initials(m.sender?.name||"?")}</div>}
+                        {!isMe && <div style={{...S.avatar, width:28,height:28,fontSize:11,background:"#0F6E56",flexShrink:0}}>{initials(m.sender?.name||"?")}</div>}
                         <div style={{...S.bubble, ...(isMe?S.bubbleMe:S.bubbleThem)}}>
                           <div style={S.bubbleText}>{m.content}</div>
                           <div style={S.bubbleTime}>{timeStr(m.createdAt)}</div>
@@ -196,17 +196,17 @@ export default function MessagesPage() {
 }
 
 const S: Record<string,any> = {
-  shell: { display:"grid", gridTemplateColumns:"300px 1fr", height:"calc(100vh - 60px)", overflow:"hidden", background:"#F7F7FA" },
+  shell: { display:"grid", gridTemplateColumns:"300px 1fr", height:"calc(100vh - 60px)", overflow:"hidden", background:"#FAF8F2" },
   sidebar: { background:"#fff", borderRight:"0.5px solid rgba(0,0,0,.08)", display:"flex", flexDirection:"column", overflow:"hidden" },
   sideHead: { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"1rem 1.25rem", borderBottom:"0.5px solid rgba(0,0,0,.07)" },
   sideTitle: { fontSize:16, fontWeight:600, color:"#0A0A0F" },
   newBtn: { background:"none", border:"0.5px solid rgba(0,0,0,.1)", borderRadius:8, width:32, height:32, fontSize:16, cursor:"pointer", display:"flex", alignItems:"center", justifyContent:"center" },
   newConvo: { padding:"10px 1.25rem", borderBottom:"0.5px solid rgba(0,0,0,.07)", display:"flex", gap:8 },
   newInput: { flex:1, border:"0.5px solid rgba(0,0,0,.13)", borderRadius:8, padding:"7px 10px", fontSize:13, outline:"none" },
-  newSend: { background:"#534AB7", color:"#fff", border:"none", borderRadius:8, padding:"7px 14px", fontSize:13, cursor:"pointer" },
+  newSend: { background:"#0F6E56", color:"#fff", border:"none", borderRadius:8, padding:"7px 14px", fontSize:13, cursor:"pointer" },
   convoList: { flex:1, overflowY:"auto" as const, padding:"8px 0" },
   convoItem: { display:"flex", alignItems:"center", gap:10, padding:"10px 1.25rem", cursor:"pointer", transition:"background .15s" },
-  convoItemOn: { background:"#EEEDF9" },
+  convoItemOn: { background:"#E1F5EE" },
   avatar: { width:42, height:42, borderRadius:"50%", display:"flex", alignItems:"center", justifyContent:"center", fontSize:15, fontWeight:600, color:"#fff", flexShrink:0 },
   convoInfo: { flex:1, minWidth:0 },
   convoName: { fontSize:14, fontWeight:500, color:"#0A0A0F", whiteSpace:"nowrap" as const, overflow:"hidden", textOverflow:"ellipsis" },
@@ -220,11 +220,11 @@ const S: Record<string,any> = {
   dateSep: { textAlign:"center" as const, fontSize:12, color:"#9ca3af", margin:"12px 0", padding:"4px 12px", background:"rgba(0,0,0,.04)", borderRadius:999, display:"inline-block", alignSelf:"center" as const },
   msgRow: { display:"flex", alignItems:"flex-end", gap:8 },
   bubble: { maxWidth:"65%", padding:"9px 14px", borderRadius:14 },
-  bubbleMe: { background:"#534AB7", color:"#fff", borderBottomRightRadius:4 },
+  bubbleMe: { background:"#0F6E56", color:"#fff", borderBottomRightRadius:4 },
   bubbleThem: { background:"#fff", border:"0.5px solid rgba(0,0,0,.08)", color:"#0A0A0F", borderBottomLeftRadius:4 },
   bubbleText: { fontSize:14, lineHeight:1.55, wordBreak:"break-word" as const },
   bubbleTime: { fontSize:10, marginTop:4, opacity:.6, textAlign:"right" as const },
   inputRow: { display:"flex", gap:8, padding:"1rem 1.5rem", background:"#fff", borderTop:"0.5px solid rgba(0,0,0,.08)", alignItems:"center" },
   msgInput: { flex:1, border:"0.5px solid rgba(0,0,0,.13)", borderRadius:12, padding:"10px 14px", fontSize:14, outline:"none", fontFamily:"inherit" },
-  sendBtn: { width:42, height:42, borderRadius:12, background:"#534AB7", border:"none", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"background .15s" },
+  sendBtn: { width:42, height:42, borderRadius:12, background:"#0F6E56", border:"none", color:"#fff", display:"flex", alignItems:"center", justifyContent:"center", cursor:"pointer", flexShrink:0, transition:"background .15s" },
 }

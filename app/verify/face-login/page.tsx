@@ -126,7 +126,7 @@ function FaceLoginInner() {
             <div style={S.statusBox}>
               <div style={S.statusText}>{status}</div>
               <div style={S.barWrap}>
-                <div style={S.barTrack}><div style={{...S.barFill,width:`${livenessScore*100}%`,background:livenessScore>0.7?"#059669":livenessScore>0.4?"#B45309":"#534AB7"}}/></div>
+                <div style={S.barTrack}><div style={{...S.barFill,width:`${livenessScore*100}%`,background:livenessScore>0.7?"#059669":livenessScore>0.4?"#B45309":"#0F6E56"}}/></div>
                 <span style={{fontSize:12,color:"#9ca3af"}}>{Math.round(livenessScore*100)}%</span>
               </div>
               <div style={{fontSize:12,color:"#9ca3af"}}>Blinks: {blinkCount}</div>
@@ -173,14 +173,14 @@ function FaceLoginInner() {
 }
 
 const S: Record<string,any> = {
-  page:{minHeight:"100vh",background:"#0F0A1E",display:"flex",alignItems:"center",justifyContent:"center",padding:"2rem"},
+  page:{minHeight:"100vh",background:"#04342C",display:"flex",alignItems:"center",justifyContent:"center",padding:"2rem"},
   card:{background:"#fff",borderRadius:16,padding:"2rem",width:"100%",maxWidth:480},
   title:{fontSize:20,fontWeight:600,color:"#0A0A0F",marginBottom:6},
   sub:{fontSize:13,color:"#7B7B8F",marginBottom:"1.25rem",lineHeight:1.6},
   err:{background:"#FEF2F2",border:"0.5px solid #FECACA",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#B91C1C",marginBottom:12},
   videoWrap:{position:"relative" as const,borderRadius:14,overflow:"hidden",background:"#000",marginBottom:12,aspectRatio:"4/3"},
   video:{width:"100%",height:"100%",objectFit:"cover" as const,transform:"scaleX(-1)"},
-  guide:{position:"absolute" as const,top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:180,height:220,border:"2px solid rgba(83,74,183,.7)",borderRadius:"50%",boxShadow:"0 0 0 4000px rgba(0,0,0,.4)"},
+  guide:{position:"absolute" as const,top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:180,height:220,border:"2px solid rgba(15,110,86,.7)",borderRadius:"50%",boxShadow:"0 0 0 4000px rgba(0,0,0,.4)"},
   statusBox:{background:"#F9F9FC",borderRadius:10,padding:"1rem",display:"flex",flexDirection:"column" as const,gap:8},
   statusText:{fontSize:13,fontWeight:500,color:"#3D3D4E"},
   barWrap:{display:"flex",alignItems:"center",gap:8},
@@ -190,7 +190,7 @@ const S: Record<string,any> = {
   doneTitle:{fontSize:18,fontWeight:600,color:"#0A0A0F",margin:"12px 0 8px"},
   failBox:{textAlign:"center" as const,padding:"1rem 0",display:"flex",flexDirection:"column" as const,gap:10,alignItems:"center"},
   uncertainBox:{textAlign:"center" as const,padding:"1rem 0"},
-  primaryBtn:{width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:500,cursor:"pointer",marginBottom:8},
+  primaryBtn:{width:"100%",background:"#0F6E56",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:500,cursor:"pointer",marginBottom:8},
   secondaryBtn:{width:"100%",background:"none",border:"0.5px solid rgba(0,0,0,.13)",color:"#3D3D4E",borderRadius:9,padding:"10px",fontSize:13,cursor:"pointer",marginBottom:6},
   cancelBtn:{width:"100%",background:"none",border:"none",color:"#9ca3af",fontSize:13,cursor:"pointer",marginTop:4},
   textarea:{width:"100%",border:"0.5px solid rgba(0,0,0,.12)",borderRadius:8,padding:"8px",fontSize:13,fontFamily:"inherit",outline:"none",marginBottom:10,resize:"vertical" as const},

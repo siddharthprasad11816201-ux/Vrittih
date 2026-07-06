@@ -71,7 +71,7 @@ export default function ChannelsPage() {
 
   const initials = (name: string) => name?.split(" ").map((n:string)=>n[0]).join("").slice(0,2).toUpperCase()||"?"
   const timeAgo = (iso: string) => { const m=Math.floor((Date.now()-new Date(iso).getTime())/60000); if(m<1)return "just now"; if(m<60)return `${m}m`; if(m<1440)return `${Math.floor(m/60)}h`; return `${Math.floor(m/1440)}d` }
-  const colors = ["#534AB7","#059669","#0891B2","#B45309","#DC2626"]
+  const colors = ["#0F6E56","#059669","#0891B2","#B45309","#DC2626"]
   const getColor = (id: string) => colors[id?.charCodeAt(0)%colors.length||0]
   const isMember = (ch: any) => ch.members?.length > 0
 
@@ -193,28 +193,28 @@ export default function ChannelsPage() {
 }
 
 const S: Record<string,any> = {
-  shell:{ display:"grid",gridTemplateColumns:"220px 1fr",height:"calc(100vh - 60px)",overflow:"hidden",background:"#F7F7FA" },
-  sidebar:{ background:"#0F0A1E",display:"flex",flexDirection:"column" as const,overflow:"hidden" },
+  shell:{ display:"grid",gridTemplateColumns:"220px 1fr",height:"calc(100vh - 60px)",overflow:"hidden",background:"#FAF8F2" },
+  sidebar:{ background:"#04342C",display:"flex",flexDirection:"column" as const,overflow:"hidden" },
   sideHead:{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"1rem 1.25rem",borderBottom:"0.5px solid rgba(255,255,255,.07)" },
   sideTitle:{ fontSize:14,fontWeight:600,color:"#fff" },
   newBtn:{ width:28,height:28,borderRadius:7,background:"rgba(255,255,255,.1)",border:"none",color:"#fff",fontSize:18,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",lineHeight:1 },
   createForm:{ padding:"10px 1rem",borderBottom:"0.5px solid rgba(255,255,255,.07)" },
   createErr:{ fontSize:12,color:"#FCA5A5",marginBottom:6 },
   createInput:{ width:"100%",background:"rgba(255,255,255,.08)",border:"0.5px solid rgba(255,255,255,.12)",borderRadius:7,padding:"6px 10px",fontSize:12,color:"#fff",outline:"none",marginBottom:6 },
-  createBtn:{ width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:7,padding:"7px",fontSize:12,fontWeight:500,cursor:"pointer" },
+  createBtn:{ width:"100%",background:"#0F6E56",color:"#fff",border:"none",borderRadius:7,padding:"7px",fontSize:12,fontWeight:500,cursor:"pointer" },
   channelList:{ flex:1,overflowY:"auto" as const,padding:"8px 0" },
   channelBtn:{ display:"flex",alignItems:"center",gap:6,width:"100%",background:"none",border:"none",padding:"7px 1.25rem",fontSize:13,color:"rgba(255,255,255,.55)",cursor:"pointer",textAlign:"left" as const,transition:"all .12s" },
-  channelBtnOn:{ background:"rgba(83,74,183,.25)",color:"#B9B2E6" },
+  channelBtnOn:{ background:"rgba(15,110,86,.25)",color:"#9FD4C3" },
   channelHash:{ fontSize:16,color:"rgba(255,255,255,.3)",flexShrink:0 },
   channelName:{ flex:1 },
-  memberDot:{ width:6,height:6,borderRadius:"50%",background:"#534AB7",flexShrink:0 },
+  memberDot:{ width:6,height:6,borderRadius:"50%",background:"#0F6E56",flexShrink:0 },
   main:{ display:"flex",flexDirection:"column" as const,overflow:"hidden",background:"#fff" },
   empty:{ flex:1,display:"flex",flexDirection:"column" as const,alignItems:"center",justifyContent:"center" },
   channelHead:{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"1rem 1.5rem",borderBottom:"0.5px solid rgba(0,0,0,.07)",flexShrink:0 },
   channelHeadName:{ fontSize:16,fontWeight:600,color:"#0A0A0F" },
   channelDesc:{ fontSize:12,color:"#9ca3af",marginTop:2 },
   channelMeta:{ display:"flex",alignItems:"center",gap:10 },
-  joinBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"7px 16px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  joinBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"7px 16px",fontSize:13,fontWeight:500,cursor:"pointer" },
   postsArea:{ flex:1,overflowY:"auto" as const,padding:"1rem 1.5rem",display:"flex",flexDirection:"column" as const,gap:12 },
   emptyPosts:{ textAlign:"center" as const,padding:"3rem 0" },
   post:{ display:"flex",gap:10,alignItems:"flex-start" },
@@ -228,12 +228,12 @@ const S: Record<string,any> = {
   reply:{ display:"flex",gap:8,marginTop:8,paddingLeft:10,borderLeft:"2px solid rgba(0,0,0,.06)" },
   replyForm:{ display:"flex",gap:6,marginTop:8,alignItems:"center" },
   replyInput:{ flex:1,border:"0.5px solid rgba(0,0,0,.12)",borderRadius:8,padding:"6px 10px",fontSize:13,outline:"none" },
-  replyBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:500,cursor:"pointer" },
+  replyBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:500,cursor:"pointer" },
   cancelReplyBtn:{ background:"none",border:"none",fontSize:12,color:"#9ca3af",cursor:"pointer" },
   replyToggle:{ background:"none",border:"none",fontSize:12,color:"#9ca3af",cursor:"pointer",marginTop:6,padding:0 },
   inputRow:{ display:"flex",gap:8,padding:"1rem 1.5rem",borderTop:"0.5px solid rgba(0,0,0,.07)",flexShrink:0,background:"#fff" },
   postInput:{ flex:1,border:"0.5px solid rgba(0,0,0,.12)",borderRadius:12,padding:"10px 14px",fontSize:14,outline:"none",fontFamily:"inherit" },
-  postBtn:{ width:42,height:42,borderRadius:12,background:"#534AB7",border:"none",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0 },
+  postBtn:{ width:42,height:42,borderRadius:12,background:"#0F6E56",border:"none",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",cursor:"pointer",flexShrink:0 },
   joinPrompt:{ padding:"1rem 1.5rem",borderTop:"0.5px solid rgba(0,0,0,.07)",textAlign:"center" as const },
-  joinPromptBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:9,padding:"10px 24px",fontSize:14,fontWeight:500,cursor:"pointer" },
+  joinPromptBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:9,padding:"10px 24px",fontSize:14,fontWeight:500,cursor:"pointer" },
 }

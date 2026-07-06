@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import AdminShell, { AdminTopBar } from "@/components/admin/AdminShell"
 import { IconUpload, IconUsers, IconBriefcase, IconCheckCircle, IconFileText } from "@/components/ui/Icons"
 
-const ACCENT = "#534AB7"
+const ACCENT = "#0F6E56"
 
 export default function ImportPage() {
   const [employers, setEmployers] = useState<any[]>([])
@@ -163,16 +163,16 @@ function Stat({ label, value, sub }: { label: string; value: any; sub?: string }
 
 const S: Record<string, any> = {
   body: { padding: "2rem" },
-  badge: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: ACCENT, background: "#EEEDF9", border: "1px solid #E9E4FB", padding: "5px 12px", borderRadius: 999 },
+  badge: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: ACCENT, background: "#E1F5EE", border: "1px solid #E9E4FB", padding: "5px 12px", borderRadius: 999 },
   grid: { display: "grid", gridTemplateColumns: "1.4fr 1fr", gap: "1.25rem", alignItems: "start" },
   card: { background: "#fff", border: "1px solid rgba(0,0,0,.07)", borderRadius: 14, padding: "1.35rem", marginBottom: "1.25rem" },
   cardHead: { display: "flex", alignItems: "center", gap: 8, fontSize: 14.5, fontWeight: 700, color: "#0A0A0F", marginBottom: 12 },
   hint: { fontSize: 12.5, color: "#6b7280", lineHeight: 1.6, marginBottom: 14 },
-  code: { display: "block", marginTop: 8, background: "#F7F7FA", border: "1px solid rgba(0,0,0,.06)", borderRadius: 8, padding: "8px 10px", fontSize: 11, color: "#4b5563", fontFamily: "ui-monospace, monospace", lineHeight: 1.5 },
+  code: { display: "block", marginTop: 8, background: "#FAF8F2", border: "1px solid rgba(0,0,0,.06)", borderRadius: 8, padding: "8px 10px", fontSize: 11, color: "#4b5563", fontFamily: "ui-monospace, monospace", lineHeight: 1.5 },
   dropRow: { display: "flex", alignItems: "center", gap: 12, marginBottom: 12, flexWrap: "wrap" as const },
-  fileBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: "#EEEDF9", color: ACCENT, border: "1px solid #E9E4FB", borderRadius: 9, padding: "9px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" },
+  fileBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: "#E1F5EE", color: ACCENT, border: "1px solid #E9E4FB", borderRadius: 9, padding: "9px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" },
   fileName: { fontSize: 12.5, color: "#0A0A0F", fontWeight: 500 },
-  rowCount: { fontSize: 12, color: "#6b7280", background: "#F7F7FA", padding: "3px 10px", borderRadius: 999 },
+  rowCount: { fontSize: 12, color: "#6b7280", background: "#FAF8F2", padding: "3px 10px", borderRadius: 999 },
   textarea: { width: "100%", border: "1px solid rgba(0,0,0,.15)", borderRadius: 10, padding: "11px 13px", fontSize: 12.5, fontFamily: "ui-monospace, monospace", outline: "none", resize: "vertical" as const, lineHeight: 1.5, color: "#0A0A0F" },
   label: { display: "block", fontSize: 12, fontWeight: 600, color: "#7B7B8F", marginBottom: 6 },
   select: { width: "100%", border: "1px solid rgba(0,0,0,.15)", borderRadius: 10, padding: "10px 12px", fontSize: 13, outline: "none", background: "#fff", color: "#0A0A0F" },
@@ -183,13 +183,13 @@ const S: Record<string, any> = {
   primaryBtn: { flex: 1, background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "11px", fontSize: 13.5, fontWeight: 600, cursor: "pointer" },
   err: { background: "#FEF2F2", border: "1px solid #FECACA", borderRadius: 8, padding: "10px 12px", fontSize: 12.5, color: "#B91C1C", marginTop: 12 },
   statRow: { display: "flex", flexWrap: "wrap" as const, gap: 14, marginBottom: 8 },
-  stat: { flex: "1 1 150px", background: "#F7F7FA", borderRadius: 11, padding: "14px 16px" },
+  stat: { flex: "1 1 150px", background: "#FAF8F2", borderRadius: 11, padding: "14px 16px" },
   statValue: { fontSize: 24, fontWeight: 700, color: "#0A0A0F", letterSpacing: "-.5px" },
   statLabel: { fontSize: 12, color: "#6b7280", marginTop: 2 },
   statSub: { fontSize: 11, color: "#9ca3af", marginTop: 3 },
   posHead: { fontSize: 12.5, fontWeight: 600, color: "#7B7B8F", margin: "14px 0 8px" },
   posList: { display: "flex", flexDirection: "column" as const, gap: 6, maxHeight: 260, overflow: "auto" },
-  posItem: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "#F7F7FA", borderRadius: 9, padding: "9px 13px", fontSize: 13, color: "#0A0A0F" },
-  posCount: { fontSize: 12, fontWeight: 700, color: ACCENT, background: "#EEEDF9", padding: "2px 10px", borderRadius: 999 },
+  posItem: { display: "flex", justifyContent: "space-between", alignItems: "center", background: "#FAF8F2", borderRadius: 9, padding: "9px 13px", fontSize: 13, color: "#0A0A0F" },
+  posCount: { fontSize: 12, fontWeight: 700, color: ACCENT, background: "#E1F5EE", padding: "2px 10px", borderRadius: 999 },
   link: { color: ACCENT, fontWeight: 600, textDecoration: "none" },
 }

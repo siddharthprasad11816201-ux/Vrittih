@@ -72,7 +72,7 @@ export default function JobCommunityPage() {
 
   const initials = (name: string) => name?.split(" ").map((n:string)=>n[0]).join("").slice(0,2).toUpperCase()||"?"
   const timeAgo = (iso: string) => { const m=Math.floor((Date.now()-new Date(iso).getTime())/60000); if(m<1)return "just now"; if(m<60)return `${m}m`; if(m<1440)return `${Math.floor(m/60)}h`; return `${Math.floor(m/1440)}d` }
-  const colors = ["#534AB7","#059669","#0891B2","#B45309","#DC2626"]
+  const colors = ["#0F6E56","#059669","#0891B2","#B45309","#DC2626"]
   const getColor = (id: string) => colors[id?.charCodeAt(0)%colors.length||0]
 
   if (loading) return <AppShell><div style={S.loading}>Loading community...</div></AppShell>
@@ -129,7 +129,7 @@ export default function JobCommunityPage() {
 
               {!isMember && (
                 <div style={S.joinPrompt}>
-                  <span style={{color:"#534AB7"}}><IconMessage size={16} /></span>
+                  <span style={{color:"#0F6E56"}}><IconMessage size={16} /></span>
                   <p style={{fontSize:14,color:"#3D3D4E",fontWeight:500}}>Join this community to post and interact</p>
                   <button onClick={join} style={S.joinBtn}>Join now</button>
                 </div>
@@ -219,7 +219,7 @@ export default function JobCommunityPage() {
 }
 
 const S: Record<string,any> = {
-  page:{ background:"#F7F7FA",minHeight:"calc(100vh - 60px)",padding:"2rem" },
+  page:{ background:"#FAF8F2",minHeight:"calc(100vh - 60px)",padding:"2rem" },
   wrap:{ maxWidth:1100,margin:"0 auto" },
   loading:{ display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",fontSize:14,color:"#9ca3af" },
   header:{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.5rem",marginBottom:"1.25rem",flexWrap:"wrap" as const,gap:12 },
@@ -229,8 +229,8 @@ const S: Record<string,any> = {
   meta:{ fontSize:12,color:"#9ca3af",marginTop:4 },
   desc:{ fontSize:13,color:"#7B7B8F",marginTop:6,lineHeight:1.6 },
   headerRight:{ display:"flex",gap:8,alignItems:"center",flexWrap:"wrap" as const },
-  jobLink:{ fontSize:13,color:"#534AB7",textDecoration:"none" },
-  joinBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  jobLink:{ fontSize:13,color:"#0F6E56",textDecoration:"none" },
+  joinBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
   joinedTag:{ fontSize:13,color:"#059669",fontWeight:500 },
   layout:{ display:"grid",gridTemplateColumns:"1fr 280px",gap:"1.25rem" },
   main:{ display:"flex",flexDirection:"column" as const,gap:12 },
@@ -239,8 +239,8 @@ const S: Record<string,any> = {
   composeInput:{ flex:1 },
   textarea:{ width:"100%",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:10,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical" as const },
   composeActions:{ display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:8 },
-  postBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"7px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
-  joinPrompt:{ background:"#EEEDF9",border:"0.5px solid rgba(83,74,183,.15)",borderRadius:12,padding:"1.5rem",display:"flex",flexDirection:"column" as const,alignItems:"center",gap:10,textAlign:"center" as const },
+  postBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"7px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  joinPrompt:{ background:"#E1F5EE",border:"0.5px solid rgba(15,110,86,.15)",borderRadius:12,padding:"1.5rem",display:"flex",flexDirection:"column" as const,alignItems:"center",gap:10,textAlign:"center" as const },
   posts:{ display:"flex",flexDirection:"column" as const,gap:1 },
   emptyPosts:{ background:"#fff",borderRadius:12,padding:"3rem",textAlign:"center" as const },
   post:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.07)",borderRadius:12,padding:"1.1rem",display:"flex",gap:12,marginBottom:8 },
@@ -254,7 +254,7 @@ const S: Record<string,any> = {
   reply:{ display:"flex",gap:8,marginTop:10,paddingLeft:12,borderLeft:"2px solid rgba(0,0,0,.06)" },
   replyForm:{ display:"flex",gap:6,marginTop:10,alignItems:"center" },
   replyInput:{ flex:1,border:"0.5px solid rgba(0,0,0,.1)",borderRadius:8,padding:"6px 10px",fontSize:13,outline:"none" },
-  replyBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:500,cursor:"pointer",flexShrink:0 },
+  replyBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:500,cursor:"pointer",flexShrink:0 },
   cancelBtn:{ background:"none",border:"none",fontSize:12,color:"#9ca3af",cursor:"pointer" },
   replyToggle:{ background:"none",border:"none",fontSize:12,color:"#9ca3af",cursor:"pointer",marginTop:8,padding:0 },
   sidebar:{ display:"flex",flexDirection:"column" as const,gap:12 },
@@ -264,8 +264,8 @@ const S: Record<string,any> = {
   memberRow:{ display:"flex",alignItems:"center",gap:9 },
   memberAvatar:{ width:32,height:32,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:600,color:"#fff",flexShrink:0 },
   memberName:{ fontSize:13,fontWeight:500,color:"#0A0A0F" },
-  hostTag:{ fontSize:11,color:"#534AB7",fontWeight:500 },
+  hostTag:{ fontSize:11,color:"#0F6E56",fontWeight:500 },
   jobInfo:{ display:"flex",flexDirection:"column" as const,gap:2,marginBottom:12 },
   jobInfoRow:{ display:"flex",justifyContent:"space-between",fontSize:12,padding:"5px 0",borderBottom:"0.5px solid rgba(0,0,0,.04)" },
-  applyLink:{ display:"block",background:"#534AB7",color:"#fff",padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center" as const,marginTop:8 },
+  applyLink:{ display:"block",background:"#0F6E56",color:"#fff",padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center" as const,marginTop:8 },
 }

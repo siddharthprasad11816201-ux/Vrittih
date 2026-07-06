@@ -100,12 +100,12 @@ export default function InterviewsPage() {
 }
 
 const S: Record<string,any> = {
-  page:{background:"#F7F7FA",minHeight:"calc(100vh - 60px)",padding:"2rem"},
+  page:{background:"#FAF8F2",minHeight:"calc(100vh - 60px)",padding:"2rem"},
   wrap:{maxWidth:800,margin:"0 auto"},
   header:{display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem"},
   title:{fontSize:22,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px"},
   sub:{fontSize:13,color:"#7B7B8F",marginTop:3},
-  scheduleBtn:{background:"#534AB7",color:"#fff",padding:"9px 18px",borderRadius:9,fontSize:13,fontWeight:500,textDecoration:"none"},
+  scheduleBtn:{background:"#0F6E56",color:"#fff",padding:"9px 18px",borderRadius:9,fontSize:13,fontWeight:500,textDecoration:"none"},
   section:{marginBottom:"2rem"},
   sectionTitle:{fontSize:12,fontWeight:600,color:"#9ca3af",textTransform:"uppercase" as const,letterSpacing:".08em",marginBottom:"1rem"},
   list:{display:"flex",flexDirection:"column" as const,gap:10},
@@ -117,7 +117,7 @@ const S: Record<string,any> = {
   cardInfo:{display:"flex",gap:14,flexWrap:"wrap" as const,marginBottom:12},
   infoItem:{fontSize:12,color:"#9ca3af",display:"inline-flex",alignItems:"center",gap:5},
   cardActions:{display:"flex",gap:8},
-  joinBtn:{background:"#534AB7",color:"#fff",padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none"},
+  joinBtn:{background:"#0F6E56",color:"#fff",padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none"},
   joinBtnDisabled:{background:"#9ca3af"},
   empty:{display:"flex",flexDirection:"column" as const,alignItems:"center",justifyContent:"center",padding:"4rem",background:"#fff",borderRadius:14,border:"0.5px solid rgba(0,0,0,.07)",textAlign:"center" as const},
 }

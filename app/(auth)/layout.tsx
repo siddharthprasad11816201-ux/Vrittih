@@ -55,7 +55,7 @@ const CSS = `
   background:
     radial-gradient(120% 80% at 12% 8%, rgba(255,255,255,.14), transparent 42%),
     radial-gradient(90% 70% at 100% 100%, rgba(0,0,0,.28), transparent 55%),
-    linear-gradient(155deg, #5D53C9 0%, #4A41AE 46%, #352E86 100%);
+    linear-gradient(155deg, #15806A 0%, #0F6E56 46%, #04342C 100%);
 }
 .vauth-brand::before { content:""; position:absolute; inset:0;
   background-image:radial-gradient(rgba(255,255,255,.10) 1px, transparent 1.4px);

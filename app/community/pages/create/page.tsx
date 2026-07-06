@@ -47,7 +47,7 @@ export default function CreatePage() {
 }
 
 const S: Record<string,any> = {
-  page:{ background:"#F7F7FA",minHeight:"calc(100vh - 60px)",padding:"2rem",display:"flex",justifyContent:"center" },
+  page:{ background:"#FAF8F2",minHeight:"calc(100vh - 60px)",padding:"2rem",display:"flex",justifyContent:"center" },
   card:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:16,padding:"2rem",width:"100%",maxWidth:520,height:"fit-content" },
   title:{ fontSize:20,fontWeight:700,color:"#0A0A0F",letterSpacing:"-.3px",marginBottom:8 },
   sub:{ fontSize:13,color:"#7B7B8F",lineHeight:1.65,marginBottom:"1.5rem",paddingBottom:"1rem",borderBottom:"0.5px solid rgba(0,0,0,.07)" },
@@ -56,5 +56,5 @@ const S: Record<string,any> = {
   label:{ fontSize:12,fontWeight:500,color:"#7B7B8F" },
   input:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"9px 12px",fontSize:13,outline:"none",fontFamily:"inherit" },
   textarea:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"9px 12px",fontSize:13,outline:"none",fontFamily:"inherit",resize:"vertical" as const },
-  btn:{ width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:600,cursor:"pointer" },
+  btn:{ width:"100%",background:"#0F6E56",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:600,cursor:"pointer" },
 }

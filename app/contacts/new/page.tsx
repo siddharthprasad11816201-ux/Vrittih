@@ -84,6 +84,6 @@ const S: Record<string, any> = {
   label: { display: "block", fontSize: 12.5, fontWeight: 600, color: "#6B6777", marginBottom: 6 },
   input: { width: "100%", border: "1px solid #E1E0E7", borderRadius: 9, padding: "10px 12px", fontSize: 14, color: "#1A1A2E", outline: "none", background: "#fff", fontFamily: "inherit" },
   err: { background: "#FEF2F2", border: "1px solid #FECACA", color: "#B91C1C", borderRadius: 9, padding: "10px 14px", fontSize: 13, marginBottom: 14 },
-  saveBtn: { background: "#534AB7", color: "#fff", border: "none", borderRadius: 9, padding: "11px 22px", fontSize: 14, fontWeight: 600, cursor: "pointer" },
+  saveBtn: { background: "#0F6E56", color: "#fff", border: "none", borderRadius: 9, padding: "11px 22px", fontSize: 14, fontWeight: 600, cursor: "pointer" },
   cancel: { display: "inline-flex", alignItems: "center", padding: "11px 18px", fontSize: 14, color: "#6B6777", textDecoration: "none" },
 }

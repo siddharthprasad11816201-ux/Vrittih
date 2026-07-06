@@ -21,11 +21,11 @@ export default function AdminDashboard() {
   if (error) return <div style={S.loading}><div style={S.errBox}>{error}<br/><small>Make sure your account role is ADMIN</small></div></div>
 
   const STATS = [
-    { label:"Total users", value:stats.totalUsers, sub:`${stats.paidUsers} paid`, color:"#534AB7" },
+    { label:"Total users", value:stats.totalUsers, sub:`${stats.paidUsers} paid`, color:"#0F6E56" },
     { label:"Revenue", value:`${stats.paidUsers} CHF`, sub:"1 CHF per user", color:"#059669" },
     { label:"Active jobs", value:stats.activeJobs, sub:`${stats.totalJobs} total`, color:"#B45309" },
     { label:"Applications", value:stats.totalApplications, sub:"all time", color:"#0891B2" },
-    { label:"Messages", value:stats.totalMessages, sub:"sent total", color:"#534AB7" },
+    { label:"Messages", value:stats.totalMessages, sub:"sent total", color:"#0F6E56" },
   ]
 
   return (
@@ -58,7 +58,7 @@ export default function AdminDashboard() {
                   <tr key={u.id}>
                     <td style={S.td}><span style={S.userName}>{u.name}</span></td>
                     <td style={S.td}><span style={S.email}>{u.email}</span></td>
-                    <td style={S.td}><span style={{...S.pill, background:u.role==="ADMIN"?"#FEF3C7":u.role==="EMPLOYER"?"#EFF4FF":"#EEEDF9", color:u.role==="ADMIN"?"#92400E":u.role==="EMPLOYER"?"#1D4ED8":"#534AB7"}}>{u.role}</span></td>
+                    <td style={S.td}><span style={{...S.pill, background:u.role==="ADMIN"?"#FEF3C7":u.role==="EMPLOYER"?"#EFF4FF":"#E1F5EE", color:u.role==="ADMIN"?"#92400E":u.role==="EMPLOYER"?"#1D4ED8":"#0F6E56"}}>{u.role}</span></td>
                     <td style={S.td}><span style={{...S.pill, background:u.paid?"#ECFDF5":"#FEF2F2", color:u.paid?"#047857":"#B91C1C"}}>{u.paid?"Yes":"No"}</span></td>
                     <td style={S.td}><span style={S.email}>{new Date(u.createdAt).toLocaleDateString("en-IN",{day:"numeric",month:"short"})}</span></td>
                   </tr>
@@ -89,12 +89,12 @@ export default function AdminDashboard() {
 }
 
 const S: Record<string,any> = {
-  page: { display:"grid", gridTemplateColumns:"220px 1fr", minHeight:"100vh", background:"#F7F7FA" },
+  page: { display:"grid", gridTemplateColumns:"220px 1fr", minHeight:"100vh", background:"#FAF8F2" },
   loading: { display:"flex", alignItems:"center", justifyContent:"center", minHeight:"100vh", fontSize:14, color:"#9ca3af" },
   errBox: { background:"#FEF2F2", border:"0.5px solid #FECACA", borderRadius:12, padding:"1.5rem", fontSize:14, color:"#B91C1C", textAlign:"center" as const },
-  sidebar: { background:"#0F0A1E", display:"flex", flexDirection:"column" as const, borderRight:"0.5px solid rgba(255,255,255,.06)" },
+  sidebar: { background:"#04342C", display:"flex", flexDirection:"column" as const, borderRight:"0.5px solid rgba(255,255,255,.06)" },
   brand: { display:"flex", alignItems:"center", gap:10, padding:"1.25rem 1.5rem", borderBottom:"0.5px solid rgba(255,255,255,.06)" },
-  brandMark: { width:32, height:32, borderRadius:9, background:"#534AB7", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 },
+  brandMark: { width:32, height:32, borderRadius:9, background:"#0F6E56", display:"flex", alignItems:"center", justifyContent:"center", fontSize:16 },
   brandText: { fontSize:14, fontWeight:600, color:"#fff" },
   nav: { padding:"1rem .75rem", flex:1, display:"flex", flexDirection:"column" as const, gap:2 },
   navLink: { display:"flex", alignItems:"center", gap:10, padding:"8px 12px", borderRadius:8, fontSize:13, color:"rgba(255,255,255,.6)", textDecoration:"none", transition:"all .15s" },
@@ -114,7 +114,7 @@ const S: Record<string,any> = {
   panel: { background:"#fff", padding:"1.5rem" },
   panelHead: { display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:14, paddingBottom:10, borderBottom:"0.5px solid rgba(0,0,0,.06)" },
   panelTitle: { fontSize:14, fontWeight:600, color:"#0A0A0F" },
-  panelLink: { fontSize:12, color:"#534AB7", textDecoration:"none" },
+  panelLink: { fontSize:12, color:"#0F6E56", textDecoration:"none" },
   table: { width:"100%", borderCollapse:"collapse" as const, fontSize:13 },
   th: { padding:"6px 8px", textAlign:"left" as const, fontSize:11, color:"#9ca3af", fontWeight:500, textTransform:"uppercase" as const, letterSpacing:".05em", borderBottom:"0.5px solid rgba(0,0,0,.06)" },
   td: { padding:"10px 8px", borderBottom:"0.5px solid rgba(0,0,0,.04)" },

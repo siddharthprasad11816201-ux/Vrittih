@@ -110,7 +110,7 @@ export default function ScheduleInterview() {
 }
 
 const S: Record<string,any> = {
-  page:{minHeight:"calc(100vh-60px)",background:"#F7F7FA",padding:"2rem",display:"flex",justifyContent:"center"},
+  page:{minHeight:"calc(100vh-60px)",background:"#FAF8F2",padding:"2rem",display:"flex",justifyContent:"center"},
   card:{background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:16,padding:"2rem",width:"100%",maxWidth:620,height:"fit-content"},
   title:{fontSize:20,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px",marginBottom:6},
   sub:{fontSize:13,color:"#7B7B8F",marginBottom:"1.5rem",lineHeight:1.6},
@@ -121,15 +121,15 @@ const S: Record<string,any> = {
   textarea:{border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"8px 11px",fontSize:13,color:"#0A0A0F",outline:"none",fontFamily:"inherit",resize:"vertical" as const,width:"100%"},
   typeGrid:{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:14},
   typeCard:{background:"#F9F9FC",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:10,padding:"12px",textAlign:"left" as const,cursor:"pointer",transition:"all .15s"},
-  typeCardOn:{border:"1.5px solid #534AB7",background:"#EEEDF9"},
+  typeCardOn:{border:"1.5px solid #0F6E56",background:"#E1F5EE"},
   typeLabel:{fontSize:13,fontWeight:600,color:"#0A0A0F",marginBottom:3},
   typeDesc:{fontSize:11,color:"#9ca3af"},
   row:{display:"flex",gap:12},
   addRow:{display:"flex",gap:8},
-  addBtn:{background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,cursor:"pointer",flexShrink:0},
+  addBtn:{background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"8px 16px",fontSize:13,cursor:"pointer",flexShrink:0},
   participantList:{display:"flex",flexDirection:"column" as const,gap:6,marginTop:10},
   participantItem:{display:"flex",alignItems:"center",gap:10,background:"#F9F9FC",border:"0.5px solid rgba(0,0,0,.07)",borderRadius:8,padding:"8px 12px"},
-  pAvatar:{width:32,height:32,borderRadius:"50%",background:"#534AB7",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,flexShrink:0},
+  pAvatar:{width:32,height:32,borderRadius:"50%",background:"#0F6E56",color:"#fff",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,flexShrink:0},
   removeBtn:{background:"none",border:"none",fontSize:18,color:"#9ca3af",cursor:"pointer"},
-  submitBtn:{width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:9,padding:"12px",fontSize:14,fontWeight:600,cursor:"pointer",marginTop:4},
+  submitBtn:{width:"100%",background:"#0F6E56",color:"#fff",border:"none",borderRadius:9,padding:"12px",fontSize:14,fontWeight:600,cursor:"pointer",marginTop:4},
 }

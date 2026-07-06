@@ -55,7 +55,7 @@ export default function CommunityHub() {
   }
 
   const isMember = (s: any) => s.members?.some((m: any) => m.userId === me?.id)
-  const colors = ["#534AB7","#059669","#0891B2","#B45309","#DC2626"]
+  const colors = ["#0F6E56","#059669","#0891B2","#B45309","#DC2626"]
   const getColor = (id: string) => colors[id?.charCodeAt(0)%colors.length||0]
 
   const TABS: { key: Tab; label: string }[] = [
@@ -160,18 +160,18 @@ export default function CommunityHub() {
 }
 
 const S: Record<string,any> = {
-  page:{ background:"#F7F7FA",minHeight:"calc(100vh - 60px)",padding:"2rem" },
+  page:{ background:"#FAF8F2",minHeight:"calc(100vh - 60px)",padding:"2rem" },
   wrap:{ maxWidth:1100,margin:"0 auto" },
   header:{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem" },
   title:{ fontSize:22,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px" },
   sub:{ fontSize:13,color:"#7B7B8F",marginTop:4,maxWidth:520 },
   tabs:{ display:"flex",gap:4,marginBottom:"1.5rem",background:"#fff",padding:4,borderRadius:12,border:"0.5px solid rgba(0,0,0,.07)",width:"fit-content" },
   tab:{ padding:"7px 18px",borderRadius:9,border:"none",background:"none",fontSize:13,color:"#7B7B8F",cursor:"pointer" },
-  tabOn:{ background:"#534AB7",color:"#fff",fontWeight:500 },
+  tabOn:{ background:"#0F6E56",color:"#fff",fontWeight:500 },
   grid:{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12 },
   card:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.25rem",display:"flex",flexDirection:"column" as const,gap:10 },
   cardTop:{ display:"flex",gap:12,alignItems:"flex-start" },
-  spaceIcon:{ flexShrink:0,width:52,height:52,display:"flex",alignItems:"center",justifyContent:"center",background:"#EEEDF9",color:"#534AB7",borderRadius:12 },
+  spaceIcon:{ flexShrink:0,width:52,height:52,display:"flex",alignItems:"center",justifyContent:"center",background:"#E1F5EE",color:"#0F6E56",borderRadius:12 },
   jobLogo:{ width:52,height:52,borderRadius:12,display:"flex",alignItems:"center",justifyContent:"center",fontSize:16,fontWeight:700,color:"#fff",flexShrink:0 },
   spaceInfo:{ flex:1,minWidth:0 },
   spaceName:{ fontSize:15,fontWeight:600,color:"#0A0A0F",display:"flex",alignItems:"center",gap:8,flexWrap:"wrap" as const },
@@ -179,11 +179,11 @@ const S: Record<string,any> = {
   spaceMeta:{ fontSize:12,color:"#9ca3af",marginTop:3 },
   spaceDesc:{ fontSize:13,color:"#7B7B8F",lineHeight:1.6 },
   jobTags:{ display:"flex",gap:6,flexWrap:"wrap" as const },
-  tag:{ background:"#EEEDF9",color:"#534AB7",fontSize:11,fontWeight:500,padding:"2px 9px",borderRadius:999 },
+  tag:{ background:"#E1F5EE",color:"#0F6E56",fontSize:11,fontWeight:500,padding:"2px 9px",borderRadius:999 },
   cardActions:{ display:"flex",gap:8,marginTop:4 },
-  viewBtn:{ flex:1,background:"#534AB7",color:"#fff",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center" as const },
+  viewBtn:{ flex:1,background:"#0F6E56",color:"#fff",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center" as const },
   secondBtn:{ flex:1,background:"none",border:"0.5px solid rgba(0,0,0,.12)",color:"#3D3D4E",padding:"8px 0",borderRadius:8,fontSize:13,textDecoration:"none",textAlign:"center" as const },
   joinBtn:{ padding:"8px 16px",borderRadius:8,border:"0.5px solid rgba(0,0,0,.12)",background:"none",color:"#3D3D4E",fontSize:13,cursor:"pointer",flexShrink:0 },
-  joinBtnOn:{ background:"#EEEDF9",color:"#534AB7",borderColor:"rgba(83,74,183,.2)" },
+  joinBtnOn:{ background:"#E1F5EE",color:"#0F6E56",borderColor:"rgba(15,110,86,.2)" },
   empty:{ padding:"3rem",textAlign:"center" as const },
 }

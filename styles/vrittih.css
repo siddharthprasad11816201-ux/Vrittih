@@ -1,57 +1,150 @@
 /* ============================================================
-   Vrittih design system — single source of truth.
-   Calm, professional, indigo accent (spec §3.7 focus ring #534AB7).
+   VRITTIH DESIGN SYSTEM — single source of truth.
+   One brand everywhere: ink-green + cream + reserved gold.
+   "Every industry. Every professional. One network."
+   Depth jurisdiction: glass = floating chrome, neu = tactile
+   controls (always bordered), 3D = one landing hero only.
    ============================================================ */
 :root {
-  /* surfaces */
-  --v-bg:        #F6F6FA;
+  /* ---- brand ramp ---- */
+  --brand-900: #04342C;   /* ink green — display, dark slabs */
+  --brand-700: #0B5A46;
+  --brand-600: #0F6E56;   /* primary actions, active */
+  --brand-400: #1D9E75;   /* hover, focus ring, live */
+  --brand-200: #A7D9C8;
+  --brand-100: #E1F5EE;   /* tints, selected rows, badges */
+  --cream-0:   #FAF8F2;   /* page canvas */
+  --gold:      #C8A24B;   /* RESERVED: Verified badge only */
+
+  /* ---- surfaces (light) ---- */
+  --v-bg:        #FAF8F2;
   --v-surface:   #FFFFFF;
-  --v-surface-2: #F3F3F8;
+  --v-surface-2: #F3F0E7;
   --v-sidebar:   #FFFFFF;
-  --v-topbar:    rgba(246,246,250,.82);
+  --v-topbar:    rgba(250,248,242,.72);
 
-  /* ink */
-  --v-ink:   #17161F;
-  --v-ink-2: #56535F;
-  --v-ink-3: #8B8896;
+  /* ---- ink ---- */
+  --v-ink:   #101311;
+  --v-ink-2: #3C443F;
+  --v-ink-3: #6E7A73;
 
-  /* lines */
-  --v-line:   #ECEBF1;
-  --v-line-2: #E0DFE7;
+  /* ---- lines ---- */
+  --v-line:   #E8E3D7;
+  --v-line-2: #D9D3C4;
 
-  /* accent (indigo) */
-  --v-accent:      #534AB7;
-  --v-accent-2:    #443AA3;
-  --v-accent-soft: #EEEDF9;
+  /* ---- accent (aliases → brand green so every var-driven surface flips) ---- */
+  --v-accent:      #0F6E56;
+  --v-accent-2:    #0B5A46;
+  --v-accent-soft: #E1F5EE;
   --v-accent-ink:  #FFFFFF;
 
-  /* semantic */
-  --v-green:  #0E9F6E;
-  --v-green-soft: #E7F7F0;
-  --v-amber:  #B45309;
-  --v-blue:   #2563EB;
-  --v-red:    #DC2626;
-  --v-chat-out: #D7F0DD;   /* WhatsApp-familiar outgoing bubble */
+  /* ---- semantic (status only, never decoration) ---- */
+  --v-green:  #0F6E56;
+  --v-green-soft: #E1F5EE;
+  --v-amber:  #BA7517;   --warn:   #BA7517;
+  --v-blue:   #185FA5;   --info:   #185FA5;
+  --v-red:    #A32D2D;   --danger: #A32D2D;
+  --v-chat-out: #D7F0DD;
 
-  /* radii */
+  /* ---- radii ---- */
   --v-r:    12px;
-  --v-r-sm: 9px;
+  --v-r-sm: 10px;
   --v-r-lg: 16px;
   --v-r-pill: 999px;
 
-  /* shadow / motion */
-  --v-shadow-sm: 0 1px 2px rgba(23,18,45,.05);
-  --v-shadow:    0 1px 2px rgba(23,18,45,.04), 0 10px 30px rgba(23,18,45,.06);
+  /* ---- elevation (green-tinted) + motion ---- */
+  --v-shadow-sm: 0 1px 2px rgba(4,52,44,.06);
+  --v-shadow:    0 1px 2px rgba(4,52,44,.05), 0 12px 34px rgba(4,52,44,.08);
+  --v-shadow-lg: 0 24px 60px rgba(4,52,44,.14);
   --v-ease: cubic-bezier(.22,1,.36,1);
+  --v-spring: cubic-bezier(.34,1.56,.64,1);
 
-  /* type */
-  --v-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
-  --v-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* ---- type ---- */
+  --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --v-serif: var(--font-display);
+  --v-sans:  var(--font-sans);
+
+  /* ---- fluid type scale ---- */
+  --fs-display: clamp(2.5rem, 6vw + 1rem, 5.5rem);
+  --fs-h1: clamp(1.75rem, 3vw + .5rem, 2.75rem);
+  --fs-h2: clamp(1.25rem, 1.4vw + .55rem, 1.7rem);
+  --fs-h3: clamp(1.05rem, .6vw + .5rem, 1.2rem);
+  --fs-body: clamp(0.95rem, 0.9rem + 0.2vw, 1.05rem);
+  --fs-sm: clamp(0.8rem, .78rem + .1vw, .875rem);
 }
 
-/* Vrittih app surface reset applied under the shell */
-.v-app { font-family: var(--v-sans); color: var(--v-ink); }
-.v-app *::selection { background: #DCD9F5; }
+/* ---- dark mode: token-level flip (screens that use tokens follow automatically) ---- */
+:root[data-theme="dark"], .v-dark {
+  --v-bg:        #0C0F0D;
+  --v-surface:   #121612;
+  --v-surface-2: #171C18;
+  --v-sidebar:   #101410;
+  --v-topbar:    rgba(16,19,17,.62);
+  --v-ink:   #EAF1EC;
+  --v-ink-2: #A6B2AA;
+  --v-ink-3: #74817A;
+  --v-line:   #232A25;
+  --v-line-2: #2E362F;
+  --v-accent:      #1D9E75;
+  --v-accent-2:    #14B37F;
+  --v-accent-soft: #123028;
+  --v-green-soft:  #123028;
+  --v-shadow-sm: 0 1px 2px rgba(0,0,0,.4);
+  --v-shadow:    0 1px 2px rgba(0,0,0,.4), 0 12px 34px rgba(0,0,0,.5);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --v-bg:#0C0F0D; --v-surface:#121612; --v-surface-2:#171C18; --v-sidebar:#101410;
+    --v-topbar:rgba(16,19,17,.62); --v-ink:#EAF1EC; --v-ink-2:#A6B2AA; --v-ink-3:#74817A;
+    --v-line:#232A25; --v-line-2:#2E362F; --v-accent:#1D9E75; --v-accent-2:#14B37F;
+    --v-accent-soft:#123028; --v-green-soft:#123028;
+  }
+}
+
+/* ---- app reset ---- */
+.v-app { font-family: var(--font-sans); color: var(--v-ink); }
+.v-app *::selection { background: var(--brand-100); color: var(--brand-900); }
+
+/* ---- depth utilities (strict jurisdiction) ---- */
+.v-glass {
+  background: var(--v-topbar);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  backdrop-filter: blur(16px) saturate(160%);
+  border: 1px solid rgba(255,255,255,.45);
+  box-shadow: var(--v-shadow);
+}
+:root[data-theme="dark"] .v-glass, .v-dark .v-glass { border-color: rgba(255,255,255,.08); }
+.v-neu {
+  background: var(--v-surface);
+  border: 1px solid var(--v-line-2);
+  box-shadow: 4px 4px 10px rgba(4,52,44,.07), -4px -4px 10px rgba(255,255,255,.9);
+  transition: box-shadow .18s var(--v-ease), border-color .18s;
+}
+.v-neu:active, .v-neu[data-on="true"] {
+  box-shadow: inset 3px 3px 7px rgba(4,52,44,.10), inset -3px -3px 7px rgba(255,255,255,.85);
+  border-color: var(--v-accent);
+}
+.v-gold {                 /* the Verified badge — precious metal */
+  color: #6B531C; background: linear-gradient(135deg,#F4E9C8,#E7CE8E);
+  border: 1px solid var(--gold);
+}
+
+/* ---- accessible focus + verbs ---- */
+.v-app :focus-visible { outline: 2px solid var(--brand-400); outline-offset: 2px; border-radius: 4px; }
+
+/* ---- motion keyframes ---- */
+@keyframes v-rise { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
+@keyframes v-pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
+@keyframes v-shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+.v-skeleton {
+  background: linear-gradient(90deg, var(--v-surface-2) 25%, var(--brand-100) 37%, var(--v-surface-2) 63%);
+  background-size: 200% 100%; animation: v-shimmer 1.4s linear infinite; border-radius: var(--v-r-sm);
+}
+.v-live { animation: v-pulse 1.6s var(--v-ease) infinite; }
+
 @media (prefers-reduced-motion: reduce) {
-  .v-app *, .v-app *::before, .v-app *::after { transition-duration: .01ms !important; }
+  .v-app *, .v-app *::before, .v-app *::after { animation-duration:.01ms !important; transition-duration:.01ms !important; }
+  .v-live { animation: none; }
 }

@@ -18,6 +18,6 @@ export function formatMoney(value: number, currency = "CHF"): string {
 export const initials = (first?: string, last?: string) =>
   `${(first || "?")[0] || ""}${(last || "")[0] || ""}`.toUpperCase()
 
-const AVATAR_COLORS = ["#534AB7", "#0891B2", "#059669", "#B45309", "#DB2777", "#4F46E5"]
+const AVATAR_COLORS = ["#0F6E56", "#0891B2", "#059669", "#B45309", "#DB2777", "#4F46E5"]
 export const avatarColor = (seed: string) =>
   AVATAR_COLORS[[...seed].reduce((a, c) => a + c.charCodeAt(0), 0) % AVATAR_COLORS.length]

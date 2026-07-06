@@ -4,7 +4,7 @@ import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
 import { IconMessage, IconTrendingUp, IconUsers } from "@/components/ui/Icons"
 
-const ACCENT = "#534AB7"
+const ACCENT = "#0F6E56"
 const initials = (n?: string) => (n || "?").split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()
 const timeAgo = (iso: string) => {
   const m = Math.floor((Date.now() - new Date(iso).getTime()) / 60000)
@@ -15,7 +15,7 @@ const timeAgo = (iso: string) => {
 function Avatar({ name, avatar, size = 44 }: { name?: string; avatar?: string; size?: number }) {
   return avatar
     ? <img src={avatar} alt={name} style={{ width: size, height: size, borderRadius: "50%", objectFit: "cover", flexShrink: 0 }} />
-    : <div style={{ width: size, height: size, borderRadius: "50%", background: "#EEEDF9", color: ACCENT, display: "grid", placeItems: "center", fontWeight: 700, fontSize: size * 0.34, flexShrink: 0 }}>{initials(name)}</div>
+    : <div style={{ width: size, height: size, borderRadius: "50%", background: "#E1F5EE", color: ACCENT, display: "grid", placeItems: "center", fontWeight: 700, fontSize: size * 0.34, flexShrink: 0 }}>{initials(name)}</div>
 }
 
 export default function FeedPage() {
@@ -131,7 +131,7 @@ export default function FeedPage() {
             )) : <p style={{ fontSize: 13, color: "var(--v-ink-3)", padding: "6px 0" }}>No profile views yet. Post and connect to get noticed.</p>}
           </div>
           <Link href="/network" style={{ ...S.card, display: "flex", alignItems: "center", gap: 10, textDecoration: "none", color: "var(--v-ink)" }}>
-            <span style={{ width: 36, height: 36, borderRadius: 9, background: "#EEEDF9", color: ACCENT, display: "grid", placeItems: "center" }}><IconUsers size={17} /></span>
+            <span style={{ width: 36, height: 36, borderRadius: 9, background: "#E1F5EE", color: ACCENT, display: "grid", placeItems: "center" }}><IconUsers size={17} /></span>
             <div><div style={{ fontSize: 14, fontWeight: 650 }}>Grow your network</div><div style={{ fontSize: 12.5, color: "var(--v-ink-3)" }}>Find people to connect with</div></div>
           </Link>
         </aside>

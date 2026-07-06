@@ -101,7 +101,7 @@ export default function MailPage() {
             <div style={S.empty}><span style={{color:"#D1D5DB"}}><IconInbox size={34} /></span><p style={{fontSize:14,color:"#9ca3af",marginTop:10}}>No mail in {folder}</p></div>
           ) : mails.map(m => (
             <div key={m.id} onClick={() => openMail(m)} style={{...S.mailItem,...(selected?.id===m.id?S.mailItemOn:{})}}>
-              <div style={{...S.mailAvatar,background:"#534AB7"}}>{initials(folder==="sent"?m.to?.name:m.from?.name)}</div>
+              <div style={{...S.mailAvatar,background:"#0F6E56"}}>{initials(folder==="sent"?m.to?.name:m.from?.name)}</div>
               <div style={S.mailInfo}>
                 <div style={S.mailFrom}>{folder==="sent"?`To: ${m.to?.name}`:m.from?.name}{!m.read&&folder==="inbox"&&<span style={S.unreadDot}/>}</div>
                 <div style={{...S.mailSubject,...(!m.read&&folder==="inbox"?{fontWeight:600,color:"#0A0A0F"}:{})}}>{m.subject}</div>
@@ -145,7 +145,7 @@ export default function MailPage() {
                 </div>
               </div>
               <div style={S.readMeta}>
-                <div style={{...S.mailAvatar,width:36,height:36,fontSize:13,background:"#534AB7"}}>{initials(selected.from?.name)}</div>
+                <div style={{...S.mailAvatar,width:36,height:36,fontSize:13,background:"#0F6E56"}}>{initials(selected.from?.name)}</div>
                 <div>
                   <div style={{fontSize:13,fontWeight:500,color:"#0A0A0F"}}>{selected.from?.name}</div>
                   <div style={{fontSize:12,color:"#9ca3af"}}>{selected.from?.email} → {selected.to?.email}</div>
@@ -170,26 +170,26 @@ export default function MailPage() {
 }
 
 const S: Record<string,any> = {
-  shell:{ display:"grid",gridTemplateColumns:"200px 280px 1fr",height:"calc(100vh - 60px)",overflow:"hidden",background:"#F7F7FA" },
+  shell:{ display:"grid",gridTemplateColumns:"200px 280px 1fr",height:"calc(100vh - 60px)",overflow:"hidden",background:"#FAF8F2" },
   sidebar:{ background:"#fff",borderRight:"0.5px solid rgba(0,0,0,.07)",padding:"1rem .75rem",display:"flex",flexDirection:"column" as const,gap:4 },
-  composeBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:10,padding:"10px 14px",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:8,textAlign:"left" as const },
+  composeBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:10,padding:"10px 14px",fontSize:13,fontWeight:600,cursor:"pointer",marginBottom:8,textAlign:"left" as const },
   searchWrap:{ marginBottom:8 },
   searchInput:{ width:"100%",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:8,padding:"6px 10px",fontSize:12,outline:"none" },
   folderBtn:{ display:"flex",justifyContent:"space-between",alignItems:"center",background:"none",border:"none",padding:"8px 10px",borderRadius:8,fontSize:13,color:"#7B7B8F",cursor:"pointer",textAlign:"left" as const },
-  folderBtnOn:{ background:"#EEEDF9",color:"#534AB7",fontWeight:500 },
-  badge:{ background:"#534AB7",color:"#fff",borderRadius:999,fontSize:10,fontWeight:700,padding:"1px 6px",minWidth:18,textAlign:"center" as const },
+  folderBtnOn:{ background:"#E1F5EE",color:"#0F6E56",fontWeight:500 },
+  badge:{ background:"#0F6E56",color:"#fff",borderRadius:999,fontSize:10,fontWeight:700,padding:"1px 6px",minWidth:18,textAlign:"center" as const },
   mailList:{ background:"#fff",borderRight:"0.5px solid rgba(0,0,0,.07)",overflow:"auto",display:"flex",flexDirection:"column" as const },
   listHead:{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"1rem 1.25rem",borderBottom:"0.5px solid rgba(0,0,0,.06)" },
   listTitle:{ fontSize:14,fontWeight:600,color:"#0A0A0F" },
   mailItem:{ display:"flex",alignItems:"flex-start",gap:10,padding:"12px 1.25rem",borderBottom:"0.5px solid rgba(0,0,0,.04)",cursor:"pointer",transition:"background .12s" },
-  mailItemOn:{ background:"#EEEDF9" },
+  mailItemOn:{ background:"#E1F5EE" },
   mailAvatar:{ width:38,height:38,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,color:"#fff",flexShrink:0 },
   mailInfo:{ flex:1,minWidth:0 },
   mailFrom:{ fontSize:13,fontWeight:500,color:"#0A0A0F",display:"flex",alignItems:"center",gap:6 },
   mailSubject:{ fontSize:12,color:"#3D3D4E",marginTop:1 },
   mailPreview:{ fontSize:11,color:"#9ca3af",marginTop:2,overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" as const },
   mailTime:{ fontSize:11,color:"#9ca3af",flexShrink:0,marginTop:2 },
-  unreadDot:{ width:7,height:7,borderRadius:"50%",background:"#534AB7",flexShrink:0 },
+  unreadDot:{ width:7,height:7,borderRadius:"50%",background:"#0F6E56",flexShrink:0 },
   readPane:{ overflow:"auto",display:"flex",flexDirection:"column" as const },
   composePane:{ display:"flex",flexDirection:"column" as const,height:"100%",padding:"1.25rem" },
   composeHead:{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem" },
@@ -201,7 +201,7 @@ const S: Record<string,any> = {
   composeInput:{ border:"0.5px solid rgba(0,0,0,.12)",borderRadius:8,padding:"8px 11px",fontSize:13,outline:"none",color:"#0A0A0F" },
   composeTextarea:{ border:"0.5px solid rgba(0,0,0,.12)",borderRadius:8,padding:"10px 12px",fontSize:13,outline:"none",resize:"vertical" as const,fontFamily:"inherit",flex:1 },
   composeActions:{ display:"flex",gap:8 },
-  sendBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  sendBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",fontSize:13,fontWeight:500,cursor:"pointer" },
   discardBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.1)",color:"#6b7280",borderRadius:8,padding:"9px 16px",fontSize:13,cursor:"pointer" },
   alert:{ borderRadius:8,padding:"8px 12px",fontSize:13,marginBottom:8 },
   alertOk:{ background:"#ECFDF5",color:"#047857" },
@@ -211,7 +211,7 @@ const S: Record<string,any> = {
   readSubject:{ fontSize:20,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px",flex:1 },
   readActions:{ display:"flex",gap:6,flexShrink:0 },
   actionBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:8,padding:"6px 10px",fontSize:14,cursor:"pointer" },
-  replyBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  replyBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"6px 14px",fontSize:13,fontWeight:500,cursor:"pointer" },
   readMeta:{ display:"flex",gap:10,alignItems:"flex-start",padding:"1rem",background:"#F9F9FC",borderRadius:10,marginBottom:"1.25rem" },
   readBody:{ fontSize:14,color:"#3D3D4E",lineHeight:1.8,whiteSpace:"pre-wrap" as const },
   empty:{ flex:1,display:"flex",flexDirection:"column" as const,alignItems:"center",justifyContent:"center",color:"#9ca3af" },

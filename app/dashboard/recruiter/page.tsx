@@ -4,13 +4,13 @@ import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
 const STATUSES = ["APPLIED","REVIEWED","SHORTLISTED","INTERVIEW","ASSESSMENT","OFFERED","HIRED","REJECTED"]
 const STATUS_COLORS: Record<string, {bg:string,color:string}> = {
-  APPLIED:{bg:"#E6F1FB",color:"#185FA5"}, REVIEWED:{bg:"#E6E3F7",color:"#3C338F"},
+  APPLIED:{bg:"#E6F1FB",color:"#185FA5"}, REVIEWED:{bg:"#D3EDE4",color:"#04342C"},
   SHORTLISTED:{bg:"#DBEAFE",color:"#1E40AF"}, INTERVIEW:{bg:"#FEF3C7",color:"#92400E"},
   ASSESSMENT:{bg:"#FFE4E6",color:"#9F1239"}, OFFERED:{bg:"#D1FAE5",color:"#065F46"},
   HIRED:{bg:"#D1FAE5",color:"#065F46"}, REJECTED:{bg:"#FEE2E2",color:"#991B1B"},
 }
-function tier(s:number){ return s>=85?"#047857":s>=70?"#1D4ED8":s>=55?"#443AA3":s>=40?"#B45309":"#6B7280" }
-function tierBg(s:number){ return s>=85?"#ECFDF5":s>=70?"#EFF6FF":s>=55?"#EEEDF9":s>=40?"#FFFBEB":"#F3F4F6" }
+function tier(s:number){ return s>=85?"#047857":s>=70?"#1D4ED8":s>=55?"#0B5A46":s>=40?"#B45309":"#6B7280" }
+function tierBg(s:number){ return s>=85?"#ECFDF5":s>=70?"#EFF6FF":s>=55?"#E1F5EE":s>=40?"#FFFBEB":"#F3F4F6" }
 
 export default function RecruiterDashboard() {
   const [jobs, setJobs] = useState<any[]>([])
@@ -52,7 +52,7 @@ export default function RecruiterDashboard() {
         {jobs.length === 0 && !loading ? (
           <div style={{background:"#fff",border:"1px solid #eee",borderRadius:"14px",padding:"3rem",textAlign:"center",color:"#6b7280"}}>
             <p style={{fontWeight:600,marginBottom:6}}>You haven&apos;t posted any jobs yet.</p>
-            <Link href="/dashboard/post-job" style={{color:"#534AB7",fontWeight:600}}>Post a job →</Link>
+            <Link href="/dashboard/post-job" style={{color:"#0F6E56",fontWeight:600}}>Post a job →</Link>
           </div>
         ) : (
           <>
@@ -90,7 +90,7 @@ export default function RecruiterDashboard() {
                   return (
                     <div key={c.userId} style={{background:"#fff",border:"1px solid #eee",borderRadius:"14px",padding:"1.1rem 1.3rem",display:"flex",gap:"14px",alignItems:"flex-start"}}>
                       <div style={{fontSize:"13px",fontWeight:700,color:"#9ca3af",width:"22px",textAlign:"center",paddingTop:"6px"}}>{i+1}</div>
-                      <div style={{width:"44px",height:"44px",borderRadius:"11px",background:"linear-gradient(135deg,#EEEDF9,#E6E3F7)",border:"1px solid rgba(83,74,183,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:700,color:"#534AB7",flexShrink:0}}>
+                      <div style={{width:"44px",height:"44px",borderRadius:"11px",background:"linear-gradient(135deg,#E1F5EE,#D3EDE4)",border:"1px solid rgba(15,110,86,.15)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:"14px",fontWeight:700,color:"#0F6E56",flexShrink:0}}>
                         {(c.name||"?").slice(0,2).toUpperCase()}
                       </div>
                       <div style={{flex:1,minWidth:0}}>
@@ -112,7 +112,7 @@ export default function RecruiterDashboard() {
                         )}
                       </div>
                       <div style={{display:"flex",flexDirection:"column",gap:"6px",alignItems:"flex-end"}}>
-                        <Link href={`/messages`} style={{fontSize:"12.5px",fontWeight:600,color:"#534AB7",whiteSpace:"nowrap"}}>Message →</Link>
+                        <Link href={`/messages`} style={{fontSize:"12.5px",fontWeight:600,color:"#0F6E56",whiteSpace:"nowrap"}}>Message →</Link>
                       </div>
                     </div>
                   )

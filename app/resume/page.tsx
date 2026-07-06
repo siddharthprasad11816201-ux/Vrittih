@@ -34,7 +34,7 @@ export default function ResumeBuilder() {
   if (loading) return <AppShell><div style={S.loading}>Building your resume...</div></AppShell>
   if (!user) return <AppShell><div style={S.loading}>Please log in</div></AppShell>
 
-  const accentColor = template === "modern" ? "#534AB7" : template === "minimal" ? "#0A0A0F" : "#1E40AF"
+  const accentColor = template === "modern" ? "#0F6E56" : template === "minimal" ? "#0A0A0F" : "#1E40AF"
 
   return (
     <>
@@ -185,8 +185,8 @@ const S: Record<string,any> = {
   sub:{ fontSize:13,color:"#7B7B8F",marginTop:4 },
   templatePicker:{ display:"flex",gap:4,background:"#fff",padding:3,borderRadius:8,border:"0.5px solid rgba(0,0,0,.1)" },
   templateBtn:{ background:"none",border:"none",borderRadius:6,padding:"5px 12px",fontSize:12,cursor:"pointer",color:"#7B7B8F" },
-  templateBtnOn:{ background:"#534AB7",color:"#fff",fontWeight:500 },
-  downloadBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:9,padding:"9px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  templateBtnOn:{ background:"#0F6E56",color:"#fff",fontWeight:500 },
+  downloadBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:9,padding:"9px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
   editBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.13)",color:"#3D3D4E",borderRadius:9,padding:"8px 16px",fontSize:13,textDecoration:"none" },
   resume:{ background:"#fff",maxWidth:820,margin:"0 auto",padding:"2rem 2.5rem",boxShadow:"0 4px 32px rgba(0,0,0,.1)",borderRadius:4,minHeight:"29.7cm" },
   resumeModern:{ fontFamily:"system-ui,sans-serif" },

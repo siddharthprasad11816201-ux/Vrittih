@@ -7,7 +7,7 @@ import {
   IconClipboard, IconMail, IconPhone, IconCheckCircle, IconArrowRight,
 } from "@/components/ui/Icons"
 
-const ACCENT = "#534AB7"
+const ACCENT = "#0F6E56"
 
 export default function ProfilePage() {
   const [user, setUser] = useState<any>(null)
@@ -233,9 +233,9 @@ const S: Record<string, any> = {
   loading: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", color: "var(--v-ink-3)", fontSize: 14 },
   page: { maxWidth: 780, margin: "0 auto", padding: "2rem", display: "flex", flexDirection: "column", gap: "1.25rem" },
   card: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 16, overflow: "hidden" },
-  cover: { height: 96, background: "linear-gradient(120deg,#534AB7,#6E64D6 55%,#8A7FE8)" },
+  cover: { height: 96, background: "linear-gradient(120deg,#0F6E56,#6E64D6 55%,#8A7FE8)" },
   headBody: { padding: "0 1.75rem 1.5rem" },
-  avatar: { width: 108, height: 108, borderRadius: "50%", background: "#EEEDF9", color: ACCENT, border: "4px solid #fff", marginTop: -54, display: "grid", placeItems: "center", fontSize: 36, fontWeight: 700, fontFamily: "var(--v-serif)" },
+  avatar: { width: 108, height: 108, borderRadius: "50%", background: "#E1F5EE", color: ACCENT, border: "4px solid #fff", marginTop: -54, display: "grid", placeItems: "center", fontSize: 36, fontWeight: 700, fontFamily: "var(--v-serif)" },
   avatarImg: { width: 108, height: 108, borderRadius: "50%", objectFit: "cover", border: "4px solid #fff", marginTop: -54 },
   headRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginTop: 12 },
   name: { fontFamily: "var(--v-serif)", fontSize: 28, fontWeight: 600, color: "var(--v-ink)", letterSpacing: "-.02em" },
@@ -249,13 +249,13 @@ const S: Record<string, any> = {
   between: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem 1.5rem 0" },
   h2: { fontSize: 16.5, fontWeight: 700, color: "var(--v-ink)", letterSpacing: "-.01em" },
   bar: { height: 8, background: "#F1F0F5", borderRadius: 5, margin: "12px 1.5rem 0", overflow: "hidden" },
-  barFill: { height: 8, background: "linear-gradient(90deg,#534AB7,#8A7FE8)", borderRadius: 5, transition: "width .5s ease" },
+  barFill: { height: 8, background: "linear-gradient(90deg,#0F6E56,#8A7FE8)", borderRadius: 5, transition: "width .5s ease" },
   hint: { fontSize: 12.5, color: "var(--v-ink-3)", padding: "8px 1.5rem 1.25rem" },
   body: { fontSize: 14.5, color: "var(--v-ink-2)", lineHeight: 1.7, padding: "10px 1.5rem 1.5rem", whiteSpace: "pre-wrap" },
   empty: { fontSize: 13.5, color: "var(--v-ink-3)", padding: "10px 1.5rem 1.5rem" },
   linkBtn: { display: "inline-flex", alignItems: "center", gap: 5, background: "none", border: "none", color: ACCENT, fontSize: 13, fontWeight: 600, cursor: "pointer" },
   item: { display: "flex", gap: 14, padding: "1rem 1.5rem", borderTop: "1px solid var(--v-line)", alignItems: "flex-start" },
-  logo: { width: 44, height: 44, borderRadius: 10, background: "#EEEDF9", color: ACCENT, display: "grid", placeItems: "center", flexShrink: 0 },
+  logo: { width: 44, height: 44, borderRadius: 10, background: "#E1F5EE", color: ACCENT, display: "grid", placeItems: "center", flexShrink: 0 },
   itemTitle: { fontSize: 15, fontWeight: 650, color: "var(--v-ink)" },
   itemSub: { fontSize: 13.5, color: "var(--v-ink-2)", marginTop: 1 },
   itemDate: { fontSize: 12.5, color: "var(--v-ink-3)", marginTop: 2 },
@@ -268,7 +268,7 @@ const S: Record<string, any> = {
   textarea: { width: "100%", border: "1px solid var(--v-line-2)", borderRadius: 9, padding: "10px 12px", fontSize: 14, color: "var(--v-ink)", outline: "none", resize: "vertical", fontFamily: "inherit", lineHeight: 1.6, boxSizing: "border-box" },
   primary: { background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "9px 18px", fontSize: 13.5, fontWeight: 600, cursor: "pointer" },
   ghost: { background: "none", border: "1px solid var(--v-line-2)", color: "var(--v-ink-2)", borderRadius: 9, padding: "9px 16px", fontSize: 13.5, fontWeight: 500, cursor: "pointer" },
-  chip: { display: "inline-flex", alignItems: "center", gap: 6, background: "#EEEDF9", color: "#3F369E", padding: "6px 12px", borderRadius: 999, fontSize: 13, fontWeight: 500 },
+  chip: { display: "inline-flex", alignItems: "center", gap: 6, background: "#E1F5EE", color: "#3F369E", padding: "6px 12px", borderRadius: 999, fontSize: 13, fontWeight: 500 },
   chipX: { background: "none", border: "none", color: "#8079C4", fontSize: 16, cursor: "pointer", lineHeight: 1, padding: 0 },
   contactRow: { display: "flex", alignItems: "center", gap: 9, fontSize: 14, color: "var(--v-ink-2)", padding: "0 1.5rem" },
   overlay: { position: "fixed", inset: 0, background: "rgba(20,15,40,.4)", zIndex: 100, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "6vh", overflowY: "auto" },

@@ -59,7 +59,7 @@ export default function NotificationBell() {
 
   function getIcon(title: string) {
     const t = title.toLowerCase()
-    if (t.includes("application") || t.includes("applied")) return { icon: <IconFileText size={15} />, color: "#534AB7" }
+    if (t.includes("application") || t.includes("applied")) return { icon: <IconFileText size={15} />, color: "#0F6E56" }
     if (t.includes("interview")) return { icon: <IconTarget size={15} />, color: "#B45309" }
     if (t.includes("message")) return { icon: <IconMessage size={15} />, color: "#0891B2" }
     if (t.includes("offer") || t.includes("hired")) return { icon: <IconAward size={15} />, color: "#059669" }
@@ -120,17 +120,17 @@ const S: Record<string,any> = {
   dropHead: { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"14px 16px", borderBottom:"0.5px solid rgba(0,0,0,.07)" },
   dropTitle: { fontSize:15, fontWeight:600, color:"#0A0A0F" },
   dropActions: { display:"flex", gap:8 },
-  dropBtn: { background:"none", border:"none", fontSize:12, color:"#534AB7", cursor:"pointer", padding:"3px 6px" },
+  dropBtn: { background:"none", border:"none", fontSize:12, color:"#0F6E56", cursor:"pointer", padding:"3px 6px" },
   list: { maxHeight:380, overflowY:"auto" as const },
   empty: { display:"flex", flexDirection:"column" as const, alignItems:"center", justifyContent:"center", padding:"2rem" },
   item: { display:"flex", alignItems:"flex-start", gap:10, padding:"12px 16px", cursor:"pointer", borderBottom:"0.5px solid rgba(0,0,0,.05)", transition:"background .15s" },
-  itemUnread: { background:"rgba(83,74,183,.04)" },
+  itemUnread: { background:"rgba(15,110,86,.04)" },
   itemIcon: { width:30, height:30, borderRadius:8, display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0, marginTop:2 },
   itemBody: { flex:1, minWidth:0 },
   itemTitle: { fontSize:13, fontWeight:500, color:"#0A0A0F", marginBottom:2 },
   itemText: { fontSize:12, color:"#6b7280", lineHeight:1.5 },
   itemTime: { fontSize:11, color:"#9ca3af", marginTop:4 },
-  unreadDot: { width:8, height:8, borderRadius:"50%", background:"#534AB7", flexShrink:0, marginTop:4 },
+  unreadDot: { width:8, height:8, borderRadius:"50%", background:"#0F6E56", flexShrink:0, marginTop:4 },
   dropFoot: { padding:"10px 16px", borderTop:"0.5px solid rgba(0,0,0,.07)", textAlign:"center" as const },
-  viewAll: { fontSize:13, color:"#534AB7", textDecoration:"none", fontWeight:500 },
+  viewAll: { fontSize:13, color:"#0F6E56", textDecoration:"none", fontWeight:500 },
 }

@@ -178,7 +178,7 @@ export default function FaceSetup() {
                   { icon:<IconTarget size={20} />, title:"Challenge", desc:"A random action is required to confirm you are present." },
                 ].map(item=>(
                   <div key={item.title} style={S.infoCard}>
-                    <span style={{color:"#534AB7"}}>{item.icon}</span>
+                    <span style={{color:"#0F6E56"}}>{item.icon}</span>
                     <div style={S.infoTitle}>{item.title}</div>
                     <div style={S.infoDesc}>{item.desc}</div>
                   </div>
@@ -186,7 +186,7 @@ export default function FaceSetup() {
               </div>
               <div style={S.updateBox}>
                 <label style={S.checkLabel}>
-                  <input type="checkbox" checked={isUpdate} onChange={e=>setIsUpdate(e.target.checked)} style={{accentColor:"#534AB7"}} />
+                  <input type="checkbox" checked={isUpdate} onChange={e=>setIsUpdate(e.target.checked)} style={{accentColor:"#0F6E56"}} />
                   I am updating my face due to injury, surgery, or significant change
                 </label>
                 {isUpdate && (
@@ -208,7 +208,7 @@ export default function FaceSetup() {
                 <div style={S.statusText}>{status}</div>
                 <div style={S.barRow}>
                   <span style={S.barLabel}>Liveness</span>
-                  <div style={S.barTrack}><div style={{...S.barFill,width:`${livenessScore*100}%`,background:livenessScore>0.7?"#059669":livenessScore>0.4?"#B45309":"#534AB7"}}/></div>
+                  <div style={S.barTrack}><div style={{...S.barFill,width:`${livenessScore*100}%`,background:livenessScore>0.7?"#059669":livenessScore>0.4?"#B45309":"#0F6E56"}}/></div>
                   <span style={S.barVal}>{Math.round(livenessScore*100)}%</span>
                 </div>
                 {challenge && (
@@ -240,7 +240,7 @@ export default function FaceSetup() {
 }
 
 const S: Record<string,any> = {
-  page:{minHeight:"calc(100vh - 60px)",background:"#F7F7FA",padding:"2rem",display:"flex",justifyContent:"center"},
+  page:{minHeight:"calc(100vh - 60px)",background:"#FAF8F2",padding:"2rem",display:"flex",justifyContent:"center"},
   card:{background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:16,padding:"2rem",width:"100%",maxWidth:560,height:"fit-content"},
   title:{fontSize:20,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px",marginBottom:8},
   sub:{fontSize:13,color:"#7B7B8F",lineHeight:1.65,marginBottom:"1.25rem",paddingBottom:"1rem",borderBottom:"0.5px solid rgba(0,0,0,.07)"},
@@ -252,12 +252,12 @@ const S: Record<string,any> = {
   updateBox:{background:"#FFFBEB",border:"0.5px solid #FCD34D",borderRadius:10,padding:"1rem",marginBottom:"1rem"},
   checkLabel:{display:"flex",alignItems:"flex-start",gap:8,fontSize:13,color:"#92400E",cursor:"pointer",lineHeight:1.5},
   reason:{width:"100%",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:8,padding:"8px",fontSize:13,fontFamily:"inherit",outline:"none",marginTop:8,resize:"vertical" as const},
-  primary:{width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:8},
+  primary:{width:"100%",background:"#0F6E56",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:14,fontWeight:600,cursor:"pointer",marginBottom:8},
   secondary:{width:"100%",background:"none",border:"0.5px solid rgba(0,0,0,.12)",color:"#3D3D4E",borderRadius:10,padding:"11px",fontSize:13,cursor:"pointer"},
   cancel:{width:"100%",background:"none",border:"0.5px solid rgba(0,0,0,.1)",color:"#9ca3af",borderRadius:10,padding:"10px",fontSize:13,cursor:"pointer",marginTop:8},
   videoWrap:{position:"relative" as const,background:"#000",borderRadius:14,overflow:"hidden",marginBottom:12,aspectRatio:"4/3"},
   video:{width:"100%",height:"100%",objectFit:"cover" as const,transform:"scaleX(-1)"},
-  oval:{position:"absolute" as const,top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:180,height:230,border:"2px solid rgba(83,74,183,.65)",borderRadius:"50%",boxShadow:"0 0 0 4000px rgba(0,0,0,.4)",pointerEvents:"none" as const},
+  oval:{position:"absolute" as const,top:"50%",left:"50%",transform:"translate(-50%,-50%)",width:180,height:230,border:"2px solid rgba(15,110,86,.65)",borderRadius:"50%",boxShadow:"0 0 0 4000px rgba(0,0,0,.4)",pointerEvents:"none" as const},
   statusBox:{background:"#F9F9FC",border:"0.5px solid rgba(0,0,0,.07)",borderRadius:10,padding:"1rem",display:"flex",flexDirection:"column" as const,gap:8,marginBottom:8},
   statusText:{fontSize:13,fontWeight:500,color:"#3D3D4E"},
   barRow:{display:"flex",alignItems:"center",gap:8},
