@@ -321,13 +321,16 @@ model LoginAttempt {
 }
 
 model Profile {
-  id       String  @id @default(cuid())
-  userId   String  @unique
-  website  String?
-  github   String?
-  linkedin String?
-  twitter  String?
-  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String    @id @default(cuid())
+  userId    String    @unique
+  website   String?
+  github    String?
+  linkedin  String?
+  twitter   String?
+  birthDate DateTime?         // for in-house astrological / guna / dosha analysis
+  birthTime String?           // optional HH:mm for finer Vedic reading
+  birthPlace String?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Job {

@@ -5,7 +5,7 @@ import AppShell from "@/components/vrittih/AppShell"
 export default function EditProfile() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
-  const [form, setForm] = useState({ name:"", headline:"", bio:"", location:"", phone:"", website:"", github:"", linkedin:"", twitter:"" })
+  const [form, setForm] = useState({ name:"", headline:"", bio:"", location:"", phone:"", website:"", github:"", linkedin:"", twitter:"", birthDate:"", birthTime:"", birthPlace:"" })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [expForm, setExpForm] = useState({ company:"", title:"", location:"", startDate:"", endDate:"", description:"" })
@@ -25,6 +25,8 @@ export default function EditProfile() {
         phone: d.user.phone || "", website: d.user.profile?.website || "",
         github: d.user.profile?.github || "", linkedin: d.user.profile?.linkedin || "",
         twitter: d.user.profile?.twitter || "",
+        birthDate: d.user.profile?.birthDate ? new Date(d.user.profile.birthDate).toISOString().slice(0, 10) : "",
+        birthTime: d.user.profile?.birthTime || "", birthPlace: d.user.profile?.birthPlace || "",
       })
     })
   }, [])
@@ -119,6 +121,12 @@ export default function EditProfile() {
                 <div style={S.row}>{fg("Location","location","text",form.location,e=>setForm(p=>({...p,location:e.target.value})))}{fg("Phone","phone","tel",form.phone,e=>setForm(p=>({...p,phone:e.target.value})))}</div>
                 <div style={S.row}>{fg("Website","website","url",form.website,e=>setForm(p=>({...p,website:e.target.value})))}{fg("GitHub","github","url",form.github,e=>setForm(p=>({...p,github:e.target.value})))}</div>
                 <div style={S.row}>{fg("LinkedIn","linkedin","url",form.linkedin,e=>setForm(p=>({...p,linkedin:e.target.value})))}{fg("Twitter","twitter","url",form.twitter,e=>setForm(p=>({...p,twitter:e.target.value})))}</div>
+                <div style={{ borderTop:"1px solid var(--v-line)", margin:"6px 0 14px", paddingTop:14 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:"var(--v-ink)" }}>Birth details</div>
+                  <div style={{ fontSize:12, color:"var(--v-ink-3)", marginTop:2, marginBottom:10 }}>Used only for your in-house astrological, guna and Ayurvedic career analysis. Date is enough; time &amp; place refine it.</div>
+                  <div style={S.row}>{fg("Date of birth","birthDate","date",form.birthDate,e=>setForm(p=>({...p,birthDate:e.target.value})))}{fg("Birth time (optional)","birthTime","time",form.birthTime,e=>setForm(p=>({...p,birthTime:e.target.value})))}</div>
+                  {fg("Birth place (optional)","birthPlace","text",form.birthPlace,e=>setForm(p=>({...p,birthPlace:e.target.value})))}
+                </div>
                 <button type="submit" style={S.saveBtn} disabled={saving}>{saving?"Saving...":"Save changes"}</button>
               </form>
             </div>

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
+import AstroCard from "@/components/vrittih/AstroCard"
 import {
   IconMapPin, IconCheckCircle, IconGlobe, IconBriefcase, IconClipboard,
   IconMessage, IconArrowRight,
@@ -71,6 +72,8 @@ export default function PublicProfilePage({ params }: { params: { id: string } }
         </section>
 
         {user.bio && <section style={S.card}><h2 style={{ ...S.h2, padding: "1.25rem 1.5rem 0" }}>About</h2><p style={S.body}>{user.bio}</p></section>}
+
+        {p.birthDate && <AstroCard birthDate={p.birthDate} experience={user.experience || []} />}
 
         {user.experience?.length > 0 && (
           <section style={S.card}>

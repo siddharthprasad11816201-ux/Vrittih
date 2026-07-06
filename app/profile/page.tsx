@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
+import AstroCard from "@/components/vrittih/AstroCard"
 import {
   IconMapPin, IconShield, IconGlobe, IconPlus, IconTrash, IconEdit, IconBriefcase,
   IconClipboard, IconMail, IconPhone, IconCheckCircle, IconArrowRight,
@@ -128,6 +129,9 @@ export default function ProfilePage() {
             </div>
           ) : user.bio ? <p style={S.body}>{user.bio}</p> : <p style={S.empty}>Add a summary so employers understand your strengths at a glance.</p>}
         </section>
+
+        {/* Astrological & career analysis */}
+        <AstroCard birthDate={user.profile?.birthDate} experience={user.experience || []} self />
 
         {/* Experience */}
         <section style={S.card}>
