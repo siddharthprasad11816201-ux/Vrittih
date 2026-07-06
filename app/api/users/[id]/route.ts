@@ -14,7 +14,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const user = await prisma.user.findUnique({
     where: { id: params.id },
     select: {
-      id: true, name: true, avatar: true, headline: true, bio: true, location: true, role: true, idVerified: true, createdAt: true,
+      id: true, name: true, avatar: true, headline: true, bio: true, location: true, role: true, idVerified: true, openToWork: true, createdAt: true,
       profile: { select: { website: true, github: true, linkedin: true, twitter: true, birthDate: true } },
       experience: { orderBy: { startDate: "desc" } },
       education: { orderBy: { startYear: "desc" } },

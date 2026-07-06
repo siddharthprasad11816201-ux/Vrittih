@@ -32,7 +32,7 @@ export async function PATCH(req: NextRequest) {
     const payload = verifyToken(token)
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
     const body = await req.json()
-    const { name, headline, bio, location, phone, avatar, website, github, linkedin, twitter, birthDate, birthTime, birthPlace } = body
+    const { name, headline, bio, location, phone, avatar, website, github, linkedin, twitter, birthDate, birthTime, birthPlace, openToWork } = body
     const bd = birthDate ? new Date(birthDate) : undefined
     const birth = { birthDate: bd && !isNaN(bd.getTime()) ? bd : undefined, birthTime: birthTime ?? undefined, birthPlace: birthPlace ?? undefined }
     const user = await prisma.user.update({
@@ -44,6 +44,7 @@ export async function PATCH(req: NextRequest) {
         location: location ?? undefined,
         phone: phone ?? undefined,
         avatar: avatar ?? undefined,
+        openToWork: typeof openToWork === "boolean" ? openToWork : undefined,
         profile: {
           upsert: {
             create: { website, github, linkedin, twitter, ...birth },

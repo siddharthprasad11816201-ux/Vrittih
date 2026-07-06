@@ -5,7 +5,7 @@ import AppShell from "@/components/vrittih/AppShell"
 export default function EditProfile() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
-  const [form, setForm] = useState({ name:"", headline:"", bio:"", location:"", phone:"", website:"", github:"", linkedin:"", twitter:"", birthDate:"", birthTime:"", birthPlace:"" })
+  const [form, setForm] = useState({ name:"", headline:"", bio:"", location:"", phone:"", website:"", github:"", linkedin:"", twitter:"", birthDate:"", birthTime:"", birthPlace:"", openToWork:false })
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
   const [expForm, setExpForm] = useState({ company:"", title:"", location:"", startDate:"", endDate:"", description:"" })
@@ -27,6 +27,7 @@ export default function EditProfile() {
         twitter: d.user.profile?.twitter || "",
         birthDate: d.user.profile?.birthDate ? new Date(d.user.profile.birthDate).toISOString().slice(0, 10) : "",
         birthTime: d.user.profile?.birthTime || "", birthPlace: d.user.profile?.birthPlace || "",
+        openToWork: !!d.user.openToWork,
       })
     })
   }, [])
@@ -116,6 +117,15 @@ export default function EditProfile() {
               <h3 style={S.cardTitle}>Basic information</h3>
               {saved && <div style={S.savedMsg}>Saved successfully</div>}
               <form onSubmit={saveBasic}>
+                <label style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 14px", border:"1px solid var(--v-line-2)", borderRadius:12, marginBottom:16, cursor:"pointer", background: form.openToWork ? "var(--brand-100)" : "var(--v-surface)" }}>
+                  <span onClick={()=>setForm(p=>({...p,openToWork:!p.openToWork}))} data-on={form.openToWork} style={{ position:"relative", width:42, height:24, borderRadius:999, background: form.openToWork ? "var(--brand-600)" : "var(--v-line-2)", transition:"background .15s", flexShrink:0 }}>
+                    <span style={{ position:"absolute", top:3, left: form.openToWork ? 21 : 3, width:18, height:18, borderRadius:"50%", background:"#fff", transition:"left .18s var(--v-spring)", boxShadow:"0 1px 3px rgba(0,0,0,.2)" }} />
+                  </span>
+                  <span style={{ flex:1 }}>
+                    <span style={{ display:"block", fontSize:13.5, fontWeight:600, color:"var(--v-ink)" }}>Open to work</span>
+                    <span style={{ display:"block", fontSize:12, color:"var(--v-ink-3)" }}>Show recruiters you're available — adds a badge to your profile.</span>
+                  </span>
+                </label>
                 <div style={S.row}>{fg("Full name","name","text",form.name,e=>setForm(p=>({...p,name:e.target.value})))}{fg("Headline","headline","text",form.headline,e=>setForm(p=>({...p,headline:e.target.value})))}</div>
                 {fga("Bio",form.bio,e=>setForm(p=>({...p,bio:e.target.value})))}
                 <div style={S.row}>{fg("Location","location","text",form.location,e=>setForm(p=>({...p,location:e.target.value})))}{fg("Phone","phone","tel",form.phone,e=>setForm(p=>({...p,phone:e.target.value})))}</div>

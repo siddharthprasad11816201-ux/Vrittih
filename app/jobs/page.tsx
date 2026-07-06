@@ -4,7 +4,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import styles from "@/styles/jobs.module.css"
 import AppShell from "@/components/vrittih/AppShell"
-import { IconBanknote, IconGlobe, IconFolder, IconUsers, IconTarget } from "@/components/ui/Icons"
+import { IconBanknote, IconGlobe, IconFolder, IconUsers, IconTarget, IconBookmark } from "@/components/ui/Icons"
 
 const INDUSTRIES = ["All","Technology","Finance","Healthcare","Education","Manufacturing","Retail","Legal","Government","Logistics","Energy","Agriculture","Media","Other"]
 const TYPES = ["All","FULLTIME","PARTTIME","INTERNSHIP","CONTRACT","FREELANCE"]
@@ -33,8 +33,17 @@ function JobsInner() {
     return TYPES.includes(t) ? t : "All"
   })
   const [remote, setRemote] = useState(sp.get("remote") === "true")
+  const [saved, setSaved] = useState<Set<string>>(new Set())
 
   useEffect(() => { fetchJobs() }, [industry, type, remote])
+  useEffect(() => {
+    fetch("/api/jobs/save").then(r => r.ok ? r.json() : { jobs: [] }).then(d => setSaved(new Set((d.jobs || []).map((j: any) => j.id)))).catch(() => {})
+  }, [])
+
+  async function toggleSave(jobId: string) {
+    setSaved(s => { const n = new Set(s); n.has(jobId) ? n.delete(jobId) : n.add(jobId); return n }) // optimistic
+    await fetch("/api/jobs/save", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ jobId }) })
+  }
 
   async function fetchJobs(query = q) {
     setLoading(true)
@@ -142,6 +151,11 @@ function JobsInner() {
                         </span>
                       )}
                       <span className={styles.typePill}>{TYPE_LABELS[job.type] || job.type}</span>
+                      <button type="button" aria-label={saved.has(job.id) ? "Remove from saved" : "Save job"}
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); toggleSave(job.id) }}
+                        style={{ display: "grid", placeItems: "center", width: 32, height: 32, borderRadius: 8, border: "1px solid var(--v-line-2)", background: saved.has(job.id) ? "var(--brand-100)" : "var(--v-surface)", color: saved.has(job.id) ? "var(--brand-600)" : "var(--v-ink-3)", cursor: "pointer", flexShrink: 0 }}>
+                        <IconBookmark size={15} />
+                      </button>
                     </div>
                   </div>
                   <div className={styles.cardBottom}>

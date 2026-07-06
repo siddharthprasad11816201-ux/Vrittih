@@ -46,6 +46,7 @@ export default function PublicProfilePage({ params }: { params: { id: string } }
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <h1 style={S.name}>{user.name}</h1>
                   {user.idVerified && <span style={S.verified}><IconCheckCircle size={13} /> Verified</span>}
+                  {user.openToWork && <span style={S.otw}>Open to work</span>}
                 </div>
                 {user.headline && <p style={S.headline}>{user.headline}</p>}
                 <div style={S.metaRow}>
@@ -132,6 +133,7 @@ const S: Record<string, any> = {
   headRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, marginTop: 12 },
   name: { fontFamily: "var(--v-serif)", fontSize: 28, fontWeight: 600, color: "var(--v-ink)", letterSpacing: "-.02em" },
   verified: { display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11.5, fontWeight: 600, color: "#047857", background: "#ECFDF5", padding: "3px 9px", borderRadius: 999 },
+  otw: { display: "inline-flex", alignItems: "center", fontSize: 11.5, fontWeight: 600, color: "#fff", background: "var(--brand-600)", padding: "3px 10px", borderRadius: 999 },
   headline: { fontSize: 15.5, color: "var(--v-ink-2)", marginTop: 4 },
   metaRow: { display: "flex", flexWrap: "wrap", gap: 14, marginTop: 8 },
   meta: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--v-ink-3)" },

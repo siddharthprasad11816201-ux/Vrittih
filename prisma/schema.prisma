@@ -19,6 +19,7 @@ model User {
   resumeUrl        String?
   phone            String?
   source           String?        // provenance: "indeed", "signup", null=organic
+  openToWork       Boolean        @default(false)  // LinkedIn-style "open to work" signal
   role             String         @default("JOBSEEKER")
   paid             Boolean        @default(false)
   paidAt           DateTime?
@@ -318,6 +319,16 @@ model LoginAttempt {
   success   Boolean
   createdAt DateTime @default(now())
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+// Saved / bookmarked jobs (scalar ids, batch-fetched — matches Post/ProfileView convention).
+model SavedJob {
+  id        String   @id @default(cuid())
+  userId    String
+  jobId     String
+  createdAt DateTime @default(now())
+  @@unique([userId, jobId])
+  @@index([userId, createdAt])
 }
 
 model Profile {
