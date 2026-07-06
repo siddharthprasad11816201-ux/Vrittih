@@ -89,24 +89,46 @@ export default function Dashboard() {
   const pct = Math.round((doneCount / steps.length) * 100)
   const showOnboarding = doneCount < steps.length
 
+  // Real 8-week weekly series from actual dates — flat baseline when empty (honest).
+  const WEEKS = 8
+  const weekly = (items: any[], dateKey: string, pred: (x: any) => boolean = () => true) => {
+    const now = Date.now(), wk = 7 * 86400000, b = Array(WEEKS).fill(0)
+    for (const it of items) {
+      if (!pred(it)) continue
+      const t = new Date(it[dateKey] || 0).getTime()
+      if (!t) continue
+      const idx = WEEKS - 1 - Math.floor((now - t) / wk)
+      if (idx >= 0 && idx < WEEKS) b[idx]++
+    }
+    return b
+  }
   const seekerStats = [
-    { label:"Applications", val:stats?.total ?? 0, icon:<IconFileText size={16} />, color:"#534AB7" },
-    { label:"Active", val:stats?.active ?? 0, icon:<IconActivity size={16} />, color:"#2563EB" },
-    { label:"Interviews", val:stats?.interviews ?? 0, icon:<IconTarget size={16} />, color:"#B45309" },
-    { label:"Offers", val:stats?.offers ?? 0, icon:<IconAward size={16} />, color:"#0891B2" },
-    { label:"Hired", val:stats?.hired ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669" },
+    { label:"Applications", val:stats?.total ?? 0, icon:<IconFileText size={16} />, color:"#534AB7", series:weekly(applications,"appliedAt") },
+    { label:"Active", val:stats?.active ?? 0, icon:<IconActivity size={16} />, color:"#2563EB", series:weekly(applications,"appliedAt",(a)=>!["HIRED","REJECTED"].includes(a.status)) },
+    { label:"Interviews", val:stats?.interviews ?? 0, icon:<IconTarget size={16} />, color:"#B45309", series:weekly(applications,"appliedAt",(a)=>a.status==="INTERVIEW") },
+    { label:"Offers", val:stats?.offers ?? 0, icon:<IconAward size={16} />, color:"#0891B2", series:weekly(applications,"appliedAt",(a)=>a.status==="OFFERED") },
+    { label:"Hired", val:stats?.hired ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
   ]
   const employerStats = [
-    { label:"Jobs posted", val:stats?.totalJobs ?? 0, icon:<IconBriefcase size={16} />, color:"#534AB7" },
-    { label:"Active", val:stats?.activeJobs ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669" },
-    { label:"Applicants", val:stats?.totalApplicants ?? 0, icon:<IconUsers size={16} />, color:"#2563EB" },
-    { label:"Shortlisted", val:stats?.shortlisted ?? 0, icon:<IconAward size={16} />, color:"#B45309" },
-    { label:"Hired", val:stats?.hired ?? 0, icon:<IconTrendingUp size={16} />, color:"#0891B2" },
+    { label:"Jobs posted", val:stats?.totalJobs ?? 0, icon:<IconBriefcase size={16} />, color:"#534AB7", series:weekly(jobs,"createdAt") },
+    { label:"Active", val:stats?.activeJobs ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669", series:weekly(jobs,"createdAt",(j)=>j.active) },
+    { label:"Applicants", val:stats?.totalApplicants ?? 0, icon:<IconUsers size={16} />, color:"#2563EB", series:weekly(applications,"appliedAt") },
+    { label:"Shortlisted", val:stats?.shortlisted ?? 0, icon:<IconAward size={16} />, color:"#B45309", series:weekly(applications,"appliedAt",(a)=>a.status==="SHORTLISTED") },
+    { label:"Hired", val:stats?.hired ?? 0, icon:<IconTrendingUp size={16} />, color:"#0891B2", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
   ]
   const tiles = isEmployer ? employerStats : seekerStats
 
   return (
     <AppShell title="Overview">
+      <style>{`
+        .dtile{transition:box-shadow .18s cubic-bezier(.22,1,.36,1),transform .18s cubic-bezier(.22,1,.36,1),border-color .18s;}
+        .dtile:hover{box-shadow:0 8px 26px rgba(23,18,45,.10);transform:translateY(-3px);border-color:#E0DEEC;}
+        .dstep{transition:border-color .14s,transform .14s,box-shadow .14s;}
+        .dstep:hover{border-color:#534AB7 !important;box-shadow:0 4px 14px rgba(83,74,183,.10);}
+        .dquick{transition:background .14s;}
+        .dquick:hover{background:#F4F1FE !important;}
+        .dcard{transition:box-shadow .18s;}
+      `}</style>
       <div style={S.page}>
         <div style={S.wrap}>
 
@@ -126,16 +148,27 @@ export default function Dashboard() {
 
           {/* Stat tiles */}
           <div style={S.statRow}>
-            {tiles.map(t => (
-              <div key={t.label} style={S.tile}>
-                <div style={S.tileTop}>
-                  <span style={{...S.tileIcon, background:`${t.color}14`, color:t.color}}>{t.icon}</span>
-                  <span style={S.tileLabel}>{t.label}</span>
+            {tiles.map((t: any) => {
+              const s = t.series || []
+              const last = s[s.length - 1] || 0, prev = s[s.length - 2] || 0
+              const delta = last - prev
+              return (
+                <div key={t.label} className="dtile" style={S.tile}>
+                  <div style={S.tileTop}>
+                    <span style={{...S.tileIcon, background:`${t.color}14`, color:t.color}}>{t.icon}</span>
+                    <span style={S.tileLabel}>{t.label}</span>
+                  </div>
+                  <div style={S.tileNumRow}>
+                    <span style={S.tileNum}>{t.val}</span>
+                    <span style={{...S.tileDelta, ...(delta > 0 ? S.deltaUp : delta < 0 ? S.deltaDown : S.deltaFlat)}}>
+                      {delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : "—"}
+                      {delta !== 0 && <span style={S.deltaWk}>/wk</span>}
+                    </span>
+                  </div>
+                  <div style={S.tileSpark}><Spark data={s} color={t.color} /></div>
                 </div>
-                <div style={S.tileNum}>{t.val}</div>
-                <div style={{...S.tileBar, background:t.color, opacity: t.val ? 1 : 0.18}} />
-              </div>
-            ))}
+              )
+            })}
           </div>
 
           <div style={S.grid}>
@@ -152,7 +185,7 @@ export default function Dashboard() {
                   </div>
                   <div style={S.steps}>
                     {steps.map(s => (
-                      <Link key={s.title} href={s.href} style={S.step}>
+                      <Link key={s.title} href={s.href} className="dstep" style={S.step}>
                         <span style={{...S.stepCheck, ...(s.done ? S.stepCheckDone : {})}}>
                           {s.done ? <IconCheck size={14} /> : s.icon}
                         </span>
@@ -264,7 +297,7 @@ export default function Dashboard() {
                   { href:"/network", icon:<IconNetwork size={16} />, title:"Network", desc:"Connect & grow" },
                   { href:"/resume", icon:<IconFileText size={16} />, title:"Résumé", desc:"Build & export" },
                 ]).map(item => (
-                  <Link key={item.href} href={item.href} style={S.quickRow}>
+                  <Link key={item.href} href={item.href} className="dquick" style={S.quickRow}>
                     <span style={S.quickIcon}>{item.icon}</span>
                     <div style={{ flex: 1 }}>
                       <div style={S.quickTitle}>{item.title}</div>
@@ -279,6 +312,33 @@ export default function Dashboard() {
         </div>
       </div>
     </AppShell>
+  )
+}
+
+// In-house SVG sparkline — single series, non-scaling stroke, honest flat baseline when empty.
+function Spark({ data, color }: { data: number[]; color: string }) {
+  const W = 100, H = 40, pad = 4
+  const n = data.length || 1
+  const max = Math.max(1, ...data)
+  const hasData = data.some(v => v > 0)
+  const x = (i: number) => pad + (i / Math.max(1, n - 1)) * (W - 2 * pad)
+  const y = (v: number) => hasData ? (H - pad - (v / max) * (H - 2 * pad)) : H * 0.66
+  const pts = data.map((v, i) => `${x(i).toFixed(1)} ${y(v).toFixed(1)}`)
+  const line = pts.length ? "M" + pts.join(" L") : ""
+  const area = pts.length ? `M${x(0).toFixed(1)} ${H - pad} L${pts.join(" L")} L${x(n - 1).toFixed(1)} ${H - pad} Z` : ""
+  const gid = "sp" + color.replace("#", "")
+  return (
+    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block" }} aria-hidden="true">
+      <defs>
+        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor={color} stopOpacity={hasData ? 0.20 : 0.05} />
+          <stop offset="1" stopColor={color} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {area && <path d={area} fill={`url(#${gid})`} />}
+      {line && <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+        vectorEffect="non-scaling-stroke" opacity={hasData ? 1 : 0.3} />}
+    </svg>
   )
 }
 
@@ -308,13 +368,19 @@ const S: Record<string,any> = {
   headActions:{ display:"flex", gap:10 },
   primaryBtn:{ display:"inline-flex", alignItems:"center", gap:8, background:"#16151D", color:"#fff", padding:"12px 20px", borderRadius:10, fontSize:14, fontWeight:600, textDecoration:"none", boxShadow:"0 4px 14px rgba(20,19,29,.15)" },
 
-  statRow:{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:12 },
-  tile:{ background:"#fff", border:"1px solid #ECEBF1", borderRadius:14, padding:"16px 18px", display:"flex", flexDirection:"column" as const, gap:10 },
+  statRow:{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14 },
+  tile:{ background:"#fff", border:"1px solid #ECEBF1", borderRadius:16, padding:"16px 18px 0", display:"flex", flexDirection:"column" as const, gap:9, boxShadow:"0 1px 2px rgba(23,18,45,.04)", overflow:"hidden" },
   tileTop:{ display:"flex", alignItems:"center", gap:9 },
   tileIcon:{ width:30, height:30, borderRadius:8, display:"grid", placeItems:"center", flexShrink:0 },
-  tileLabel:{ fontSize:12, fontWeight:600, color:"#8E8B99", textTransform:"uppercase" as const, letterSpacing:".03em" },
+  tileLabel:{ fontSize:11.5, fontWeight:600, color:"#8E8B99", textTransform:"uppercase" as const, letterSpacing:".03em" },
+  tileNumRow:{ display:"flex", alignItems:"baseline", gap:8 },
   tileNum:{ fontFamily:SERIF, fontSize:34, fontWeight:600, color:"#16151D", letterSpacing:"-.02em", lineHeight:1, fontVariantNumeric:"tabular-nums" as const },
-  tileBar:{ height:3, borderRadius:2, width:"100%" },
+  tileDelta:{ display:"inline-flex", alignItems:"baseline", gap:1, fontSize:12, fontWeight:700, fontVariantNumeric:"tabular-nums" as const },
+  deltaUp:{ color:"#0E9F6E" },
+  deltaDown:{ color:"#DC2626" },
+  deltaFlat:{ color:"#C4C1CD", fontWeight:600 },
+  deltaWk:{ fontSize:10, fontWeight:600, opacity:.7 },
+  tileSpark:{ margin:"6px -18px 0", height:40 },
 
   grid:{ display:"grid", gridTemplateColumns:"1fr 340px", gap:"1.5rem", alignItems:"start" },
   col:{ display:"flex", flexDirection:"column" as const, gap:"1.5rem" },
@@ -330,7 +396,7 @@ const S: Record<string,any> = {
   stepTitle:{ fontSize:14, fontWeight:600, color:"#16151D" },
   stepDesc:{ fontSize:12.5, color:"#8E8B99", marginTop:1 },
 
-  card:{ background:"#fff", border:"1px solid #ECEBF1", borderRadius:16, padding:"1.35rem 1.5rem" },
+  card:{ background:"#fff", border:"1px solid #ECEBF1", borderRadius:16, padding:"1.35rem 1.5rem", boxShadow:"0 1px 2px rgba(23,18,45,.04)" },
   cardHead:{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 },
   cardTitle:{ fontSize:16, fontWeight:650, color:"#16151D", letterSpacing:"-.01em" },
   link:{ display:"inline-flex", alignItems:"center", gap:4, fontSize:13, color:"#443AA3", textDecoration:"none", fontWeight:600 },
