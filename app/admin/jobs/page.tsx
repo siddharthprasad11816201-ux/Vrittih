@@ -94,7 +94,7 @@ const S: Record<string, any> = {
   pill: { fontSize: 11, fontWeight: 500, padding: "2px 8px", borderRadius: 999 },
   empty: { padding: "2rem", textAlign: "center" as const, color: "#9ca3af" },
   actions: { display: "flex", gap: 6, flexWrap: "wrap" as const },
-  actBtn: { background: "#7C3AED", color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontWeight: 500 },
+  actBtn: { background: "#534AB7", color: "#fff", border: "none", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer", fontWeight: 500 },
   dangerBtn: { background: "none", border: "0.5px solid rgba(220,38,38,.2)", color: "#DC2626", borderRadius: 6, padding: "4px 10px", fontSize: 11, cursor: "pointer" },
   pagination: { display: "flex", alignItems: "center", gap: 12, padding: "1rem 2rem", background: "#fff", borderTop: "0.5px solid rgba(0,0,0,.07)" },
   pageBtn: { background: "none", border: "0.5px solid rgba(0,0,0,.13)", borderRadius: 8, padding: "6px 14px", fontSize: 13, cursor: "pointer", color: "#3D3D4E" },

@@ -15,7 +15,7 @@ export default function AnalyticsPage() {
   if (!data) return <AppShell><div style={S.loading}>No data</div></AppShell>
 
   const STATUS_COLORS: Record<string,string> = {
-    APPLIED:"#6366F1",REVIEWED:"#7C3AED",SHORTLISTED:"#059669",
+    APPLIED:"#6366F1",REVIEWED:"#534AB7",SHORTLISTED:"#059669",
     INTERVIEW:"#B45309",ASSESSMENT:"#0891B2",OFFERED:"#16A34A",
     HIRED:"#047857",REJECTED:"#DC2626"
   }
@@ -40,7 +40,7 @@ export default function AnalyticsPage() {
                 <div style={S.statCard}><div style={{...S.statNum,color:"#B45309"}}>{data.statusCounts?.INTERVIEW||0}</div><div style={S.statLabel}>Interviews</div></div>
                 <div style={S.statCard}><div style={{...S.statNum,color:"#047857"}}>{data.statusCounts?.HIRED||0}</div><div style={S.statLabel}>Hired</div></div>
                 <div style={S.statCard}>
-                  <div style={{...S.statNum,color:"#7C3AED"}}>
+                  <div style={{...S.statNum,color:"#534AB7"}}>
                     {data.totalApps > 0 ? Math.round(((data.statusCounts?.HIRED||0)/data.totalApps)*100) : 0}%
                   </div>
                   <div style={S.statLabel}>Hire rate</div>
@@ -49,7 +49,7 @@ export default function AnalyticsPage() {
             ) : (
               <>
                 <div style={S.statCard}><div style={S.statNum}>{data.total||0}</div><div style={S.statLabel}>Applications</div></div>
-                <div style={S.statCard}><div style={{...S.statNum,color:"#7C3AED"}}>{data.responseRate||0}%</div><div style={S.statLabel}>Response rate</div></div>
+                <div style={S.statCard}><div style={{...S.statNum,color:"#534AB7"}}>{data.responseRate||0}%</div><div style={S.statLabel}>Response rate</div></div>
                 <div style={S.statCard}><div style={{...S.statNum,color:"#B45309"}}>{data.statusCounts?.INTERVIEW||0}</div><div style={S.statLabel}>Interviews</div></div>
                 <div style={S.statCard}><div style={{...S.statNum,color:"#059669"}}>{data.statusCounts?.OFFERED||0}</div><div style={S.statLabel}>Offers</div></div>
                 <div style={S.statCard}><div style={{...S.statNum,color:"#047857"}}>{data.statusCounts?.HIRED||0}</div><div style={S.statLabel}>Hired</div></div>
@@ -64,7 +64,7 @@ export default function AnalyticsPage() {
               <div style={S.chart}>
                 {(data.appsByDay||[]).map((d:any,i:number) => (
                   <div key={i} style={S.barWrap}>
-                    <div style={{...S.bar,height:`${Math.max(4,(d.count/maxBarVal)*100)}%`,background:d.count>0?"#7C3AED":"#E5E7EB"}} title={`${d.day}: ${d.count}`} />
+                    <div style={{...S.bar,height:`${Math.max(4,(d.count/maxBarVal)*100)}%`,background:d.count>0?"#534AB7":"#E5E7EB"}} title={`${d.day}: ${d.count}`} />
                     {i % 5 === 0 && <div style={S.barLabel}>{d.day.split(" ")[0]}</div>}
                   </div>
                 ))}
@@ -82,7 +82,7 @@ export default function AnalyticsPage() {
                       <div key={f.stage} style={S.funnelRow}>
                         <div style={S.funnelLabel}>{f.stage}</div>
                         <div style={S.funnelBarWrap}>
-                          <div style={{...S.funnelBar,width:`${pct}%`,background:["#7C3AED","#6366F1","#059669","#B45309","#16A34A","#047857"][i]}} />
+                          <div style={{...S.funnelBar,width:`${pct}%`,background:["#534AB7","#6366F1","#059669","#B45309","#16A34A","#047857"][i]}} />
                         </div>
                         <div style={S.funnelCount}>{f.count}</div>
                       </div>
@@ -135,7 +135,7 @@ export default function AnalyticsPage() {
                     const conv = total > 0 ? Math.round((hired/total)*100) : 0
                     return (
                       <tr key={j.id} style={S.tr}>
-                        <td style={S.td}><Link href={`/jobs/${j.id}`} style={{color:"#7C3AED",textDecoration:"none",fontSize:13,fontWeight:500}}>{j.title}</Link></td>
+                        <td style={S.td}><Link href={`/jobs/${j.id}`} style={{color:"#534AB7",textDecoration:"none",fontSize:13,fontWeight:500}}>{j.title}</Link></td>
                         <td style={S.td}><span style={S.num}>{total}</span></td>
                         <td style={S.td}><span style={S.num}>{shortlisted}</span></td>
                         <td style={S.td}><span style={S.num}>{hired}</span></td>
@@ -185,8 +185,8 @@ const S: Record<string,any> = {
   statusBar:{ height:8,borderRadius:999,transition:"width .5s" },
   statusCount:{ fontSize:13,fontWeight:600,color:"#0A0A0F",width:24,textAlign:"right" as const },
   industryGrid:{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(120px,1fr))",gap:8 },
-  industryCard:{ background:"#F5F3FF",border:"0.5px solid rgba(124,58,237,.15)",borderRadius:10,padding:"12px",textAlign:"center" as const },
-  industryCount:{ fontSize:22,fontWeight:700,color:"#7C3AED" },
+  industryCard:{ background:"#EEEDF9",border:"0.5px solid rgba(83,74,183,.15)",borderRadius:10,padding:"12px",textAlign:"center" as const },
+  industryCount:{ fontSize:22,fontWeight:700,color:"#534AB7" },
   industryLabel:{ fontSize:11,color:"#7B7B8F",marginTop:4 },
   table:{ width:"100%",borderCollapse:"collapse" as const,fontSize:13 },
   thead:{ background:"#F9F9FC" },

@@ -127,7 +127,7 @@ export default function TakeTest() {
               { icon:<IconTarget size={19} />, label:"Type", val:meta.label },
             ].map(item => (
               <div key={item.label} style={S.statItem}>
-                <span style={{color:"#7C3AED"}}>{item.icon}</span>
+                <span style={{color:"#534AB7"}}>{item.icon}</span>
                 <div>
                   <div style={S.statLabel}>{item.label}</div>
                   <div style={S.statVal}>{item.val}</div>
@@ -208,7 +208,7 @@ export default function TakeTest() {
                 value={answers[q.id] || ""}
                 onChange={e => setAnswers(p => ({...p, [q.id]: e.target.value}))}
                 placeholder="// Write your solution here..."
-                style={{...S.shortAnswer, fontFamily:"monospace", background:"#0F0A1E", color:"#C4B5FD", fontSize:13}}
+                style={{...S.shortAnswer, fontFamily:"monospace", background:"#0F0A1E", color:"#B9B2E6", fontSize:13}}
                 rows={10}
               />
             </div>
@@ -247,14 +247,14 @@ export default function TakeTest() {
     <AppShell>
       <div style={S.page}>
         <div style={S.resultCard}>
-          <div style={{marginBottom:16,color:result.passed===true?"#059669":result.passed===false?"#B45309":"#7C3AED"}}>
+          <div style={{marginBottom:16,color:result.passed===true?"#059669":result.passed===false?"#B45309":"#534AB7"}}>
             {result.passed === true ? <IconAward size={56} /> : result.passed === false ? <IconBarChart size={56} /> : <IconCheckCircle size={56} />}
           </div>
           <h1 style={S.resultTitle}>
             {result.passed === true ? "Passed!" : result.passed === false ? "Keep practicing" : "Completed!"}
           </h1>
           <div style={S.scoreCircle}>
-            <div style={{fontSize:40,fontWeight:700,color:result.passed===true?"#059669":result.passed===false?"#DC2626":"#7C3AED"}}>{result.score}%</div>
+            <div style={{fontSize:40,fontWeight:700,color:result.passed===true?"#059669":result.passed===false?"#DC2626":"#534AB7"}}>{result.score}%</div>
             <div style={{fontSize:13,color:"#9ca3af"}}>Score</div>
           </div>
           <div style={S.resultStats}>
@@ -284,7 +284,7 @@ const S: Record<string,any> = {
   loading:{ display:"flex",alignItems:"center",justifyContent:"center",minHeight:"calc(100vh - 60px)",fontSize:14,color:"#9ca3af" },
   page:{ background:"#F7F7FA",minHeight:"calc(100vh - 60px)",padding:"2rem",display:"flex",justifyContent:"center" },
   introCard:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:16,padding:"2.5rem",width:"100%",maxWidth:540,height:"fit-content",textAlign:"center" as const },
-  introIcon:{ marginBottom:12,color:"#7C3AED",display:"flex",justifyContent:"center" },
+  introIcon:{ marginBottom:12,color:"#534AB7",display:"flex",justifyContent:"center" },
   introTitle:{ fontSize:22,fontWeight:700,color:"#0A0A0F",letterSpacing:"-.3px",marginBottom:8 },
   introDesc:{ fontSize:14,color:"#7B7B8F",lineHeight:1.65,marginBottom:"1.5rem" },
   introStats:{ display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:"1.5rem",textAlign:"left" as const },
@@ -292,36 +292,36 @@ const S: Record<string,any> = {
   statLabel:{ fontSize:11,color:"#9ca3af",textTransform:"uppercase" as const,letterSpacing:".05em" },
   statVal:{ fontSize:14,fontWeight:600,color:"#0A0A0F" },
   rules:{ background:"#F9F9FC",borderRadius:10,padding:"1rem",marginBottom:"1.5rem",textAlign:"left" as const },
-  startBtn:{ width:"100%",background:"#7C3AED",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:8 },
+  startBtn:{ width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:8 },
   cancelBtn:{ width:"100%",background:"none",border:"0.5px solid rgba(0,0,0,.1)",color:"#6b7280",borderRadius:10,padding:"11px",fontSize:13,cursor:"pointer" },
   testShell:{ display:"flex",flexDirection:"column" as const,height:"100vh",background:"#F7F7FA",overflow:"hidden" },
   testHead:{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 2rem",background:"#fff",borderBottom:"0.5px solid rgba(0,0,0,.07)",flexShrink:0 },
   testTitle:{ fontSize:15,fontWeight:600,color:"#0A0A0F",flex:1 },
   testMeta:{ display:"flex",gap:12,alignItems:"center" },
-  timer:{ fontSize:16,fontWeight:700,color:"#7C3AED",fontVariantNumeric:"tabular-nums" as const },
+  timer:{ fontSize:16,fontWeight:700,color:"#534AB7",fontVariantNumeric:"tabular-nums" as const },
   timerWarn:{ color:"#DC2626" },
   qCount:{ fontSize:13,color:"#9ca3af" },
   tabWarn:{ fontSize:12,color:"#DC2626",fontWeight:500 },
-  submitBtn:{ background:"#7C3AED",color:"#fff",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer",marginLeft:12 },
+  submitBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer",marginLeft:12 },
   progressWrap:{ height:3,background:"#E5E7EB",flexShrink:0 },
-  progressFill:{ height:3,background:"#7C3AED",transition:"width .3s" },
+  progressFill:{ height:3,background:"#534AB7",transition:"width .3s" },
   testBody:{ flex:1,display:"grid",gridTemplateColumns:"1fr 220px",gap:0,overflow:"hidden" },
   questionCard:{ padding:"2rem",overflow:"auto" },
   qNum:{ fontSize:12,color:"#9ca3af",marginBottom:12,textTransform:"uppercase" as const,letterSpacing:".05em" },
   qText:{ fontSize:18,fontWeight:600,color:"#0A0A0F",lineHeight:1.5,marginBottom:"1.5rem" },
   options:{ display:"flex",flexDirection:"column" as const,gap:10,marginBottom:"1.5rem" },
   option:{ display:"flex",alignItems:"center",gap:12,padding:"14px 16px",border:"1px solid rgba(0,0,0,.1)",borderRadius:10,background:"#fff",textAlign:"left" as const,cursor:"pointer",fontSize:14,color:"#3D3D4E",transition:"all .15s",width:"100%" },
-  optionSelected:{ border:"1.5px solid #7C3AED",background:"#F5F3FF",color:"#7C3AED" },
+  optionSelected:{ border:"1.5px solid #534AB7",background:"#EEEDF9",color:"#534AB7" },
   optionLetter:{ width:28,height:28,borderRadius:"50%",background:"rgba(0,0,0,.06)",display:"flex",alignItems:"center",justifyContent:"center",fontSize:12,fontWeight:600,flexShrink:0 },
   shortAnswer:{ width:"100%",border:"1px solid rgba(0,0,0,.12)",borderRadius:10,padding:"12px",fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical" as const,marginBottom:"1.5rem" },
   qNavRow:{ display:"flex",justifyContent:"space-between",alignItems:"center" },
   navBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.13)",color:"#3D3D4E",borderRadius:8,padding:"8px 16px",fontSize:13,cursor:"pointer" },
-  navBtnPrimary:{ background:"#7C3AED",color:"#fff",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  navBtnPrimary:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
   qSidebar:{ background:"#fff",borderLeft:"0.5px solid rgba(0,0,0,.07)",padding:"1.25rem",overflow:"auto" },
   qNavTitle:{ fontSize:12,fontWeight:600,color:"#9ca3af",textTransform:"uppercase" as const,letterSpacing:".06em",marginBottom:10 },
   qNavGrid:{ display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:6 },
   qNavItem:{ width:"100%",aspectRatio:"1",borderRadius:8,border:"0.5px solid rgba(0,0,0,.1)",background:"#fff",fontSize:12,cursor:"pointer" },
-  qNavCurrent:{ border:"1.5px solid #7C3AED",background:"#F5F3FF",color:"#7C3AED",fontWeight:600 },
+  qNavCurrent:{ border:"1.5px solid #534AB7",background:"#EEEDF9",color:"#534AB7",fontWeight:600 },
   qNavAnswered:{ background:"#ECFDF5",border:"0.5px solid #A7F3D0",color:"#047857" },
   resultCard:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:16,padding:"2.5rem",width:"100%",maxWidth:480,height:"fit-content",textAlign:"center" as const },
   resultTitle:{ fontSize:24,fontWeight:700,color:"#0A0A0F",letterSpacing:"-.5px",marginBottom:"1.5rem" },

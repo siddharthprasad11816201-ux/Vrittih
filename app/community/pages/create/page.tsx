@@ -56,5 +56,5 @@ const S: Record<string,any> = {
   label:{ fontSize:12,fontWeight:500,color:"#7B7B8F" },
   input:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"9px 12px",fontSize:13,outline:"none",fontFamily:"inherit" },
   textarea:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"9px 12px",fontSize:13,outline:"none",fontFamily:"inherit",resize:"vertical" as const },
-  btn:{ width:"100%",background:"#7C3AED",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:600,cursor:"pointer" },
+  btn:{ width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:600,cursor:"pointer" },
 }

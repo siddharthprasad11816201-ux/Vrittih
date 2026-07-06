@@ -175,7 +175,7 @@ export default function CreateTest() {
                           <div key={oi} style={S.optRow}>
                             <input type="radio" name={`correct-${qi}`} checked={q.correctAnswer === opt && opt !== ""}
                               onChange={() => updateQuestion(qi,"correctAnswer",opt)}
-                              style={{accentColor:"#7C3AED",flexShrink:0}} />
+                              style={{accentColor:"#534AB7",flexShrink:0}} />
                             <input value={opt} onChange={e => updateOption(qi,oi,e.target.value)}
                               style={{...S.input,flex:1}} placeholder={`Option ${String.fromCharCode(65+oi)}`} />
                           </div>
@@ -232,19 +232,19 @@ const S: Record<string,any> = {
   label:{ fontSize:12,fontWeight:500,color:"#7B7B8F" },
   input:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"8px 11px",fontSize:13,color:"#0A0A0F",outline:"none",fontFamily:"inherit",width:"100%" },
   textarea:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"8px 11px",fontSize:13,color:"#0A0A0F",outline:"none",fontFamily:"inherit",resize:"vertical" as const,width:"100%" },
-  addQBtn:{ background:"#7C3AED",color:"#fff",border:"none",borderRadius:8,padding:"7px 14px",fontSize:13,fontWeight:500,cursor:"pointer" },
-  addQBtnLarge:{ width:"100%",background:"#F5F3FF",color:"#7C3AED",border:"1px dashed rgba(124,58,237,.3)",borderRadius:10,padding:"12px",fontSize:13,fontWeight:500,cursor:"pointer",marginTop:8 },
+  addQBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"7px 14px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  addQBtnLarge:{ width:"100%",background:"#EEEDF9",color:"#534AB7",border:"1px dashed rgba(83,74,183,.3)",borderRadius:10,padding:"12px",fontSize:13,fontWeight:500,cursor:"pointer",marginTop:8 },
   qCard:{ background:"#F9F9FC",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:12,padding:"1.25rem",marginBottom:10 },
   qCardHead:{ display:"flex",alignItems:"center",gap:10,marginBottom:"1rem",flexWrap:"wrap" as const },
-  qNum:{ fontSize:13,fontWeight:700,color:"#7C3AED",background:"#F5F3FF",padding:"4px 10px",borderRadius:999,flexShrink:0 },
+  qNum:{ fontSize:13,fontWeight:700,color:"#534AB7",background:"#EEEDF9",padding:"4px 10px",borderRadius:999,flexShrink:0 },
   qTypeTabs:{ display:"flex",gap:4,flex:1,flexWrap:"wrap" as const },
   qTypeTab:{ background:"none",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:7,padding:"4px 10px",fontSize:11,cursor:"pointer",color:"#7B7B8F" },
-  qTypeTabOn:{ background:"#7C3AED",color:"#fff",border:"0.5px solid #7C3AED" },
+  qTypeTabOn:{ background:"#534AB7",color:"#fff",border:"0.5px solid #534AB7" },
   qPoints:{ display:"flex",alignItems:"center",gap:6 },
   removeBtn:{ background:"none",border:"none",fontSize:20,color:"#9ca3af",cursor:"pointer",lineHeight:1,padding:"0 4px" },
   optionsGrid:{ display:"flex",flexDirection:"column" as const,gap:8,marginBottom:4 },
   optRow:{ display:"flex",alignItems:"center",gap:8 },
   actions:{ display:"flex",gap:10,marginTop:4 },
-  saveBtn:{ flex:1,background:"#7C3AED",color:"#fff",border:"none",borderRadius:9,padding:"12px",fontSize:14,fontWeight:600,cursor:"pointer" },
+  saveBtn:{ flex:1,background:"#534AB7",color:"#fff",border:"none",borderRadius:9,padding:"12px",fontSize:14,fontWeight:600,cursor:"pointer" },
   cancelBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.1)",color:"#6b7280",borderRadius:9,padding:"12px 20px",fontSize:14,cursor:"pointer" },
 }

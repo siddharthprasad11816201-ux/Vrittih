@@ -60,7 +60,7 @@ export default function ProfessionalPageView() {
   }
 
   const initials = (name: string) => name?.split(" ").map((n:string)=>n[0]).join("").slice(0,2).toUpperCase()||"?"
-  const colors = ["#7C3AED","#059669","#0891B2","#B45309","#DC2626"]
+  const colors = ["#534AB7","#059669","#0891B2","#B45309","#DC2626"]
   const getColor = (uid: string) => colors[uid?.charCodeAt(0)%colors.length||0]
 
   if (loading) return <AppShell><div style={S.loading}>Loading...</div></AppShell>
@@ -235,14 +235,14 @@ const S: Record<string,any> = {
   nameRow:{ display:"flex",alignItems:"center",gap:10,flexWrap:"wrap" as const,marginBottom:4 },
   name:{ fontSize:22,fontWeight:700,color:"#0A0A0F",letterSpacing:"-.3px" },
   verified:{ fontSize:12,background:"#ECFDF5",color:"#047857",padding:"3px 10px",borderRadius:999,fontWeight:500 },
-  proTitle:{ fontSize:15,color:"#7C3AED",fontWeight:500,marginBottom:4 },
-  badge:{ display:"inline-block",background:"#F5F3FF",color:"#7C3AED",fontSize:12,padding:"3px 12px",borderRadius:999,border:"0.5px solid rgba(124,58,237,.2)",marginBottom:6 },
+  proTitle:{ fontSize:15,color:"#534AB7",fontWeight:500,marginBottom:4 },
+  badge:{ display:"inline-block",background:"#EEEDF9",color:"#534AB7",fontSize:12,padding:"3px 12px",borderRadius:999,border:"0.5px solid rgba(83,74,183,.2)",marginBottom:6 },
   headline:{ fontSize:14,color:"#7B7B8F",marginBottom:4 },
   location:{ fontSize:13,color:"#9ca3af",marginBottom:6 },
   stats:{ fontSize:13,color:"#9ca3af",display:"flex",gap:8 },
   profileActions:{ display:"flex",flexDirection:"column" as const,gap:8,flexShrink:0 },
-  followBtn:{ background:"#7C3AED",color:"#fff",border:"none",borderRadius:9,padding:"9px 22px",fontSize:14,fontWeight:500,cursor:"pointer",whiteSpace:"nowrap" as const },
-  followingBtn:{ background:"#F5F3FF",color:"#7C3AED",border:"0.5px solid rgba(124,58,237,.2)" },
+  followBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:9,padding:"9px 22px",fontSize:14,fontWeight:500,cursor:"pointer",whiteSpace:"nowrap" as const },
+  followingBtn:{ background:"#EEEDF9",color:"#534AB7",border:"0.5px solid rgba(83,74,183,.2)" },
   editBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.13)",color:"#3D3D4E",borderRadius:9,padding:"8px 18px",fontSize:13,textDecoration:"none",textAlign:"center" as const },
   backBtn:{ fontSize:13,color:"#9ca3af",textDecoration:"none",textAlign:"center" as const },
   bio:{ fontSize:14,color:"#3D3D4E",lineHeight:1.7,marginTop:"1rem",paddingTop:"1rem",borderTop:"0.5px solid rgba(0,0,0,.07)" },
@@ -251,7 +251,7 @@ const S: Record<string,any> = {
   composeCard:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.25rem",display:"flex",gap:12 },
   composeAvatar:{ width:36,height:36,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,color:"#fff",flexShrink:0,marginTop:4 },
   composeTextarea:{ width:"100%",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:10,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical" as const },
-  postBtn:{ background:"#7C3AED",color:"#fff",border:"none",borderRadius:8,padding:"7px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  postBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"7px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
   empty:{ display:"flex",flexDirection:"column" as const,alignItems:"center",justifyContent:"center",padding:"3rem",background:"#fff",borderRadius:14,border:"0.5px solid rgba(0,0,0,.07)" },
   postCard:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.25rem" },
   postTop:{ display:"flex",gap:10,alignItems:"flex-start",marginBottom:10 },
@@ -268,5 +268,5 @@ const S: Record<string,any> = {
   aboutRow:{ display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"0.5px solid rgba(0,0,0,.04)",fontSize:13 },
   aboutLabel:{ color:"#9ca3af" },
   aboutVal:{ color:"#0A0A0F",fontWeight:500 },
-  browseBtn:{ display:"block",background:"#7C3AED",color:"#fff",padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center" as const },
+  browseBtn:{ display:"block",background:"#534AB7",color:"#fff",padding:"9px 0",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center" as const },
 }

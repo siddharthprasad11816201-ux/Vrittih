@@ -30,7 +30,7 @@ export default function ProfessionalPagesHub() {
   }
 
   const initials = (name: string) => name?.split(" ").map((n:string)=>n[0]).join("").slice(0,2).toUpperCase()||"?"
-  const colors = ["#7C3AED","#059669","#0891B2","#B45309","#DC2626"]
+  const colors = ["#534AB7","#059669","#0891B2","#B45309","#DC2626"]
   const getColor = (id: string) => colors[id?.charCodeAt(0)%colors.length||0]
 
   return (
@@ -101,8 +101,8 @@ const S: Record<string,any> = {
   header:{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem" },
   title:{ fontSize:22,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px" },
   sub:{ fontSize:13,color:"#7B7B8F",marginTop:4,maxWidth:520 },
-  createBtn:{ background:"#7C3AED",color:"#fff",padding:"9px 18px",borderRadius:9,fontSize:13,fontWeight:500,textDecoration:"none" },
-  myPageBtn:{ background:"#F5F3FF",color:"#7C3AED",padding:"9px 18px",borderRadius:9,fontSize:13,fontWeight:500,textDecoration:"none",border:"0.5px solid rgba(124,58,237,.2)" },
+  createBtn:{ background:"#534AB7",color:"#fff",padding:"9px 18px",borderRadius:9,fontSize:13,fontWeight:500,textDecoration:"none" },
+  myPageBtn:{ background:"#EEEDF9",color:"#534AB7",padding:"9px 18px",borderRadius:9,fontSize:13,fontWeight:500,textDecoration:"none",border:"0.5px solid rgba(83,74,183,.2)" },
   grid:{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(240px,1fr))",gap:12 },
   card:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.5rem",display:"flex",flexDirection:"column" as const,alignItems:"center",textAlign:"center" as const,gap:8,position:"relative" as const },
   cardTop:{ position:"relative" as const },
@@ -110,14 +110,14 @@ const S: Record<string,any> = {
   avatarFallback:{ width:72,height:72,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:24,fontWeight:600,color:"#fff" },
   verifiedBadge:{ position:"absolute" as const,bottom:0,right:0,background:"#059669",color:"#fff",width:20,height:20,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:11,fontWeight:700,border:"2px solid #fff" },
   cardName:{ fontSize:16,fontWeight:700,color:"#0A0A0F" },
-  cardTitle2:{ fontSize:13,color:"#7C3AED",fontWeight:500 },
-  badge:{ background:"#F5F3FF",color:"#7C3AED",fontSize:12,padding:"3px 12px",borderRadius:999,border:"0.5px solid rgba(124,58,237,.2)" },
+  cardTitle2:{ fontSize:13,color:"#534AB7",fontWeight:500 },
+  badge:{ background:"#EEEDF9",color:"#534AB7",fontSize:12,padding:"3px 12px",borderRadius:999,border:"0.5px solid rgba(83,74,183,.2)" },
   bio:{ fontSize:12,color:"#9ca3af",lineHeight:1.55 },
   followers:{ fontSize:12,color:"#9ca3af" },
   cardActions:{ display:"flex",gap:8,width:"100%",marginTop:4 },
-  viewBtn:{ flex:1,background:"#7C3AED",color:"#fff",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center" as const },
+  viewBtn:{ flex:1,background:"#534AB7",color:"#fff",padding:"8px 0",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none",textAlign:"center" as const },
   followBtn:{ flex:1,background:"none",border:"0.5px solid rgba(0,0,0,.13)",color:"#3D3D4E",borderRadius:8,padding:"8px 0",fontSize:13,cursor:"pointer" },
-  followBtnOn:{ background:"#F5F3FF",color:"#7C3AED",border:"0.5px solid rgba(124,58,237,.2)" },
+  followBtnOn:{ background:"#EEEDF9",color:"#534AB7",border:"0.5px solid rgba(83,74,183,.2)" },
   ownTag:{ fontSize:12,color:"#9ca3af",padding:"8px 0" },
   emptyState:{ background:"#fff",borderRadius:14,padding:"3rem",textAlign:"center" as const,border:"0.5px solid rgba(0,0,0,.07)" },
   empty:{ padding:"3rem",textAlign:"center" as const },

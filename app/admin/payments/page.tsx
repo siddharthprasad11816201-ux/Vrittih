@@ -38,7 +38,7 @@ export default function AdminPayments() {
         <>
           <div style={S.statsGrid}>
             <div style={S.statCard}><div style={{ ...S.statNum, color: "#059669" }}>{data ? `${data.revenue} ${cur}` : "—"}</div><div style={S.statLabel}>Total revenue</div><div style={S.statSub}>{data?.fee} {cur} per member</div></div>
-            <div style={S.statCard}><div style={{ ...S.statNum, color: "#7C3AED" }}>{data?.paidCount ?? "—"}</div><div style={S.statLabel}>Paying members</div><div style={S.statSub}>lifetime access</div></div>
+            <div style={S.statCard}><div style={{ ...S.statNum, color: "#534AB7" }}>{data?.paidCount ?? "—"}</div><div style={S.statLabel}>Paying members</div><div style={S.statSub}>lifetime access</div></div>
             <div style={S.statCard}><div style={{ ...S.statNum, color: "#0891B2" }}>{data?.fee} {cur}</div><div style={S.statLabel}>Joining fee</div><div style={S.statSub}>set in Super Control</div></div>
           </div>
 

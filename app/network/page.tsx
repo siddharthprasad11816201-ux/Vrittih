@@ -41,7 +41,7 @@ export default function NetworkPage() {
   }
 
   const initials = (name: string) => name?.split(" ").map((n:string)=>n[0]).join("").slice(0,2).toUpperCase()||"?"
-  const colors = ["#7C3AED","#059669","#B45309","#DC2626","#0891B2","#7C3AED"]
+  const colors = ["#534AB7","#059669","#B45309","#DC2626","#0891B2","#534AB7"]
   const getColor = (id: string) => colors[id.charCodeAt(0) % colors.length]
 
   const filteredConnections = connections.filter(c => {
@@ -148,7 +148,7 @@ export default function NetworkPage() {
                       <div style={S.cardName}>{u.name}</div>
                       {u.headline && <div style={S.cardHead}>{u.headline}</div>}
                       {u.location && <div style={{...S.cardLoc,display:"flex",alignItems:"center",gap:4,justifyContent:"center"}}><IconMapPin size={12} /> {u.location}</div>}
-                      <span style={{...S.rolePill, background:u.role==="EMPLOYER"?"#FEF3C7":"#EFF4FF", color:u.role==="EMPLOYER"?"#92400E":"#7C3AED"}}>{u.role}</span>
+                      <span style={{...S.rolePill, background:u.role==="EMPLOYER"?"#FEF3C7":"#EFF4FF", color:u.role==="EMPLOYER"?"#92400E":"#534AB7"}}>{u.role}</span>
                       <div style={S.cardActions}>
                         <button
                           onClick={() => connect(u.id)}
@@ -178,7 +178,7 @@ const S: Record<string,any> = {
   sub: { fontSize:13, color:"#7B7B8F", marginTop:3 },
   tabs: { display:"flex", gap:4, marginBottom:"1.5rem", background:"#fff", padding:4, borderRadius:12, border:"0.5px solid rgba(0,0,0,.07)", width:"fit-content" },
   tab: { display:"flex", alignItems:"center", gap:7, padding:"7px 16px", borderRadius:9, border:"none", background:"none", fontSize:13, color:"#7B7B8F", cursor:"pointer", transition:"all .15s", fontWeight:400 },
-  tabOn: { background:"#7C3AED", color:"#fff", fontWeight:500 },
+  tabOn: { background:"#534AB7", color:"#fff", fontWeight:500 },
   badge: { background:"rgba(0,0,0,.08)", color:"#7B7B8F", borderRadius:999, fontSize:11, fontWeight:600, padding:"1px 7px" },
   badgeOn: { background:"rgba(255,255,255,.2)", color:"#fff" },
   search: { width:"100%", maxWidth:400, border:"0.5px solid rgba(0,0,0,.13)", borderRadius:10, padding:"9px 14px", fontSize:14, outline:"none", marginBottom:"1.25rem", fontFamily:"inherit" },
@@ -190,10 +190,10 @@ const S: Record<string,any> = {
   cardLoc: { fontSize:12, color:"#9ca3af" },
   rolePill: { fontSize:11, fontWeight:500, padding:"3px 10px", borderRadius:999 },
   cardActions: { display:"flex", gap:8, marginTop:8, width:"100%" },
-  connectBtn: { flex:1, background:"#7C3AED", color:"#fff", border:"none", borderRadius:8, padding:"8px 0", fontSize:13, fontWeight:500, cursor:"pointer", transition:"all .15s" },
-  connectBtnDone: { background:"#EFF4FF", color:"#7C3AED", cursor:"default" },
-  acceptBtn: { flex:1, background:"#7C3AED", color:"#fff", border:"none", borderRadius:8, padding:"8px 0", fontSize:13, fontWeight:500, cursor:"pointer" },
+  connectBtn: { flex:1, background:"#534AB7", color:"#fff", border:"none", borderRadius:8, padding:"8px 0", fontSize:13, fontWeight:500, cursor:"pointer", transition:"all .15s" },
+  connectBtnDone: { background:"#EFF4FF", color:"#534AB7", cursor:"default" },
+  acceptBtn: { flex:1, background:"#534AB7", color:"#fff", border:"none", borderRadius:8, padding:"8px 0", fontSize:13, fontWeight:500, cursor:"pointer" },
   rejectBtn: { flex:1, background:"none", border:"0.5px solid rgba(0,0,0,.13)", color:"#6b7280", borderRadius:8, padding:"8px 0", fontSize:13, cursor:"pointer" },
-  msgBtn: { flex:1, background:"none", border:"0.5px solid rgba(124,58,237,.3)", color:"#7C3AED", borderRadius:8, padding:"8px 0", fontSize:13, fontWeight:500, cursor:"pointer" },
+  msgBtn: { flex:1, background:"none", border:"0.5px solid rgba(83,74,183,.3)", color:"#534AB7", borderRadius:8, padding:"8px 0", fontSize:13, fontWeight:500, cursor:"pointer" },
   empty: { display:"flex", flexDirection:"column" as const, alignItems:"center", justifyContent:"center", padding:"4rem", background:"#fff", borderRadius:14, border:"0.5px solid rgba(0,0,0,.07)" },
 }

@@ -57,7 +57,7 @@ export default function AdminUsers() {
                 <tr key={u.id} style={S.tr}>
                   <td style={S.td}><span style={S.bold}>{u.name}</span></td>
                   <td style={S.td}><span style={S.muted}>{u.email}</span></td>
-                  <td style={S.td}><span style={{...S.pill, background:u.role==="ADMIN"?"#FEF3C7":u.role==="EMPLOYER"?"#EFF4FF":"#F5F3FF", color:u.role==="ADMIN"?"#92400E":u.role==="EMPLOYER"?"#1D4ED8":"#7C3AED"}}>{u.role}</span></td>
+                  <td style={S.td}><span style={{...S.pill, background:u.role==="ADMIN"?"#FEF3C7":u.role==="EMPLOYER"?"#EFF4FF":"#EEEDF9", color:u.role==="ADMIN"?"#92400E":u.role==="EMPLOYER"?"#1D4ED8":"#534AB7"}}>{u.role}</span></td>
                   <td style={S.td}><span style={{...S.pill, background:u.paid?"#ECFDF5":"#FEF2F2", color:u.paid?"#047857":"#B91C1C"}}>{u.paid?"Yes":"No"}</span></td>
                   <td style={S.td}><span style={{...S.pill, background:u.idVerified?"#ECFDF5":"#F3F4F6", color:u.idVerified?"#047857":"#6b7280"}}>{u.idVerified?"Verified":"No"}</span></td>
                   <td style={S.td}><span style={S.muted}>{u._count?.applications||0}</span></td>
@@ -88,11 +88,11 @@ const S: Record<string,any> = {
   page:{ display:"grid",gridTemplateColumns:"220px 1fr",minHeight:"100vh",background:"#F7F7FA" },
   sidebar:{ background:"#0F0A1E",display:"flex",flexDirection:"column" as const,borderRight:"0.5px solid rgba(255,255,255,.06)" },
   brand:{ display:"flex",alignItems:"center",gap:10,padding:"1.25rem 1.5rem",borderBottom:"0.5px solid rgba(255,255,255,.06)" },
-  brandMark:{ width:32,height:32,borderRadius:9,background:"#7C3AED",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 },
+  brandMark:{ width:32,height:32,borderRadius:9,background:"#534AB7",display:"flex",alignItems:"center",justifyContent:"center",fontSize:16 },
   brandText:{ fontSize:14,fontWeight:600,color:"#fff" },
   nav:{ padding:"1rem .75rem",flex:1,display:"flex",flexDirection:"column" as const,gap:2 },
   navLink:{ display:"flex",alignItems:"center",gap:10,padding:"8px 12px",borderRadius:8,fontSize:13,color:"rgba(255,255,255,.6)",textDecoration:"none" },
-  navLinkOn:{ background:"rgba(124,58,237,.2)",color:"#C4B5FD" },
+  navLinkOn:{ background:"rgba(83,74,183,.2)",color:"#B9B2E6" },
   sideBottom:{ padding:"1rem 1.5rem",borderTop:"0.5px solid rgba(255,255,255,.06)" },
   backLink:{ fontSize:13,color:"rgba(255,255,255,.4)",textDecoration:"none" },
   main:{ overflow:"auto" },
@@ -111,7 +111,7 @@ const S: Record<string,any> = {
   muted:{ fontSize:12,color:"#6b7280" },
   pill:{ fontSize:11,fontWeight:500,padding:"2px 8px",borderRadius:999 },
   actions:{ display:"flex",gap:6,flexWrap:"wrap" as const },
-  actBtn:{ background:"#7C3AED",color:"#fff",border:"none",borderRadius:6,padding:"4px 10px",fontSize:11,cursor:"pointer",fontWeight:500 },
+  actBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:6,padding:"4px 10px",fontSize:11,cursor:"pointer",fontWeight:500 },
   dangerBtn:{ background:"none",border:"0.5px solid rgba(220,38,38,.2)",color:"#DC2626",borderRadius:6,padding:"4px 10px",fontSize:11,cursor:"pointer" },
   pagination:{ display:"flex",alignItems:"center",gap:12,padding:"1rem 2rem",background:"#fff",borderTop:"0.5px solid rgba(0,0,0,.07)" },
   pageBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"6px 14px",fontSize:13,cursor:"pointer",color:"#3D3D4E" },

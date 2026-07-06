@@ -56,7 +56,7 @@ export default function Dashboard() {
   }
 
   const STATUS_COLOR: Record<string,{bg:string,color:string}> = {
-    APPLIED:{bg:"#EFF4FF",color:"#1D4ED8"}, REVIEWED:{bg:"#F5F3FF",color:"#7C3AED"},
+    APPLIED:{bg:"#EFF4FF",color:"#1D4ED8"}, REVIEWED:{bg:"#EEEDF9",color:"#534AB7"},
     SHORTLISTED:{bg:"#ECFDF5",color:"#047857"}, INTERVIEW:{bg:"#FFFBEB",color:"#B45309"},
     ASSESSMENT:{bg:"#F0FDF4",color:"#16A34A"}, OFFERED:{bg:"#F0FDF4",color:"#059669"},
     HIRED:{bg:"#ECFDF5",color:"#047857"}, REJECTED:{bg:"#FEF2F2",color:"#B91C1C"},
@@ -90,14 +90,14 @@ export default function Dashboard() {
   const showOnboarding = doneCount < steps.length
 
   const seekerStats = [
-    { label:"Applications", val:stats?.total ?? 0, icon:<IconFileText size={16} />, color:"#7C3AED" },
+    { label:"Applications", val:stats?.total ?? 0, icon:<IconFileText size={16} />, color:"#534AB7" },
     { label:"Active", val:stats?.active ?? 0, icon:<IconActivity size={16} />, color:"#2563EB" },
     { label:"Interviews", val:stats?.interviews ?? 0, icon:<IconTarget size={16} />, color:"#B45309" },
     { label:"Offers", val:stats?.offers ?? 0, icon:<IconAward size={16} />, color:"#0891B2" },
     { label:"Hired", val:stats?.hired ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669" },
   ]
   const employerStats = [
-    { label:"Jobs posted", val:stats?.totalJobs ?? 0, icon:<IconBriefcase size={16} />, color:"#7C3AED" },
+    { label:"Jobs posted", val:stats?.totalJobs ?? 0, icon:<IconBriefcase size={16} />, color:"#534AB7" },
     { label:"Active", val:stats?.activeJobs ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669" },
     { label:"Applicants", val:stats?.totalApplicants ?? 0, icon:<IconUsers size={16} />, color:"#2563EB" },
     { label:"Shortlisted", val:stats?.shortlisted ?? 0, icon:<IconAward size={16} />, color:"#B45309" },
@@ -287,7 +287,7 @@ function Ring({ pct }: { pct: number }) {
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#EDEBF6" strokeWidth={sw} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#7C3AED" strokeWidth={sw} strokeLinecap="round"
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#534AB7" strokeWidth={sw} strokeLinecap="round"
         strokeDasharray={c} strokeDashoffset={c * (1 - pct/100)} transform={`rotate(-90 ${size/2} ${size/2})`} style={{ transition: "stroke-dashoffset .6s ease" }} />
       <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fontSize={19} fontWeight={700} fill="#16151D" fontFamily="'Iowan Old Style', Palatino, Georgia, serif">{pct}%</text>
     </svg>
@@ -303,7 +303,7 @@ const S: Record<string,any> = {
   head:{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", flexWrap:"wrap" as const, gap:14 },
   kicker:{ fontSize:12, fontWeight:600, color:"#9A96A5", textTransform:"uppercase" as const, letterSpacing:".08em", marginBottom:8 },
   greeting:{ fontFamily:SERIF, fontSize:32, fontWeight:600, color:"#16151D", letterSpacing:"-.02em", lineHeight:1.1 },
-  greetingName:{ fontStyle:"italic", color:"#6D28D9" },
+  greetingName:{ fontStyle:"italic", color:"#443AA3" },
   greetingSub:{ fontSize:15, color:"#57545F", marginTop:7 },
   headActions:{ display:"flex", gap:10 },
   primaryBtn:{ display:"inline-flex", alignItems:"center", gap:8, background:"#16151D", color:"#fff", padding:"12px 20px", borderRadius:10, fontSize:14, fontWeight:600, textDecoration:"none", boxShadow:"0 4px 14px rgba(20,19,29,.15)" },
@@ -325,7 +325,7 @@ const S: Record<string,any> = {
   onboardSub:{ fontSize:13.5, color:"#57545F", marginTop:4, maxWidth:"40ch" },
   steps:{ display:"flex", flexDirection:"column" as const, gap:8 },
   step:{ display:"flex", alignItems:"center", gap:13, background:"#fff", border:"1px solid #ECEAF3", borderRadius:11, padding:"12px 14px", textDecoration:"none", transition:"border-color .12s, transform .12s" },
-  stepCheck:{ width:32, height:32, borderRadius:9, background:"#F4F1FE", color:"#7C3AED", display:"grid", placeItems:"center", flexShrink:0 },
+  stepCheck:{ width:32, height:32, borderRadius:9, background:"#F4F1FE", color:"#534AB7", display:"grid", placeItems:"center", flexShrink:0 },
   stepCheckDone:{ background:"#059669", color:"#fff" },
   stepTitle:{ fontSize:14, fontWeight:600, color:"#16151D" },
   stepDesc:{ fontSize:12.5, color:"#8E8B99", marginTop:1 },
@@ -333,7 +333,7 @@ const S: Record<string,any> = {
   card:{ background:"#fff", border:"1px solid #ECEBF1", borderRadius:16, padding:"1.35rem 1.5rem" },
   cardHead:{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 },
   cardTitle:{ fontSize:16, fontWeight:650, color:"#16151D", letterSpacing:"-.01em" },
-  link:{ display:"inline-flex", alignItems:"center", gap:4, fontSize:13, color:"#6D28D9", textDecoration:"none", fontWeight:600 },
+  link:{ display:"inline-flex", alignItems:"center", gap:4, fontSize:13, color:"#443AA3", textDecoration:"none", fontWeight:600 },
 
   funnel:{ display:"flex", flexDirection:"column" as const, gap:11 },
   funnelRow:{ display:"flex", alignItems:"center", gap:12 },
@@ -343,7 +343,7 @@ const S: Record<string,any> = {
   funnelCount:{ fontSize:13, fontWeight:700, width:24, textAlign:"right" as const, fontVariantNumeric:"tabular-nums" as const },
 
   empty:{ textAlign:"center" as const, padding:"1.5rem 0 0.5rem" },
-  emptyIcon:{ display:"grid", placeItems:"center", width:52, height:52, borderRadius:14, background:"#F4F1FE", color:"#7C3AED", margin:"0 auto 12px" },
+  emptyIcon:{ display:"grid", placeItems:"center", width:52, height:52, borderRadius:14, background:"#F4F1FE", color:"#534AB7", margin:"0 auto 12px" },
   emptyTitle:{ fontSize:15, fontWeight:650, color:"#16151D" },
   emptySub:{ fontSize:13, color:"#8E8B99", marginTop:4, maxWidth:"34ch", marginLeft:"auto", marginRight:"auto" },
   emptyBtn:{ display:"inline-block", marginTop:14, background:"#16151D", color:"#fff", padding:"9px 18px", borderRadius:9, fontSize:13, fontWeight:600, textDecoration:"none" },
@@ -356,7 +356,7 @@ const S: Record<string,any> = {
 
   quick:{ display:"flex", flexDirection:"column" as const, gap:6 },
   quickRow:{ display:"flex", alignItems:"center", gap:12, padding:"11px 12px", borderRadius:11, textDecoration:"none", color:"#8E8B99", transition:"background .12s" },
-  quickIcon:{ width:34, height:34, borderRadius:9, background:"#F4F1FE", color:"#6D28D9", display:"grid", placeItems:"center", flexShrink:0 },
+  quickIcon:{ width:34, height:34, borderRadius:9, background:"#F4F1FE", color:"#443AA3", display:"grid", placeItems:"center", flexShrink:0 },
   quickTitle:{ fontSize:13.5, fontWeight:600, color:"#16151D" },
   quickDesc:{ fontSize:12, color:"#8E8B99", marginTop:1 },
 }

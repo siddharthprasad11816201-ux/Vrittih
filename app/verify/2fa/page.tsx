@@ -83,7 +83,7 @@ function TwoFAContent() {
   return (
     <div style={S.page}>
       <div style={S.card}>
-        <div style={{...S.icon,color:"#7C3AED",display:"flex",justifyContent:"center"}}><IconLock size={42} /></div>
+        <div style={{...S.icon,color:"#534AB7",display:"flex",justifyContent:"center"}}><IconLock size={42} /></div>
         <h1 style={S.title}>
           {mode === "injury" ? "Identity verification" : "Two-factor authentication"}
         </h1>
@@ -151,9 +151,9 @@ const S: Record<string,any> = {
   injuryNote:{ display:"flex",gap:10,background:"#FFFBEB",border:"0.5px solid #FCD34D",borderRadius:10,padding:"12px",marginBottom:"1.25rem",textAlign:"left" as const },
   otpRow:{ display:"flex",gap:10,justifyContent:"center",marginBottom:"1.5rem" },
   otpInput:{ width:48,height:56,borderRadius:12,border:"1.5px solid rgba(0,0,0,.15)",textAlign:"center" as const,fontSize:24,fontWeight:700,color:"#0A0A0F",outline:"none",transition:"border-color .15s,box-shadow .15s" },
-  otpInputFilled:{ borderColor:"#7C3AED",boxShadow:"0 0 0 3px rgba(124,58,237,.1)" },
-  verifyBtn:{ width:"100%",background:"#7C3AED",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:"1rem" },
+  otpInputFilled:{ borderColor:"#534AB7",boxShadow:"0 0 0 3px rgba(83,74,183,.1)" },
+  verifyBtn:{ width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:"1rem" },
   resend:{ marginBottom:"1rem" },
-  resendBtn:{ background:"none",border:"none",color:"#7C3AED",fontSize:13,fontWeight:500,cursor:"pointer" },
+  resendBtn:{ background:"none",border:"none",color:"#534AB7",fontSize:13,fontWeight:500,cursor:"pointer" },
   backBtn:{ background:"none",border:"none",color:"#9ca3af",fontSize:13,cursor:"pointer" },
 }

@@ -84,9 +84,9 @@ export default function SpacePage() {
 
   const initials = (name: string) => name?.split(" ").map((n:string)=>n[0]).join("").slice(0,2).toUpperCase()||"?"
   const timeAgo = (iso: string) => { const m=Math.floor((Date.now()-new Date(iso).getTime())/60000); if(m<1)return "just now"; if(m<60)return `${m}m`; if(m<1440)return `${Math.floor(m/60)}h`; return `${Math.floor(m/1440)}d` }
-  const colors = ["#7C3AED","#059669","#0891B2","#B45309","#DC2626"]
+  const colors = ["#534AB7","#059669","#0891B2","#B45309","#DC2626"]
   const getColor = (id: string) => colors[id?.charCodeAt(0)%colors.length||0]
-  const roleColors: Record<string,string> = { SUPER_ADMIN:"#C026D3", ADMIN:"#7C3AED", EMPLOYER:"#B45309", JOBSEEKER:"#059669" }
+  const roleColors: Record<string,string> = { SUPER_ADMIN:"#C026D3", ADMIN:"#534AB7", EMPLOYER:"#B45309", JOBSEEKER:"#059669" }
 
   if (loading) return <AppShell><div style={S.loading}>Loading space...</div></AppShell>
   if (!data?.space) return <AppShell><div style={S.loading}>Space not found</div></AppShell>
@@ -133,7 +133,7 @@ export default function SpacePage() {
 
               {!isMember && (
                 <div style={S.joinPrompt}>
-                  <span style={{color:"#7C3AED"}}>{CATEGORY_ICONS[space.category] || <IconMessage size={20} />}</span>
+                  <span style={{color:"#534AB7"}}>{CATEGORY_ICONS[space.category] || <IconMessage size={20} />}</span>
                   <p style={{fontSize:14,color:"#3D3D4E",fontWeight:500}}>Join {space.name} to participate</p>
                   <button onClick={toggleJoin} style={S.joinBtn}>Join space</button>
                 </div>
@@ -150,7 +150,7 @@ export default function SpacePage() {
                       <div style={S.postMeta}>
                         <span style={S.postName}>{post.user?.name}</span>
                         {post.user?.headline && <span style={{fontSize:12,color:"#9ca3af"}}>{post.user.headline}</span>}
-                        {post.user?.role && <span style={{fontSize:11,fontWeight:500,padding:"1px 7px",borderRadius:999,background:"rgba(124,58,237,.08)",color:roleColors[post.user.role]||"#7C3AED"}}>{post.user.role}</span>}
+                        {post.user?.role && <span style={{fontSize:11,fontWeight:500,padding:"1px 7px",borderRadius:999,background:"rgba(83,74,183,.08)",color:roleColors[post.user.role]||"#534AB7"}}>{post.user.role}</span>}
                         <span style={{fontSize:11,color:"#9ca3af",marginLeft:"auto"}}>{timeAgo(post.createdAt)}</span>
                       </div>
                       <div style={S.postContent}>{post.content}</div>
@@ -192,7 +192,7 @@ export default function SpacePage() {
                       <div style={{fontSize:13,fontWeight:500,color:"#0A0A0F"}}>{m.user?.name}</div>
                       {m.user?.headline && <div style={{fontSize:11,color:"#9ca3af"}}>{m.user.headline}</div>}
                     </div>
-                    {m.role==="ADMIN" && <span style={{fontSize:10,color:"#7C3AED",marginLeft:"auto",fontWeight:600}}>MOD</span>}
+                    {m.role==="ADMIN" && <span style={{fontSize:10,color:"#534AB7",marginLeft:"auto",fontWeight:600}}>MOD</span>}
                   </div>
                 ))}
               </div>
@@ -210,22 +210,22 @@ const S: Record<string,any> = {
   loading:{ display:"flex",alignItems:"center",justifyContent:"center",minHeight:"60vh",fontSize:14,color:"#9ca3af" },
   header:{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.5rem",marginBottom:"1.25rem",flexWrap:"wrap" as const,gap:12 },
   headerLeft:{ display:"flex",gap:14,alignItems:"flex-start",flex:1 },
-  icon:{ width:60,height:60,display:"flex",alignItems:"center",justifyContent:"center",background:"#F5F3FF",color:"#7C3AED",borderRadius:14,flexShrink:0 },
+  icon:{ width:60,height:60,display:"flex",alignItems:"center",justifyContent:"center",background:"#EEEDF9",color:"#534AB7",borderRadius:14,flexShrink:0 },
   titleRow:{ display:"flex",alignItems:"center",gap:10,flexWrap:"wrap" as const },
   title:{ fontSize:20,fontWeight:700,color:"#0A0A0F",letterSpacing:"-.3px" },
   verified:{ fontSize:12,background:"#ECFDF5",color:"#047857",padding:"3px 10px",borderRadius:999,fontWeight:500 },
   meta:{ fontSize:12,color:"#9ca3af",marginTop:4 },
   desc:{ fontSize:14,color:"#7B7B8F",marginTop:6,lineHeight:1.6 },
   headerRight:{ display:"flex",gap:10,alignItems:"center" },
-  joinBtn:{ background:"#7C3AED",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  joinBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"9px 20px",fontSize:13,fontWeight:500,cursor:"pointer" },
   leaveBtn:{ background:"#FEF2F2",color:"#B91C1C",border:"0.5px solid rgba(220,38,38,.2)" },
   layout:{ display:"grid",gridTemplateColumns:"1fr 260px",gap:"1.25rem" },
   main:{ display:"flex",flexDirection:"column" as const,gap:12 },
   compose:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.25rem",display:"flex",gap:12 },
   avatar:{ width:36,height:36,borderRadius:"50%",display:"flex",alignItems:"center",justifyContent:"center",fontSize:13,fontWeight:600,color:"#fff",flexShrink:0 },
   textarea:{ width:"100%",border:"0.5px solid rgba(0,0,0,.1)",borderRadius:10,padding:"10px 12px",fontSize:14,fontFamily:"inherit",outline:"none",resize:"vertical" as const },
-  postBtn:{ background:"#7C3AED",color:"#fff",border:"none",borderRadius:8,padding:"7px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
-  joinPrompt:{ background:"#F5F3FF",border:"0.5px solid rgba(124,58,237,.15)",borderRadius:12,padding:"1.5rem",display:"flex",flexDirection:"column" as const,alignItems:"center",gap:10,textAlign:"center" as const },
+  postBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"7px 18px",fontSize:13,fontWeight:500,cursor:"pointer" },
+  joinPrompt:{ background:"#EEEDF9",border:"0.5px solid rgba(83,74,183,.15)",borderRadius:12,padding:"1.5rem",display:"flex",flexDirection:"column" as const,alignItems:"center",gap:10,textAlign:"center" as const },
   posts:{ display:"flex",flexDirection:"column" as const,gap:8 },
   emptyPosts:{ background:"#fff",borderRadius:12,padding:"3rem",textAlign:"center" as const },
   post:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.07)",borderRadius:12,padding:"1.1rem",display:"flex",gap:12 },
@@ -233,7 +233,7 @@ const S: Record<string,any> = {
   postName:{ fontSize:14,fontWeight:600,color:"#0A0A0F" },
   postContent:{ fontSize:14,color:"#3D3D4E",lineHeight:1.72,wordBreak:"break-word" as const },
   reply:{ display:"flex",gap:8,marginTop:10,paddingLeft:12,borderLeft:"2px solid rgba(0,0,0,.06)" },
-  replyBtn:{ background:"#7C3AED",color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:500,cursor:"pointer",flexShrink:0 },
+  replyBtn:{ background:"#534AB7",color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:500,cursor:"pointer",flexShrink:0 },
   sidebar:{ display:"flex",flexDirection:"column" as const,gap:12 },
   sideCard:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.1rem" },
   sideTitle:{ fontSize:14,fontWeight:600,color:"#0A0A0F",marginBottom:12,paddingBottom:8,borderBottom:"0.5px solid rgba(0,0,0,.06)" },

@@ -134,7 +134,7 @@ export default function DocVerify() {
               <div style={S.uploadZone}>
                 <input type="file" accept="image/*,.pdf" onChange={handleFile} style={{display:"none"}} id="doc-upload" />
                 <label htmlFor="doc-upload" style={S.uploadLabel}>
-                  <span style={{color:"#7C3AED"}}><IconFileText size={34} /></span>
+                  <span style={{color:"#534AB7"}}><IconFileText size={34} /></span>
                   <span style={S.uploadText}>Click to upload your {ID_TYPES.find(t=>t.value===idType)?.label}</span>
                   <span style={S.uploadHint}>JPG, PNG or PDF · Max 5MB · Processed locally</span>
                 </label>
@@ -201,14 +201,14 @@ const S: Record<string,any> = {
   uploadLabel:{display:"flex",flexDirection:"column" as const,alignItems:"center",gap:8,cursor:"pointer"},
   uploadText:{fontSize:14,fontWeight:500,color:"#3D3D4E"},
   uploadHint:{fontSize:12,color:"#9ca3af"},
-  extracting:{background:"#F5F3FF",border:"0.5px solid rgba(124,58,237,.2)",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#7C3AED",display:"flex",gap:8,alignItems:"center",marginBottom:12},
+  extracting:{background:"#EEEDF9",border:"0.5px solid rgba(83,74,183,.2)",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#534AB7",display:"flex",gap:8,alignItems:"center",marginBottom:12},
   preview:{width:"100%",borderRadius:10,marginTop:10,maxHeight:200,objectFit:"cover" as const},
-  primaryBtn:{width:"100%",background:"#7C3AED",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:500,cursor:"pointer",marginBottom:8},
+  primaryBtn:{width:"100%",background:"#534AB7",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:500,cursor:"pointer",marginBottom:8},
   secondaryBtn:{width:"100%",background:"none",border:"0.5px solid rgba(0,0,0,.1)",color:"#6b7280",borderRadius:9,padding:"10px",fontSize:13,cursor:"pointer"},
   doneWrap:{textAlign:"center" as const,padding:"1rem 0"},
   doneTitle:{fontSize:20,fontWeight:600,color:"#0A0A0F",margin:"12px 0"},
   scoreGrid:{display:"flex",gap:12,justifyContent:"center",margin:"1rem 0"},
-  scoreCard:{background:"#F5F3FF",border:"0.5px solid rgba(124,58,237,.2)",borderRadius:12,padding:"1rem 1.5rem",textAlign:"center" as const},
-  scoreNum:{fontSize:28,fontWeight:700,color:"#7C3AED"},
+  scoreCard:{background:"#EEEDF9",border:"0.5px solid rgba(83,74,183,.2)",borderRadius:12,padding:"1rem 1.5rem",textAlign:"center" as const},
+  scoreNum:{fontSize:28,fontWeight:700,color:"#534AB7"},
   scoreLabel:{fontSize:12,color:"#7B7B8F",marginTop:3},
 }
