@@ -110,7 +110,7 @@ function JobsInner() {
 
         <main>
           {!loading && weakProfile && (
-            <div style={{ display:"flex", alignItems:"center", gap:14, background:"linear-gradient(135deg,#E1F5EE,#EEF2FF)", border:"1px solid #E2DBFB", borderRadius:14, padding:"14px 18px", marginBottom:16 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap", background:"linear-gradient(135deg,#E1F5EE,#F1F7F4)", border:"1px solid #CFE9DF", borderRadius:14, padding:"14px 18px", marginBottom:16 }}>
               <div style={{ width:38, height:38, borderRadius:10, background:"#0F6E56", color:"#fff", display:"grid", placeItems:"center", flexShrink:0 }}>
                 <IconTarget size={19} />
               </div>

@@ -143,12 +143,20 @@ export default function Dashboard() {
         .dquick{transition:background .14s;}
         .dquick:hover{background:#E1F5EE !important;}
         .dcard{transition:box-shadow .18s;}
+        @media (max-width: 900px){ .dGrid{ grid-template-columns:1fr !important; } }
+        @media (max-width: 640px){
+          .dPage{ padding:1.1rem .9rem 2.5rem !important; }
+          .dStatRow{ grid-template-columns:repeat(2,1fr) !important; gap:10px !important; }
+          .dHead{ flex-direction:column !important; align-items:flex-start !important; gap:14px !important; }
+          .dOnbHead{ gap:12px !important; }
+          .dOnbHead svg{ width:60px !important; height:60px !important; }
+        }
       `}</style>
-      <div style={S.page}>
+      <div style={S.page} className="dPage">
         <div style={S.wrap}>
 
           {/* Greeting */}
-          <header style={S.head}>
+          <header style={S.head} className="dHead">
             <div>
               <div style={S.kicker}>{today}</div>
               <h1 style={S.greeting}>Good {partOfDay}, <em style={S.greetingName}>{first}</em></h1>
@@ -176,7 +184,7 @@ export default function Dashboard() {
           )}
 
           {/* Stat tiles */}
-          <div style={S.statRow}>
+          <div style={S.statRow} className="dStatRow">
             {tiles.map((t: any) => {
               const s = t.series || []
               const last = s[s.length - 1] || 0, prev = s[s.length - 2] || 0
@@ -200,12 +208,12 @@ export default function Dashboard() {
             })}
           </div>
 
-          <div style={S.grid}>
+          <div style={S.grid} className="dGrid">
             {/* Left column */}
             <div style={S.col}>
               {showOnboarding && (
                 <section style={S.onboard}>
-                  <div style={S.onboardHead}>
+                  <div style={S.onboardHead} className="dOnbHead">
                     <Ring pct={pct} />
                     <div>
                       <h2 style={S.onboardTitle}>{pct === 0 ? "Let's get you set up" : "Finish setting up"}</h2>

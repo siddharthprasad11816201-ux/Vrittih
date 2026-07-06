@@ -28,6 +28,7 @@ export default function AstroCard({ birthDate, experience = [], self = false }: 
 
   return (
     <section style={S.card}>
+      <style>{`@media (max-width:560px){ .acg2{ grid-template-columns:1fr !important; } }`}</style>
       <div style={S.head}>
         <span style={{ ...S.headIc, background: `${eColor}18`, color: eColor }}><IconStar size={16} /></span>
         <div style={{ flex: 1 }}>
@@ -66,7 +67,7 @@ export default function AstroCard({ birthDate, experience = [], self = false }: 
       </div>
 
       {/* dosha / body */}
-      <div style={S.grid2}>
+      <div style={S.grid2} className="acg2">
         <div style={S.mini}>
           <div style={S.miniLabel}>Ayurvedic constitution</div>
           <div style={S.miniValue}>{dosha.name}</div>
@@ -97,7 +98,7 @@ export default function AstroCard({ birthDate, experience = [], self = false }: 
       </div>
 
       {/* strengths + matches */}
-      <div style={S.grid2}>
+      <div style={S.grid2} className="acg2">
         <div>
           <div style={S.blockLabel}>Professional strengths</div>
           <ul style={S.list}>{sign.strengths.map(s => <li key={s} style={S.li}><IconCheckCircle size={13} /> {s}</li>)}</ul>
