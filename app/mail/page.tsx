@@ -75,9 +75,10 @@ export default function MailPage() {
 
   return (
     <AppShell>
-      <div style={S.shell}>
+      <style>{MAIL_CSS}</style>
+      <div style={S.shell} className="mailShell" data-detail={(selected || composing) ? "true" : "false"}>
         {/* Sidebar */}
-        <aside style={S.sidebar}>
+        <aside style={S.sidebar} className="mailSide">
           <button onClick={() => { setComposing(true); setSelected(null) }} style={{...S.composeBtn,display:"flex",alignItems:"center",justifyContent:"center",gap:8}}><IconEdit size={15} /> Compose</button>
           <div style={S.searchWrap}>
             <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search mail..." style={S.searchInput} />
@@ -91,7 +92,15 @@ export default function MailPage() {
         </aside>
 
         {/* Mail list */}
-        <div style={S.mailList}>
+        <div style={S.mailList} className="mailListPane">
+          <div className="mailMobileBar">
+            <button onClick={() => { setComposing(true); setSelected(null) }} style={{ ...S.composeBtn, display: "flex", alignItems: "center", justifyContent: "center", gap: 8 }}><IconEdit size={15} /> Compose</button>
+            <div style={{ display: "flex", gap: 6, overflowX: "auto" }}>
+              {FOLDERS.map(f => (
+                <button key={f.key} onClick={() => { setFolder(f.key); setComposing(false) }} style={{ flexShrink: 0, background: folder === f.key ? "#0F6E56" : "#F3F0E7", color: folder === f.key ? "#fff" : "#4A5750", border: "none", borderRadius: 999, padding: "6px 14px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>{f.label}</button>
+              ))}
+            </div>
+          </div>
           <div style={S.listHead}>
             <span style={S.listTitle}>{FOLDERS.find(f=>f.key===folder)?.label}</span>
             <span style={{fontSize:12,color:"#9ca3af"}}>{mails.length} messages</span>
@@ -113,7 +122,8 @@ export default function MailPage() {
         </div>
 
         {/* Read pane / Compose */}
-        <div style={S.readPane}>
+        <div style={S.readPane} className="mailRead">
+          <button className="mailBack" onClick={() => { setSelected(null); setComposing(false) }}>← Back to mail</button>
           {composing && (
             <div style={S.composePane}>
               <div style={S.composeHead}>
@@ -169,6 +179,18 @@ export default function MailPage() {
   )
 }
 
+const MAIL_CSS = `
+.mailMobileBar{ display:none; }
+.mailBack{ display:none; }
+@media (max-width:820px){
+  .mailShell{ grid-template-columns:1fr !important; }
+  .mailSide{ display:none !important; }
+  .mailMobileBar{ display:flex; flex-direction:column; gap:10px; padding:12px 14px; border-bottom:0.5px solid rgba(0,0,0,.07); background:#fff; }
+  .mailShell[data-detail="true"] .mailListPane{ display:none !important; }
+  .mailShell[data-detail="false"] .mailRead{ display:none !important; }
+  .mailBack{ display:inline-flex; align-items:center; gap:6px; background:#fff; border:none; border-bottom:0.5px solid rgba(0,0,0,.06); color:#0F6E56; font-weight:600; font-size:13px; padding:12px 16px; cursor:pointer; width:100%; }
+}
+`
 const S: Record<string,any> = {
   shell:{ display:"grid",gridTemplateColumns:"200px 280px 1fr",height:"calc(100vh - 60px)",overflow:"hidden",background:"#FAF8F2" },
   sidebar:{ background:"#fff",borderRight:"0.5px solid rgba(0,0,0,.07)",padding:"1rem .75rem",display:"flex",flexDirection:"column" as const,gap:4 },

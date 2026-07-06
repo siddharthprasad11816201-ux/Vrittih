@@ -95,9 +95,10 @@ export default function MessagesPage() {
 
   return (
     <AppShell>
-      <div style={S.shell}>
+      <style>{MSG_CSS}</style>
+      <div style={S.shell} className="msgShell" data-active={active ? "true" : "false"}>
         {/* Sidebar */}
-        <aside style={S.sidebar}>
+        <aside style={S.sidebar} className="msgSide">
           <div style={S.sideHead}>
             <span style={S.sideTitle}>Messages</span>
             <button onClick={() => setShowNew(!showNew)} style={S.newBtn} title="New message"><IconEdit size={15} /></button>
@@ -128,7 +129,7 @@ export default function MessagesPage() {
         </aside>
 
         {/* Chat area */}
-        <div style={S.chat}>
+        <div style={S.chat} className="msgChat">
           {!active ? (
             <div style={S.empty2}>
               <div style={{color:"#D1D5DB",marginBottom:12}}><IconMessage size={38} /></div>
@@ -139,6 +140,7 @@ export default function MessagesPage() {
             <>
               {/* Chat header */}
               <div style={S.chatHead}>
+                <button className="msgBack" onClick={() => setActive(null)} aria-label="Back">←</button>
                 <div style={{...S.avatar, background:"#0F6E56", width:38, height:38, fontSize:14}}>{initials(getOther(active)?.name||"?")}</div>
                 <div>
                   <div style={{fontSize:14,fontWeight:600,color:"#0A0A0F"}}>{getOther(active)?.name || "Unknown"}</div>
@@ -195,6 +197,15 @@ export default function MessagesPage() {
   )
 }
 
+const MSG_CSS = `
+.msgBack{ display:none; }
+@media (max-width:820px){
+  .msgShell{ grid-template-columns:1fr !important; }
+  .msgShell[data-active="true"] .msgSide{ display:none !important; }
+  .msgShell[data-active="false"] .msgChat{ display:none !important; }
+  .msgBack{ display:inline-flex; align-items:center; justify-content:center; width:32px; height:32px; margin-right:2px; border:none; background:#F3F0E7; border-radius:8px; font-size:18px; color:#0F6E56; cursor:pointer; }
+}
+`
 const S: Record<string,any> = {
   shell: { display:"grid", gridTemplateColumns:"300px 1fr", height:"calc(100vh - 60px)", overflow:"hidden", background:"#FAF8F2" },
   sidebar: { background:"#fff", borderRight:"0.5px solid rgba(0,0,0,.08)", display:"flex", flexDirection:"column", overflow:"hidden" },

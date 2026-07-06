@@ -321,6 +321,45 @@ model LoginAttempt {
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
+// ---- HRMS ----
+model Employee {
+  id             String    @id @default(cuid())
+  userId         String                          // the person (User)
+  employerId     String                          // the company (employer User)
+  employeeCode   String                          // e.g. EMP-0001
+  department     String?
+  designation    String?
+  employmentType String    @default("Full-time") // Full-time/Part-time/Contract/Intern
+  status         String    @default("ONBOARDING")// ONBOARDING/ACTIVE/ON_LEAVE/EXITED
+  managerId      String?                         // another Employee id
+  salary         String?                         // CHF
+  workLocation   String?
+  joinedAt       DateTime  @default(now())
+  onboarding     String    @default("[]")        // JSON [{label,done}]
+  leaveBalance   Int       @default(24)          // annual days
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  leaves         LeaveRequest[]
+  @@unique([employerId, userId])
+  @@index([employerId, status])
+}
+
+model LeaveRequest {
+  id         String    @id @default(cuid())
+  employeeId String
+  type       String    @default("Annual")   // Annual/Sick/Casual/Unpaid
+  startDate  DateTime
+  endDate    DateTime
+  days       Int       @default(1)
+  reason     String?
+  status     String    @default("PENDING")  // PENDING/APPROVED/REJECTED
+  note       String?
+  decidedAt  DateTime?
+  createdAt  DateTime  @default(now())
+  employee   Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  @@index([employeeId, status])
+}
+
 // Saved / bookmarked jobs (scalar ids, batch-fetched — matches Post/ProfileView convention).
 model SavedJob {
   id        String   @id @default(cuid())

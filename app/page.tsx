@@ -314,7 +314,9 @@ export default function Home() {
 }
 
 const CSS = `
-html, body { overflow-x: hidden; max-width: 100%; }
+html { overflow-x: hidden; }
+html, body { overflow-x: hidden; max-width: 100%; width: 100%; margin: 0; }
+.hero, .bento, .section, .feats, .steps, .cta, .foot { max-width: 100%; }
 .home, .home *, .home *::before, .home *::after { box-sizing: border-box; }
 .home { background: var(--cream-0); color: var(--v-ink); font-family: var(--font-sans); overflow-x: clip; width: 100%; }
 .hero, .bento, .section, .feats, .steps { width: 100%; }
