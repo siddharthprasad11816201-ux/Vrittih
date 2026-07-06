@@ -69,7 +69,7 @@ export default function Dashboard() {
   if (loading) return <AppShell title="Overview"><div style={S.loading}>Loading your workspace…</div></AppShell>
 
   const isEmployer = ["EMPLOYER","ADMIN","SUPER_ADMIN"].includes(user?.role)
-  const first = user?.name?.split(" ")[0] || "there"
+  const first = (user?.name?.split(" ")[0] || "there").replace(/^Super$/, "Admin")
   const hour = new Date().getHours()
   const partOfDay = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening"
   const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })
@@ -103,20 +103,35 @@ export default function Dashboard() {
     return b
   }
   const seekerStats = [
-    { label:"Applications", val:stats?.total ?? 0, icon:<IconFileText size={16} />, color:"#0F6E56", series:weekly(applications,"appliedAt") },
-    { label:"Active", val:stats?.active ?? 0, icon:<IconActivity size={16} />, color:"#2563EB", series:weekly(applications,"appliedAt",(a)=>!["HIRED","REJECTED"].includes(a.status)) },
-    { label:"Interviews", val:stats?.interviews ?? 0, icon:<IconTarget size={16} />, color:"#B45309", series:weekly(applications,"appliedAt",(a)=>a.status==="INTERVIEW") },
-    { label:"Offers", val:stats?.offers ?? 0, icon:<IconAward size={16} />, color:"#0891B2", series:weekly(applications,"appliedAt",(a)=>a.status==="OFFERED") },
-    { label:"Hired", val:stats?.hired ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
+    { label:"Applications", val:stats?.total ?? 0, icon:<IconFileText size={16} />, color:"#0F6E56", href:"/applications", series:weekly(applications,"appliedAt") },
+    { label:"Interviews", val:stats?.interviews ?? 0, icon:<IconTarget size={16} />, color:"#B45309", href:"/interviews", series:weekly(applications,"appliedAt",(a)=>a.status==="INTERVIEW") },
+    { label:"Offers", val:stats?.offers ?? 0, icon:<IconAward size={16} />, color:"#0891B2", href:"/applications", series:weekly(applications,"appliedAt",(a)=>a.status==="OFFERED") },
+    { label:"Hired", val:stats?.hired ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669", href:"/applications", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
   ]
   const employerStats = [
-    { label:"Jobs posted", val:stats?.totalJobs ?? 0, icon:<IconBriefcase size={16} />, color:"#0F6E56", series:weekly(jobs,"createdAt") },
-    { label:"Active", val:stats?.activeJobs ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669", series:weekly(jobs,"createdAt",(j)=>j.active) },
-    { label:"Applicants", val:stats?.totalApplicants ?? 0, icon:<IconUsers size={16} />, color:"#2563EB", series:weekly(applications,"appliedAt") },
-    { label:"Shortlisted", val:stats?.shortlisted ?? 0, icon:<IconAward size={16} />, color:"#B45309", series:weekly(applications,"appliedAt",(a)=>a.status==="SHORTLISTED") },
-    { label:"Hired", val:stats?.hired ?? 0, icon:<IconTrendingUp size={16} />, color:"#0891B2", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
+    { label:"Jobs posted", val:stats?.totalJobs ?? 0, icon:<IconBriefcase size={16} />, color:"#0F6E56", href:"/dashboard/recruiter", series:weekly(jobs,"createdAt") },
+    { label:"Applicants", val:stats?.totalApplicants ?? 0, icon:<IconUsers size={16} />, color:"#2563EB", href:"/pipeline", series:weekly(applications,"appliedAt") },
+    { label:"Shortlisted", val:stats?.shortlisted ?? 0, icon:<IconAward size={16} />, color:"#B45309", href:"/pipeline", series:weekly(applications,"appliedAt",(a)=>a.status==="SHORTLISTED") },
+    { label:"Hired", val:stats?.hired ?? 0, icon:<IconTrendingUp size={16} />, color:"#059669", href:"/pipeline", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
   ]
   const tiles = isEmployer ? employerStats : seekerStats
+
+  // Attention-first: real, actionable items. Zeros never lead the page.
+  const nowT = Date.now()
+  const attention: { label: string; href: string; live?: boolean }[] = []
+  if (isEmployer) {
+    const fresh = applications.filter(a => a.status === "APPLIED" && (nowT - new Date(a.appliedAt || a.updatedAt).getTime()) < 7 * 86400000).length
+    if (fresh) attention.push({ label: `${fresh} new applicant${fresh > 1 ? "s" : ""} awaiting your review`, href: "/pipeline", live: true })
+    const emptyJobs = jobs.filter(j => (j._count?.applications || 0) === 0 && j.active).length
+    if (emptyJobs) attention.push({ label: `${emptyJobs} active job${emptyJobs > 1 ? "s" : ""} with no applicants yet`, href: "/dashboard/recruiter" })
+    if (!user?.idVerified) attention.push({ label: "Verify your company identity to unlock full access", href: "/verify/doc-verify" })
+  } else {
+    const iv = applications.filter(a => a.status === "INTERVIEW").length
+    if (iv) attention.push({ label: `${iv} interview${iv > 1 ? "s" : ""} in progress`, href: "/interviews", live: true })
+    const off = applications.filter(a => a.status === "OFFERED").length
+    if (off) attention.push({ label: `${off} offer${off > 1 ? "s" : ""} waiting for your response`, href: "/applications", live: true })
+    if (!user?.idVerified) attention.push({ label: "Verify your identity to stand out to employers", href: "/verify/doc-verify" })
+  }
 
   return (
     <AppShell title="Overview">
@@ -146,6 +161,20 @@ export default function Dashboard() {
             </div>
           </header>
 
+          {/* Needs your attention — leads only when there's something to act on */}
+          {attention.length > 0 && (
+            <section style={S.attn}>
+              <div style={S.attnHead}>Needs your attention</div>
+              {attention.map((a, i) => (
+                <Link key={i} href={a.href} className="dstep" style={S.attnRow}>
+                  <span style={{ ...S.attnDot, background: a.live ? "var(--brand-400)" : "var(--warn)" }} className={a.live ? "v-live" : ""} />
+                  <span style={S.attnLabel}>{a.label}</span>
+                  <IconArrowRight size={15} />
+                </Link>
+              ))}
+            </section>
+          )}
+
           {/* Stat tiles */}
           <div style={S.statRow}>
             {tiles.map((t: any) => {
@@ -153,7 +182,7 @@ export default function Dashboard() {
               const last = s[s.length - 1] || 0, prev = s[s.length - 2] || 0
               const delta = last - prev
               return (
-                <div key={t.label} className="dtile" style={S.tile}>
+                <Link key={t.label} href={t.href || "#"} className="dtile" style={S.tile}>
                   <div style={S.tileTop}>
                     <span style={{...S.tileIcon, background:`${t.color}14`, color:t.color}}>{t.icon}</span>
                     <span style={S.tileLabel}>{t.label}</span>
@@ -166,7 +195,7 @@ export default function Dashboard() {
                     </span>
                   </div>
                   <div style={S.tileSpark}><Spark data={s} color={t.color} /></div>
-                </div>
+                </Link>
               )
             })}
           </div>
@@ -368,8 +397,13 @@ const S: Record<string,any> = {
   headActions:{ display:"flex", gap:10 },
   primaryBtn:{ display:"inline-flex", alignItems:"center", gap:8, background:"#16151D", color:"#fff", padding:"12px 20px", borderRadius:10, fontSize:14, fontWeight:600, textDecoration:"none", boxShadow:"0 4px 14px rgba(20,19,29,.15)" },
 
-  statRow:{ display:"grid", gridTemplateColumns:"repeat(5,1fr)", gap:14 },
-  tile:{ background:"#fff", border:"1px solid #ECEBF1", borderRadius:16, padding:"16px 18px 0", display:"flex", flexDirection:"column" as const, gap:9, boxShadow:"0 1px 2px rgba(23,18,45,.04)", overflow:"hidden" },
+  attn:{ background:"var(--v-surface)", border:"1px solid var(--v-line)", borderLeft:"3px solid var(--brand-500, #0F6E56)", borderRadius:14, padding:"14px 16px", boxShadow:"var(--v-shadow-sm)" },
+  attnHead:{ fontSize:12, fontWeight:700, textTransform:"uppercase" as const, letterSpacing:".05em", color:"var(--v-ink-3)", marginBottom:8 },
+  attnRow:{ display:"flex", alignItems:"center", gap:11, padding:"11px 12px", borderRadius:11, textDecoration:"none", color:"var(--v-ink)", border:"1px solid transparent" },
+  attnDot:{ width:9, height:9, borderRadius:"50%", flexShrink:0 },
+  attnLabel:{ flex:1, fontSize:14, fontWeight:550, color:"var(--v-ink)" },
+  statRow:{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14 },
+  tile:{ background:"#fff", border:"1px solid #ECEBF1", borderRadius:16, padding:"16px 18px 0", display:"flex", flexDirection:"column" as const, gap:9, boxShadow:"0 1px 2px rgba(23,18,45,.04)", overflow:"hidden", textDecoration:"none", color:"inherit" },
   tileTop:{ display:"flex", alignItems:"center", gap:9 },
   tileIcon:{ width:30, height:30, borderRadius:8, display:"grid", placeItems:"center", flexShrink:0 },
   tileLabel:{ fontSize:11.5, fontWeight:600, color:"#8E8B99", textTransform:"uppercase" as const, letterSpacing:".03em" },

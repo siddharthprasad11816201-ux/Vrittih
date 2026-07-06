@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
       prisma.job.findMany({
         where, skip:(page-1)*limit, take:limit,
         orderBy:{ createdAt:"desc" },
-        include:{ postedBy:{ select:{ id:true,name:true,email:true } }, _count:{ select:{ applications:true } } },
+        include:{ postedBy:{ select:{ id:true,name:true,email:true,idVerified:true } }, _count:{ select:{ applications:true } } },
       }),
       prisma.job.count({ where }),
     ])
