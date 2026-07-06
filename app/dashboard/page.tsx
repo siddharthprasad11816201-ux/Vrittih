@@ -110,9 +110,9 @@ export default function Dashboard() {
   ]
   const employerStats = [
     { label:"Jobs posted", val:stats?.totalJobs ?? 0, icon:<IconBriefcase size={16} />, color:"#0F6E56", href:"/dashboard/recruiter", series:weekly(jobs,"createdAt") },
-    { label:"Applicants", val:stats?.totalApplicants ?? 0, icon:<IconUsers size={16} />, color:"#2563EB", href:"/pipeline", series:weekly(applications,"appliedAt") },
-    { label:"Shortlisted", val:stats?.shortlisted ?? 0, icon:<IconAward size={16} />, color:"#B45309", href:"/pipeline", series:weekly(applications,"appliedAt",(a)=>a.status==="SHORTLISTED") },
-    { label:"Hired", val:stats?.hired ?? 0, icon:<IconTrendingUp size={16} />, color:"#059669", href:"/pipeline", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
+    { label:"Applicants", val:stats?.totalApplicants ?? 0, icon:<IconUsers size={16} />, color:"#2563EB", href:"/dashboard/pipeline", series:weekly(applications,"appliedAt") },
+    { label:"Shortlisted", val:stats?.shortlisted ?? 0, icon:<IconAward size={16} />, color:"#B45309", href:"/dashboard/pipeline", series:weekly(applications,"appliedAt",(a)=>a.status==="SHORTLISTED") },
+    { label:"Hired", val:stats?.hired ?? 0, icon:<IconTrendingUp size={16} />, color:"#059669", href:"/dashboard/pipeline", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
   ]
   const tiles = isEmployer ? employerStats : seekerStats
 
@@ -121,7 +121,7 @@ export default function Dashboard() {
   const attention: { label: string; href: string; live?: boolean }[] = []
   if (isEmployer) {
     const fresh = applications.filter(a => a.status === "APPLIED" && (nowT - new Date(a.appliedAt || a.updatedAt).getTime()) < 7 * 86400000).length
-    if (fresh) attention.push({ label: `${fresh} new applicant${fresh > 1 ? "s" : ""} awaiting your review`, href: "/pipeline", live: true })
+    if (fresh) attention.push({ label: `${fresh} new applicant${fresh > 1 ? "s" : ""} awaiting your review`, href: "/dashboard/pipeline", live: true })
     const emptyJobs = jobs.filter(j => (j._count?.applications || 0) === 0 && j.active).length
     if (emptyJobs) attention.push({ label: `${emptyJobs} active job${emptyJobs > 1 ? "s" : ""} with no applicants yet`, href: "/dashboard/recruiter" })
     if (!user?.idVerified) attention.push({ label: "Verify your company identity to unlock full access", href: "/verify/doc-verify" })

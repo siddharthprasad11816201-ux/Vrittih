@@ -17,6 +17,7 @@ function nav(isEmployer: boolean, isAdmin: boolean): Group[] {
     ? { title: "Hiring", items: [
         { href: "/dashboard/post-job", label: "Post a job", icon: <IconFileText size={17} /> },
         { href: "/dashboard/recruiter", label: "Candidates", icon: <IconUsers size={17} /> },
+        { href: "/dashboard/pipeline", label: "Pipeline", icon: <IconTrendingUp size={17} /> },
         { href: "/jobs", label: "All jobs", icon: <IconBriefcase size={17} /> },
       ] }
     : { title: "Jobs", items: [
