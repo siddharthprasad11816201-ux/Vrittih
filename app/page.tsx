@@ -450,7 +450,11 @@ html, body { overflow-x: hidden; max-width: 100%; }
   .bento { grid-template-columns: 1fr; }
   .bWide, .bGold, .bStat { grid-column: span 1; }
   .feats { grid-template-columns: 1fr; }
-  .featBig { grid-column: span 1; }
+  .featBig { grid-column: span 1; grid-template-columns: 1fr; }
+  .featBig .featIc { grid-row: auto; }
+  .featBig .featTitle, .featBig .featText { grid-column: 1; }
   .h1 { font-size: clamp(2.2rem, 11vw, 3rem); }
+  .h2 { font-size: clamp(1.5rem, 7vw, 2rem); }
 }
+.h2, .featTitle, .featText, .bTitle, .lede { overflow-wrap: break-word; }
 `
