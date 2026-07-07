@@ -3,8 +3,10 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")   // a single Postgres connection string
+  // LOCAL DEV = sqlite. TO DEPLOY: change provider to "postgresql" (the url is
+  // already env-driven — just set DATABASE_URL to your Postgres string).
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
 }
 
 model User {

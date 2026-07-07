@@ -2,7 +2,10 @@
 
 Railway runs a normal Node server, so **everything works**: the web app, the
 database, and (optionally) the chat/interview/worker processes — all in one place.
-No code changes needed; the repo is ready.
+
+> **Before deploying — one line:** local dev uses SQLite. In `prisma/schema.prisma`
+> change `provider = "sqlite"` → `provider = "postgresql"`, commit, push. (The `url`
+> is already env-driven — you only touch that one word. Tell me and I'll do it for you.)
 
 ---
 
