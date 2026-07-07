@@ -11,29 +11,42 @@ export async function GET(req: NextRequest) {
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
     const { searchParams } = new URL(req.url)
     const employer = searchParams.get("employer")
-    let applications
+    // Pagination guard: never load an unbounded result set into memory.
+    const jobFilter = searchParams.get("jobId") || ""
+    const take = Math.min(200, Math.max(1, parseInt(searchParams.get("limit") || "200")))
+    const skip = Math.max(0, parseInt(searchParams.get("skip") || "0"))
+
+    let applications, total
     if (employer === "true") {
       const jobs = await prisma.job.findMany({ where:{ postedById:payload.userId }, select:{ id:true } })
-      const jobIds = jobs.map(j => j.id)
-      applications = await prisma.application.findMany({
-        where: { jobId: { in: jobIds } },
-        include: {
-          user: { select:{ id:true,name:true,email:true,avatar:true,headline:true,idVerified:true } },
-          job: { select:{ id:true,title:true,company:true } },
-        },
-        orderBy: { appliedAt: "desc" }
-      })
+      const jobIds = jobFilter ? [jobFilter].filter(id => jobs.some(j => j.id === id)) : jobs.map(j => j.id)
+      const where = { jobId: { in: jobIds } }
+      ;[applications, total] = await Promise.all([
+        prisma.application.findMany({
+          where,
+          include: {
+            user: { select:{ id:true,name:true,email:true,avatar:true,headline:true,idVerified:true } },
+            job: { select:{ id:true,title:true,company:true } },
+          },
+          orderBy: { appliedAt: "desc" }, take, skip,
+        }),
+        prisma.application.count({ where }),
+      ])
     } else {
-      applications = await prisma.application.findMany({
-        where: { userId: payload.userId },
-        include: {
-          job: { select:{ id:true,title:true,company:true,location:true,type:true } },
-          timeline: { orderBy: { createdAt: "asc" } },
-        },
-        orderBy: { appliedAt: "desc" }
-      })
+      const where = { userId: payload.userId }
+      ;[applications, total] = await Promise.all([
+        prisma.application.findMany({
+          where,
+          include: {
+            job: { select:{ id:true,title:true,company:true,location:true,type:true } },
+            timeline: { orderBy: { createdAt: "asc" } },
+          },
+          orderBy: { appliedAt: "desc" }, take, skip,
+        }),
+        prisma.application.count({ where }),
+      ])
     }
-    return NextResponse.json({ applications })
+    return NextResponse.json({ applications, total })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

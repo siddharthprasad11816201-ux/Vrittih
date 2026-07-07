@@ -1,6 +1,7 @@
 import crypto from "crypto"
 
-const KEY = process.env.FACE_VECTOR_KEY || "edurankai_face_key_32bytes_secure"
+// Real key always comes from FACE_VECTOR_KEY in prod; this fallback is dev-only.
+const KEY = process.env.FACE_VECTOR_KEY || "vrittih_face_key_32bytes_secure!"
 const KEY32 = KEY.padEnd(32).slice(0,32)
 
 export function encryptVector(vector: number[]): string {

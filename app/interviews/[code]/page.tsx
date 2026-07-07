@@ -4,7 +4,11 @@ import { useParams, useRouter } from "next/navigation"
 import { io, Socket } from "socket.io-client"
 import { IconMic, IconMicOff, IconCamera, IconCameraOff, IconMonitor, IconHand, IconMessage, IconVideo, IconUser, IconUsers } from "@/components/ui/Icons"
 
-const SIGNAL_URL = "http://localhost:3002"
+// Production sets NEXT_PUBLIC_SIGNAL_URL to an https:// endpoint; dev falls back to localhost.
+const SIGNAL_URL = process.env.NEXT_PUBLIC_SIGNAL_URL
+  || (typeof window !== "undefined" && window.location.protocol === "https:"
+    ? `https://${window.location.host.replace(/:\d+$/, "")}:3002`
+    : "http://localhost:3002")
 const ICE_SERVERS = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },

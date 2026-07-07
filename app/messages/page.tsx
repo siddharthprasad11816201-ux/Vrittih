@@ -3,7 +3,11 @@ import { useEffect, useRef, useState, useCallback } from "react"
 import AppShell from "@/components/vrittih/AppShell"
 import { IconEdit, IconMessage } from "@/components/ui/Icons"
 
-const WS_URL = "ws://localhost:3001"
+// Production sets NEXT_PUBLIC_WS_URL to a wss:// endpoint; dev falls back to localhost.
+const WS_URL = process.env.NEXT_PUBLIC_WS_URL
+  || (typeof window !== "undefined" && window.location.protocol === "https:"
+    ? `wss://${window.location.host.replace(/:\d+$/, "")}:3001`
+    : "ws://localhost:3001")
 
 export default function MessagesPage() {
   const [user, setUser] = useState<any>(null)

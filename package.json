@@ -17,7 +17,6 @@
         "@prisma/client": "^5.22.0",
         "bcryptjs": "^3.0.3",
         "face-api.js": "^0.20.0",
-        "multer": "^2.1.1",
         "next": "^14.2.29",
         "pg": "^8.21.0",
         "prisma": "^5.22.0",
@@ -32,7 +31,6 @@
     },
     "devDependencies": {
         "@types/bcryptjs": "^2.4.6",
-        "@types/multer": "^2.1.0",
         "@types/node": "^20",
         "@types/pg": "^8.20.0",
         "@types/react": "^19",

@@ -5,14 +5,14 @@ import AppShell from "@/components/vrittih/AppShell"
 const INDUSTRIES = ["Technology","Finance","Healthcare","Education","Manufacturing","Retail","Legal","Government","Logistics","Energy","Agriculture","Media","Hospitality","Real Estate","Pharma","Consulting","NGO","Other"]
 const JOB_TYPES = ["FULLTIME","PARTTIME","CONTRACT","INTERNSHIP","FREELANCE"]
 const EXPERIENCE_LEVELS = ["Entry level","Mid level","Senior","Lead","Manager","Director","C-Level","Any"]
-const CURRENCIES = ["INR","USD","EUR","CHF","GBP","AED","SGD"]
+const CURRENCIES = ["CHF","EUR","USD","GBP"]
 
 export default function PostJob() {
   const router = useRouter()
   const [form, setForm] = useState({
     title:"", company:"", industry:"Technology", location:"",
     type:"FULLTIME", remote:false, description:"",
-    salaryMin:"", salaryMax:"", salaryCurrency:"INR", salaryPeriod:"year",
+    salaryMin:"", salaryMax:"", salaryCurrency:"CHF", salaryPeriod:"year",
     experience:"", openings:"1", deadline:"", requirements:"", benefits:""
   })
   const [skills, setSkills] = useState<string[]>([])
