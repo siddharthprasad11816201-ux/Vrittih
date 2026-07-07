@@ -1,11 +1,13 @@
 "use client"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
-import { IconUpload, IconFileText, IconArrowRight } from "@/components/ui/Icons"
+import { IconUpload, IconFileText, IconArrowRight, IconTarget, IconSearch } from "@/components/ui/Icons"
 
 // Only fully-working tools are listed here — never placeholders.
 const TOOLS = [
   { href: "/tools/compress", icon: <IconUpload size={20} />, title: "Image compressor", desc: "Shrink photos & assets to a fraction of their size — real WebP/JPEG compression, in your browser, nothing uploaded." },
+  { href: "/tools/funding", icon: <IconTarget size={20} />, title: "Funding & investors", desc: "Curated directory of grant agencies, VCs, angels, accelerators & scholarships for students, researchers and founders." },
+  { href: "/tools/citation", icon: <IconSearch size={20} />, title: "Citation helper", desc: "Auto-fill from a DOI (CrossRef) or enter by hand, then export in APA, MLA, IEEE or BibTeX." },
   { href: "/resume", icon: <IconFileText size={20} />, title: "Résumé builder", desc: "Build a clean, professional résumé and export it — ready to attach to any application." },
 ]
 
