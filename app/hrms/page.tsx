@@ -12,6 +12,16 @@ const STATUS: Record<string, { label: string; bg: string; color: string }> = {
 }
 const initials = (n?: string) => (n || "?").split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()
 const fmt = (iso?: string) => iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"
+const timeStr = (iso?: string) => iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"
+const ATT: Record<string, { label: string; bg: string; color: string }> = {
+  PRESENT: { label: "Present", bg: "#E1F5EE", color: "#0B6B45" },
+  LATE: { label: "Late", bg: "#FFF4E1", color: "#8a5a12" },
+  REMOTE: { label: "Remote", bg: "#E6F1FB", color: "#185FA5" },
+  LEAVE: { label: "On leave", bg: "#EDEAF9", color: "#5A4FB0" },
+  HALF_DAY: { label: "Half day", bg: "#FFF4E1", color: "#8a5a12" },
+  HOLIDAY: { label: "Holiday", bg: "#F3EDE3", color: "#7a6a55" },
+  ABSENT: { label: "Absent", bg: "#F6ECEC", color: "#A32D2D" },
+}
 
 export default function HRMS() {
   const [data, setData] = useState<any>({ employees: [], stats: {}, onboardable: [] })
@@ -19,18 +29,26 @@ export default function HRMS() {
   const [loading, setLoading] = useState(true)
   const [drawer, setDrawer] = useState<any>(null)
   const [leaveForm, setLeaveForm] = useState({ type: "Annual", startDate: "", endDate: "", reason: "" })
-  const [tab, setTab] = useState<"team" | "leave">("team")
+  const [tab, setTab] = useState<"team" | "attendance" | "leave">("team")
+  const [att, setAtt] = useState<any>({ roster: [], counts: {} })
 
   const load = useCallback(async () => {
-    const [d, l] = await Promise.all([
+    const [d, l, a] = await Promise.all([
       fetch("/api/hrms/employees").then(r => r.json()),
       fetch("/api/hrms/leave").then(r => r.json()),
+      fetch("/api/hrms/attendance").then(r => r.json()),
     ])
     if (!d.error) setData(d)
     if (!l.error) setLeaves(l.leaves || [])
+    if (!a.error) setAtt(a)
     setLoading(false)
   }, [])
   useEffect(() => { load() }, [load])
+
+  async function attend(employeeId: string, action: string, status?: string) {
+    await fetch("/api/hrms/attendance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ employeeId, action, status }) })
+    load()
+  }
 
   // keep drawer in sync after reloads
   useEffect(() => { if (drawer) { const e = data.employees.find((x: any) => x.id === drawer.id); if (e) setDrawer(e) } }, [data]) // eslint-disable-line
@@ -103,6 +121,7 @@ export default function HRMS() {
 
         <div className="hrTabs">
           <button className={"hrTab" + (tab === "team" ? " on" : "")} onClick={() => setTab("team")}>Team directory</button>
+          <button className={"hrTab" + (tab === "attendance" ? " on" : "")} onClick={() => setTab("attendance")}>Attendance</button>
           <button className={"hrTab" + (tab === "leave" ? " on" : "")} onClick={() => setTab("leave")}>Leave requests{pendingLeaves.length ? <span className="hrPill">{pendingLeaves.length}</span> : null}</button>
         </div>
 
@@ -131,6 +150,45 @@ export default function HRMS() {
                   </table>
                 </div>
               )}
+          </section>
+        ) : tab === "attendance" ? (
+          <section className="hrCard">
+            <div className="hrAttCounts">
+              {[["Present", att.counts?.present, "#0B6B45"], ["Late", att.counts?.late, "#8a5a12"], ["Remote", att.counts?.remote, "#185FA5"], ["Leave", att.counts?.leave, "#5A4FB0"], ["Absent", att.counts?.absent, "#A32D2D"]].map(([l, v, c]) => (
+                <div key={l as string} className="hrAttCount"><b style={{ color: c as string }}>{(v as number) || 0}</b> {l as string}</div>
+              ))}
+              <span className="hrAttDate">Today · {att.date || ""}</span>
+            </div>
+            {att.roster?.length === 0 ? <p className="hrEmpty">No employees to track yet.</p> : (
+              <div className="hrTableWrap">
+                <table className="hrTable">
+                  <thead><tr>{["Employee", "Status", "In", "Out", "Mark"].map(h => <th key={h}>{h}</th>)}</tr></thead>
+                  <tbody>
+                    {att.roster?.map((r: any) => {
+                      const a = r.attendance; const st = ATT[a?.status || "ABSENT"]
+                      return (
+                        <tr key={r.employeeId} className="hrRow">
+                          <td><div className="hrCell"><span className="hrAv sm">{r.initials}</span><div><div className="hrName">{r.name}</div><div className="hrMeta">{r.code}</div></div></div></td>
+                          <td><span className="hrStatus" style={{ background: st.bg, color: st.color }}>{st.label}</span></td>
+                          <td><span className="hrMono">{timeStr(a?.checkIn)}</span></td>
+                          <td><span className="hrMono">{timeStr(a?.checkOut)}</span></td>
+                          <td>
+                            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+                              {!a?.checkIn && <button onClick={() => attend(r.employeeId, "checkin")} className="hrBtn sm">Check in</button>}
+                              {a?.checkIn && !a?.checkOut && <button onClick={() => attend(r.employeeId, "checkout")} className="hrBtn ghost sm">Check out</button>}
+                              <select value="" onChange={e => { if (e.target.value) attend(r.employeeId, "mark", e.target.value) }} className="hrInput" style={{ padding: "5px 8px", fontSize: 12 }}>
+                                <option value="">Mark…</option>
+                                {["PRESENT", "REMOTE", "LEAVE", "HALF_DAY", "HOLIDAY", "ABSENT"].map(s => <option key={s} value={s}>{ATT[s].label}</option>)}
+                              </select>
+                            </div>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
           </section>
         ) : (
           <section className="hrCard">
@@ -250,6 +308,10 @@ const CSS = `
 .hrTabs{ display:flex; gap:8px; margin-bottom:14px; }
 .hrTab{ display:inline-flex; align-items:center; gap:7px; background:var(--v-surface); border:1px solid var(--v-line); border-radius:999px; padding:8px 16px; font-size:13.5px; font-weight:600; color:var(--v-ink-2); cursor:pointer; }
 .hrTab.on{ background:var(--brand-900); color:#fff; border-color:var(--brand-900); }
+.hrAttCounts{ display:flex; flex-wrap:wrap; gap:18px; align-items:center; margin-bottom:14px; padding-bottom:12px; border-bottom:1px solid var(--v-line); }
+.hrAttCount{ font-size:13px; color:var(--v-ink-2); }
+.hrAttCount b{ font-family:var(--font-display); font-size:18px; margin-right:5px; }
+.hrAttDate{ margin-left:auto; font-size:12px; color:var(--v-ink-3); font-family:var(--font-mono); }
 .hrEmpty{ color:var(--v-ink-3); font-size:14px; padding:1.5rem 0; text-align:center; }
 .hrTableWrap{ overflow-x:auto; }
 .hrTable{ width:100%; border-collapse:collapse; font-size:13.5px; min-width:640px; }

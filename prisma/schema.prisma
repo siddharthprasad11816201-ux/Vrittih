@@ -340,8 +340,26 @@ model Employee {
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
   leaves         LeaveRequest[]
+  attendance     Attendance[]
   @@unique([employerId, userId])
   @@index([employerId, status])
+}
+
+model Attendance {
+  id          String    @id @default(cuid())
+  employeeId  String
+  date        DateTime                          // the day (stored at UTC midnight)
+  checkIn     DateTime?
+  checkOut    DateTime?
+  status      String    @default("PRESENT")     // PRESENT/LATE/ABSENT/HALF_DAY/LEAVE/HOLIDAY/REMOTE
+  method      String    @default("manual")      // manual/face/self
+  workedMins  Int       @default(0)
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  employee    Employee  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+  @@unique([employeeId, date])
+  @@index([employeeId, date])
 }
 
 model LeaveRequest {
