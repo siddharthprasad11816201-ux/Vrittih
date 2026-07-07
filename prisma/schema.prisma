@@ -325,6 +325,19 @@ model LoginAttempt {
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
+// Public API keys — companies integrate and upload jobs / connect systems.
+model ApiKey {
+  id         String    @id @default(cuid())
+  keyHash    String    @unique          // sha256 of the token (raw shown once at issue)
+  prefix     String                     // display prefix e.g. vk_live_ab12…
+  employerId String                     // the company this key acts as
+  label      String?
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  lastUsedAt DateTime?
+  @@index([employerId])
+}
+
 // ---- HRMS ----
 model Employee {
   id             String    @id @default(cuid())
