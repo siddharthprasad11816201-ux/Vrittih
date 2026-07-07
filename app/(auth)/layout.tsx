@@ -50,7 +50,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         <div className="vauth-formwrap">{children}</div>
       </main>
 
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
     </div>
   )
 }

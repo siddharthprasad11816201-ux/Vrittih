@@ -28,7 +28,7 @@ export default function AstroCard({ birthDate, experience = [], self = false }: 
 
   return (
     <section style={S.card}>
-      <style>{`@media (max-width:560px){ .acg2{ grid-template-columns:1fr !important; } }`}</style>
+      <style dangerouslySetInnerHTML={{ __html: `@media (max-width:560px){ .acg2{ grid-template-columns:1fr !important; } }` }} />
       <div style={S.head}>
         <span style={{ ...S.headIc, background: `${eColor}18`, color: eColor }}><IconStar size={16} /></span>
         <div style={{ flex: 1 }}>

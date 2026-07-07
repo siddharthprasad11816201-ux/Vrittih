@@ -48,7 +48,7 @@ export default function ApplicantPipeline() {
 
   return (
     <AppShell title="Candidate pipeline">
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="pp">
         <header className="ppHead">
           <div>

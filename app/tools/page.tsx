@@ -14,7 +14,7 @@ const TOOLS = [
 export default function ToolsHub() {
   return (
     <AppShell title="Tools">
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="tl">
         <header className="tlHead">
           <h1 className="tlTitle">Tools</h1>

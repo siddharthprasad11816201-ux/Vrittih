@@ -309,7 +309,7 @@ export default function Home() {
         </div>
       </footer>
 
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
     </div>
   )
 }

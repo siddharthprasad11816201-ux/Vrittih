@@ -135,7 +135,7 @@ export default function Dashboard() {
 
   return (
     <AppShell title="Overview">
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         .dtile{transition:box-shadow .18s cubic-bezier(.22,1,.36,1),transform .18s cubic-bezier(.22,1,.36,1),border-color .18s;}
         .dtile:hover{box-shadow:0 8px 26px rgba(23,18,45,.10);transform:translateY(-3px);border-color:#E0DEEC;}
         .dstep{transition:border-color .14s,transform .14s,box-shadow .14s;}
@@ -151,7 +151,7 @@ export default function Dashboard() {
           .dOnbHead{ gap:12px !important; }
           .dOnbHead svg{ width:60px !important; height:60px !important; }
         }
-      `}</style>
+      ` }} />
       <div style={S.page} className="dPage">
         <div style={S.wrap}>
 

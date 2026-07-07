@@ -68,7 +68,7 @@ export default function AdminJobs() {
 
   return (
     <AdminShell>
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <AdminTopBar title={<>Jobs <span style={{ color: "#9ca3af", fontWeight: 400, fontSize: 16 }}>({total})</span></>}
         subtitle="Moderate every job posting — triage-grade controls"
         right={<button onClick={() => setHelp(true)} className="ajHelp"><IconHelp size={14} /> Shortcuts</button>} />

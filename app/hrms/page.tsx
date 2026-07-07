@@ -86,7 +86,7 @@ export default function HRMS() {
 
   return (
     <AppShell title="HRMS">
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="hr">
         <header className="hrHead">
           <div>

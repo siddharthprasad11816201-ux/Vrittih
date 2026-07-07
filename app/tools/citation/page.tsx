@@ -92,7 +92,7 @@ export default function CitationTool() {
 
   return (
     <AppShell title="Citation helper">
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="ct">
         <header className="ctHead">
           <h1 className="ctTitle">Citation &amp; reference helper</h1>

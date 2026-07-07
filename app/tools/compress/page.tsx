@@ -53,7 +53,7 @@ export default function CompressTool() {
 
   return (
     <AppShell title="Compress images">
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="cm">
         <header className="cmHead">
           <div>

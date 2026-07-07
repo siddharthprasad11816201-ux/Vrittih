@@ -56,7 +56,7 @@ export default function PricingPage() {
 
   return (
     <div className="pr">
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <header className="prTop">
         <Link href="/" className="prBrand"><span className="prMark"><IconBriefcase size={16} /></span>Vrittih</Link>
         <Link href={me ? "/dashboard" : "/login"} className="prSignIn">{me ? "Dashboard" : "Sign in"}</Link>

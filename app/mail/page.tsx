@@ -75,7 +75,7 @@ export default function MailPage() {
 
   return (
     <AppShell>
-      <style>{MAIL_CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: MAIL_CSS }} />
       <div style={S.shell} className="mailShell" data-detail={(selected || composing) ? "true" : "false"}>
         {/* Sidebar */}
         <aside style={S.sidebar} className="mailSide">

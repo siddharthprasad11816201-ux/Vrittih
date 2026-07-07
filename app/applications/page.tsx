@@ -22,7 +22,7 @@ export default function ApplicationsTracker() {
 
   return (
     <AppShell title="Applications">
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="trk">
         <header className="trkHead">
           <div>

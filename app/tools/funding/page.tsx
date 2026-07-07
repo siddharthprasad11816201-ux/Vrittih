@@ -30,7 +30,7 @@ export default function FundingFinder() {
 
   return (
     <AppShell title="Funding finder">
-      <style>{CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
       <div className="ff">
         <header className="ffHead">
           <h1 className="ffTitle">Funding &amp; investors</h1>

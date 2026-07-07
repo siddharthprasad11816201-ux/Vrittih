@@ -38,13 +38,13 @@ export default function ResumeBuilder() {
 
   return (
     <>
-      <style>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @media print {
           .no-print { display: none !important; }
           .resume-page { box-shadow: none !important; margin: 0 !important; border-radius: 0 !important; }
           body { background: white !important; }
         }
-      `}</style>
+      ` }} />
       <div className="no-print"></div>
       <div style={S.page}>
         <div className="no-print" style={S.controls}>

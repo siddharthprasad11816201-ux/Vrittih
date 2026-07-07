@@ -99,7 +99,7 @@ export default function MessagesPage() {
 
   return (
     <AppShell>
-      <style>{MSG_CSS}</style>
+      <style dangerouslySetInnerHTML={{ __html: MSG_CSS }} />
       <div style={S.shell} className="msgShell" data-active={active ? "true" : "false"}>
         {/* Sidebar */}
         <aside style={S.sidebar} className="msgSide">
