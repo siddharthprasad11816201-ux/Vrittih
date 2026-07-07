@@ -48,6 +48,7 @@ function nav(isEmployer: boolean, isAdmin: boolean): Group[] {
     ] },
     { title: "Grow", items: [
       { href: "/tests", label: "Assessments", icon: <IconClipboard size={17} /> },
+      { href: "/tools", label: "Tools", icon: <IconTarget size={17} /> },
       { href: "/verify/face-setup", label: "Security", icon: <IconScan size={17} /> },
     ] },
   ]
