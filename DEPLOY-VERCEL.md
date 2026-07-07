@@ -6,18 +6,19 @@ else works on Vercel.
 
 ---
 
-## 1) Database — Neon Postgres (free)
-1. Sign up at **neon.tech** → **Create project** (region close to your users).
-2. On the project dashboard, open **Connection Details**. You need **two** strings:
-   - **Pooled** connection (host contains `-pooler`) → this is `DATABASE_URL`
-   - **Direct** connection (toggle "Pooled connection" **off**) → this is `DIRECT_URL`
-   Both should end with `?sslmode=require`.
-3. Locally, put both in `.env`:
+## 1) Database — Vercel Postgres (no separate signup)
+Serverless can't use SQLite, so you need a hosted Postgres. The simplest is Vercel's
+own — created inside the dashboard you already use.
+1. Import the repo to Vercel first (step 2), then in the **project → Storage tab →
+   Create Database → Postgres**. Vercel provisions it and auto-injects the connection
+   env vars into the project. (Any Postgres works — Supabase, Railway, etc. — if you
+   prefer.)
+2. Copy the connection string it shows (use the **non-pooled / direct** one if offered).
+3. Locally, set just this one line in `.env` (paste your string):
    ```
-   DATABASE_URL="postgresql://…-pooler…/neondb?sslmode=require"
-   DIRECT_URL="postgresql://…(direct)…/neondb?sslmode=require"
+   DATABASE_URL="postgresql://user:pass@host/db?sslmode=require"
    ```
-4. Create the tables + super admin in Neon:
+4. Create the tables + super admin:
    ```
    npx prisma db push
    node prisma/seed-admin.mjs
@@ -31,8 +32,7 @@ else works on Vercel.
 2. **Environment Variables** — add every one of these (Production + Preview):
    | Key | Value |
    |---|---|
-   | `DATABASE_URL` | Neon **pooled** string |
-   | `DIRECT_URL` | Neon **direct** string |
+   | `DATABASE_URL` | your Postgres connection string (auto-set if you use Vercel Postgres) |
    | `JWT_SECRET` | long random (`openssl rand -hex 48`) |
    | `JWT_EXPIRY` | `7d` |
    | `FACE_VECTOR_KEY` | exactly 32 chars |
