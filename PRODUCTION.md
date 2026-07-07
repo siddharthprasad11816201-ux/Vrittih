@@ -13,11 +13,17 @@ real concurrency. `pg` is already installed.
 - JSON is stored in `String` columns (portable); optionally switch hot ones to `Jsonb` later.
 Managed options: Supabase, Neon, RDS, Railway.
 
-## 2. Payments → Stripe (CHF)  **[needs your infra]**
-Razorpay is an India/INR gateway and **does not settle CHF** — live 1 CHF charges fail.
-Switzerland/CHF needs **Stripe** (or Wallee/Datatrans locally). The gateway is pluggable
-(`lib/payment.ts`, `ACTIVE_PAYMENT_GATEWAY`) — swap the Razorpay client for a Stripe one
-and keep `currency: "CHF"`. Provide `STRIPE_SECRET_KEY` / `STRIPE_WEBHOOK_SECRET`.
+## 2. Payments → Stripe (CHF, multi-currency)  **[built — needs your keys]**
+**Done in code:** Stripe hosted Checkout over REST (`lib/stripe.ts`), a **live-FX** engine
+using ECB reference rates (`lib/fx.ts`), and a rebuilt `/pay` where the price shows as
+**1 CHF** but the customer **pays in their own currency at the live rate** (cards, Apple/
+Google Pay, 3DS — works in Europe). Routes: `create-checkout`, `confirm` (redirect return),
+`webhook` (authoritative). Payment now attaches to the **real signed-in user** (the old
+`temp_user_id` bug is gone).
+**You provide:** `STRIPE_SECRET_KEY` (sk_test_… to trial), and `STRIPE_WEBHOOK_SECRET` after
+adding the `checkout.session.completed` webhook at dashboard.stripe.com → Developers → Webhooks,
+pointed at `https://your-domain/api/payment/webhook`. Razorpay (India/INR) is retired — it
+cannot settle CHF.
 
 ## 3. Realtime chat & interviews  **[code fixed + needs hosting]**
 - Client URLs are now env-driven: set `NEXT_PUBLIC_WS_URL=wss://…` (chat) and
