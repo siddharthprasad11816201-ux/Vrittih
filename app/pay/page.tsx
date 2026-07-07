@@ -1,12 +1,13 @@
 "use client"
-import { useEffect, useState, Suspense } from "react"
-import { useRouter, useSearchParams } from "next/navigation"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { IconCheckCircle, IconLock, IconArrowRight, IconBriefcase } from "@/components/ui/Icons"
 
-function PayInner() {
+declare global { interface Window { Razorpay: any } }
+
+export default function PayPage() {
   const router = useRouter()
-  const sp = useSearchParams()
   const [me, setMe] = useState<any>(null)
   const [prices, setPrices] = useState<any[]>([])
   const [live, setLive] = useState(true)
@@ -14,18 +15,16 @@ function PayInner() {
   const [type, setType] = useState<"jobseeker" | "employer">("jobseeker")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
-  const [phase, setPhase] = useState<"idle" | "confirming" | "success" | "cancelled">("idle")
+  const [success, setSuccess] = useState(false)
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => { if (d.user) { setMe(d.user); if (d.user.role === "EMPLOYER") setType("employer") } })
     fetch("/api/payment/rates").then(r => r.json()).then(d => { setPrices(d.prices || []); setLive(d.live !== false) })
-    const status = sp.get("status"), sid = sp.get("session_id")
-    if (status === "success" && sid) {
-      setPhase("confirming")
-      fetch("/api/payment/confirm", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ sessionId: sid }) })
-        .then(r => r.json()).then(d => { if (d.paid) { setPhase("success"); setTimeout(() => router.push("/dashboard"), 2200) } else { setPhase("idle"); setError("Payment not completed. Please try again.") } })
-        .catch(() => { setPhase("idle"); setError("Could not confirm payment.") })
-    } else if (status === "cancelled") setPhase("cancelled")
+    // preload Razorpay checkout
+    if (!document.getElementById("rzp-sdk")) {
+      const s = document.createElement("script")
+      s.id = "rzp-sdk"; s.src = "https://checkout.razorpay.com/v1/checkout.js"; document.body.appendChild(s)
+    }
   }, [])
 
   const price = prices.find(p => p.code === currency)
@@ -34,14 +33,27 @@ function PayInner() {
   async function pay() {
     setBusy(true); setError("")
     try {
-      const d = await fetch("/api/payment/create-checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currency, type }) }).then(r => r.json())
-      if (d.url) { window.location.href = d.url; return }
-      setError(d.error || "Could not start checkout.")
-    } catch { setError("Network error. Please try again.") }
-    setBusy(false)
+      const d = await fetch("/api/payment/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currency, type }) }).then(r => r.json())
+      if (!d.orderId) { setError(d.error || "Could not start payment."); setBusy(false); return }
+      if (!window.Razorpay) { setError("Payment window failed to load — check your connection and retry."); setBusy(false); return }
+      const rzp = new window.Razorpay({
+        key: d.keyId, amount: d.amount, currency: d.currency, order_id: d.orderId,
+        name: "Vrittih", description: "Lifetime membership · 1 CHF",
+        prefill: { email: me?.email, name: me?.name },
+        theme: { color: "#0F6E56" },
+        handler: async (resp: any) => {
+          const v = await fetch("/api/payment/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(resp) }).then(r => r.json())
+          if (v.success) { setSuccess(true); setTimeout(() => router.push("/dashboard"), 2000) }
+          else setError(v.error || "Payment could not be verified.")
+        },
+        modal: { ondismiss: () => setBusy(false) },
+      })
+      rzp.on("payment.failed", (r: any) => { setError(r.error?.description || "Payment failed. Please try again."); setBusy(false) })
+      rzp.open()
+    } catch { setError("Network error. Please try again."); setBusy(false) }
   }
 
-  if (phase === "success") return (
+  if (success) return (
     <div style={S.page}><div style={S.card}>
       <div style={S.okIc}><IconCheckCircle size={30} /></div>
       <h1 style={S.h1}>You're in.</h1>
@@ -56,9 +68,6 @@ function PayInner() {
         <Link href="/" style={S.brand}><span style={S.brandMark}><IconBriefcase size={16} /></span>Vrittih</Link>
         <h1 style={S.h1}>Join Vrittih</h1>
         <p style={S.sub}>One-time fee. Lifetime access. No subscription, ever.</p>
-
-        {phase === "cancelled" && <div style={S.info}>Checkout cancelled — you haven't been charged. Try again whenever you're ready.</div>}
-        {phase === "confirming" && <div style={S.info}>Confirming your payment…</div>}
 
         <div style={S.priceBox}>
           <div style={S.priceMain}>{fmt(price)}</div>
@@ -89,17 +98,13 @@ function PayInner() {
 
         {error && <div style={S.err}>{error}</div>}
 
-        <button onClick={pay} disabled={busy || phase === "confirming"} style={{ ...S.payBtn, opacity: busy ? .7 : 1 }}>
+        <button onClick={pay} disabled={busy} style={{ ...S.payBtn, opacity: busy ? .7 : 1 }}>
           <IconLock size={15} /> {busy ? "Opening secure checkout…" : `Pay ${fmt(price)} by card`}
         </button>
-        <p style={S.trust}>Secure checkout by Stripe · cards, Apple&nbsp;Pay &amp; Google&nbsp;Pay · 256-bit encrypted</p>
+        <p style={S.trust}>Secure checkout by Razorpay · cards, UPI, netbanking & wallets · encrypted</p>
       </div>
     </div>
   )
-}
-
-export default function PayPage() {
-  return <Suspense fallback={<div style={S.page} />}><PayInner /></Suspense>
 }
 
 const S: Record<string, any> = {
@@ -124,7 +129,6 @@ const S: Record<string, any> = {
   li: { display: "flex", alignItems: "center", gap: 9, fontSize: 13.5, color: "#2c3a33" },
   payBtn: { width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#0F6E56", color: "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 15, fontWeight: 600, cursor: "pointer", textDecoration: "none" },
   trust: { textAlign: "center", fontSize: 11.5, color: "#7C877F", marginTop: 12 },
-  info: { background: "#E6F1FB", border: "1px solid #C9DEF0", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#185FA5", marginBottom: 14 },
   err: { background: "#FBEBEB", border: "1px solid #E7C9C9", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#A32D2D", marginBottom: 12 },
   okIc: { width: 60, height: 60, borderRadius: "50%", background: "#E1F5EE", color: "#0B6B45", display: "grid", placeItems: "center", margin: "0 auto 16px" },
 }

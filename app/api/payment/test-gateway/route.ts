@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server"
-import { razorpay } from "@/lib/razorpay"
+import { getRazorpay, razorpayConfigured } from "@/lib/razorpay"
 
+// Admin gateway health check.
 export async function POST() {
+  if (!razorpayConfigured()) {
+    return NextResponse.json({ success: false, message: "Razorpay not configured (add RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET)." }, { status: 503 })
+  }
   try {
-    const order = await razorpay.orders.create({
-      amount: 100,
-      currency: "CHF",
-      receipt: "test_" + Date.now(),
-      notes: { test: "true" },
+    const order = await getRazorpay().orders.create({
+      amount: 100, currency: "INR", receipt: "test_" + Date.now(), notes: { test: "true" },
     })
     return NextResponse.json({ success: true, message: "Razorpay connected and working", testOrderId: order.id })
   } catch (err: any) {
