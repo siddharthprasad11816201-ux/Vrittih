@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import crypto from "crypto"
 import { verifyToken } from "@/lib/jwt"
 import { prisma } from "@/lib/prisma"
+import { getRazorpay } from "@/lib/razorpay"
 
 export const dynamic = "force-dynamic"
 
@@ -26,11 +27,17 @@ export async function POST(req: NextRequest) {
       crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(razorpay_signature))
     if (!ok) return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 })
 
-    await prisma.user.update({
-      where: { id: payload.userId },
-      data: { paid: true, paidAt: new Date(), paymentId: razorpay_payment_id },
-    })
-    return NextResponse.json({ success: true, paymentId: razorpay_payment_id })
+    // Read the plan from the order server-side (never trust the client for the tier).
+    let planId = ""
+    try { const order = await getRazorpay().orders.fetch(razorpay_order_id); planId = (order.notes?.planId as string) || "" } catch {}
+
+    const data: any = { paid: true, paidAt: new Date(), paymentId: razorpay_payment_id }
+    if (planId) {
+      const renews = new Date(); renews.setMonth(renews.getMonth() + 1)
+      data.plan = planId; data.planRenewsAt = renews
+    }
+    await prisma.user.update({ where: { id: payload.userId }, data })
+    return NextResponse.json({ success: true, paymentId: razorpay_payment_id, plan: planId || null })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

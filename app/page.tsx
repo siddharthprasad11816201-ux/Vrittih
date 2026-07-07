@@ -163,6 +163,7 @@ export default function Home() {
           <nav className="navLinks" aria-label="Main">
             <Link href="/jobs" className="navLink">Find jobs</Link>
             <Link href="/network" className="navLink">Network</Link>
+            <Link href="/pricing" className="navLink">Pricing</Link>
             <Link href="/dashboard" className="navLink">Dashboard</Link>
           </nav>
           <div className="navRight">

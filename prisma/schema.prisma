@@ -24,6 +24,8 @@ model User {
   paid             Boolean        @default(false)
   paidAt           DateTime?
   paymentId        String?
+  plan             String         @default("free")   // subscription tier id
+  planRenewsAt     DateTime?
   twoFactorEnabled Boolean        @default(false)
   twoFactorSecret  String?
   faceVector           String?
