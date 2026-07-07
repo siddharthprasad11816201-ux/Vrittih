@@ -13,6 +13,7 @@
         "start": "next start",
         "lint": "eslint",
         "seed:admin": "node prisma/seed-admin.mjs",
+        "seed:demo": "node prisma/seed-demo.mjs",
         "db:push": "prisma db push"
     },
     "dependencies": {
