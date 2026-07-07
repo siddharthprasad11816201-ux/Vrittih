@@ -8,10 +8,12 @@
         "dev:chat": "node server/chat.js",
         "dev:signal": "node server/signal.js",
         "dev:worker": "node server/worker.js",
-        "build": "next build",
+        "build": "prisma generate && next build",
+        "postinstall": "prisma generate",
         "start": "next start",
         "lint": "eslint",
-        "seed:admin": "node prisma/seed-admin.mjs"
+        "seed:admin": "node prisma/seed-admin.mjs",
+        "db:push": "prisma db push"
     },
     "dependencies": {
         "@prisma/client": "^5.22.0",
