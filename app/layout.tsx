@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next"
 import "@/styles/globals.css"
 import "@/styles/vrittih.css"
 import PWARegister from "@/components/PWARegister"
+import InstallPrompt from "@/components/InstallPrompt"
 
 export const metadata: Metadata = {
   title: "Vrittih — Every industry. Every professional. One network.",
@@ -25,6 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         {children}
         <PWARegister />
+        <InstallPrompt />
       </body>
     </html>
   )
