@@ -6,7 +6,7 @@ import CommandPalette from "@/components/vrittih/CommandPalette"
 import {
   IconActivity, IconBriefcase, IconTarget, IconFileText, IconUsers, IconTrendingUp,
   IconClipboard, IconMessage, IconMail, IconVideo, IconNetwork, IconUser, IconSettings,
-  IconSearch, IconBell, IconShield, IconScan, IconMenu, IconX, IconHome, IconBookmark,
+  IconSearch, IconBell, IconShield, IconScan, IconMenu, IconX, IconHome, IconBookmark, IconGlobe,
 } from "@/components/ui/Icons"
 
 type Item = { href: string; label: string; icon: ReactNode }
@@ -20,10 +20,12 @@ function nav(isEmployer: boolean, isAdmin: boolean): Group[] {
         { href: "/dashboard/pipeline", label: "Pipeline", icon: <IconTrendingUp size={17} /> },
         { href: "/hrms", label: "HRMS", icon: <IconClipboard size={17} /> },
         { href: "/jobs", label: "All jobs", icon: <IconBriefcase size={17} /> },
+        { href: "/companies", label: "Companies", icon: <IconGlobe size={17} /> },
       ] }
     : { title: "Jobs", items: [
         { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={17} /> },
         { href: "/jobs/match", label: "Matched", icon: <IconTarget size={17} /> },
+        { href: "/companies", label: "Companies", icon: <IconGlobe size={17} /> },
         { href: "/jobs/saved", label: "Saved", icon: <IconBookmark size={17} /> },
         { href: "/applications", label: "Applications", icon: <IconFileText size={17} /> },
         { href: "/resume", label: "Résumé", icon: <IconFileText size={17} /> },

@@ -83,6 +83,45 @@ model User {
   ownedWorkspaces      Workspace[]          @relation("WorkspaceOwner")
   workspaceMemberships WorkspaceMember[]
   media                MediaAsset[]
+  companyFollows       CompanyFollow[]
+  companiesOwned       Company[]            @relation("CompanyOwner")
+}
+
+// Company profile — a real employer page, not just a string on a job. Jobs link by
+// company name; this holds the brand, about, HQ, size, logo and followers so the
+// board has proper company hubs like a market-level portal.
+model Company {
+  id           String          @id @default(cuid())
+  slug         String          @unique
+  name         String
+  tagline      String?
+  about        String?
+  website      String?
+  industry     String?
+  size         String?         // headcount band, e.g. "51-200"
+  headquarters String?
+  founded      Int?
+  logoUrl      String?         // /api/media/:id if uploaded, else a monogram is rendered
+  verified     Boolean         @default(false)
+  ownerId      String?         // employer user who manages the page
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  owner        User?           @relation("CompanyOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  followers    CompanyFollow[]
+
+  @@index([name])
+  @@index([industry])
+}
+
+model CompanyFollow {
+  id        String   @id @default(cuid())
+  userId    String
+  companyId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, companyId])
 }
 
 // Uploaded media (avatars, company logos, résumés, photos). Bytes live in the DB

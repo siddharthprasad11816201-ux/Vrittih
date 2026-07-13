@@ -3,8 +3,10 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
+import CompanyLogo from "@/components/vrittih/CompanyLogo"
 import styles from "@/styles/jobdetail.module.css"
 import { IconBanknote } from "@/components/ui/Icons"
+import { slugify } from "@/lib/company"
 
 export default function JobDetail({ params }: { params: { id: string } }) {
   const { id } = params
@@ -46,10 +48,12 @@ export default function JobDetail({ params }: { params: { id: string } }) {
       <div className={styles.wrap}>
         <div className={styles.main}>
           <div className={styles.header}>
-            <div className={styles.logo}>{job.company.slice(0,2).toUpperCase()}</div>
+            <Link href={`/companies/${slugify(job.company)}`}><CompanyLogo name={job.company} size={48} radius={11} /></Link>
             <div>
               <h1 className={styles.title}>{job.title}</h1>
-              <div className={styles.meta}>{job.company} · {job.location} · {job.type}</div>
+              <div className={styles.meta}>
+                <Link href={`/companies/${slugify(job.company)}`} style={{ color: "inherit", fontWeight: 600, textDecoration: "none" }}>{job.company}</Link> · {job.location} · {job.type}
+              </div>
             </div>
           </div>
 

@@ -6,6 +6,7 @@ import {
   IconClipboard, IconMessage, IconMail, IconVideo, IconNetwork, IconSettings, IconSearch,
   IconPlus, IconUser, IconLock, IconGlobe,
 } from "@/components/ui/Icons"
+import { slugify } from "@/lib/company"
 
 type Item = { id: string; group: string; label: string; sub?: string; icon: ReactNode; run: () => void; keywords?: string }
 type SearchResults = { jobs: any[]; people: any[]; companies: any[] }
@@ -87,7 +88,7 @@ export default function CommandPalette({ isEmployer }: { isEmployer: boolean }) 
     const companies: Item[] = (data.companies || []).map((c) => ({
       id: "co-" + c.company, group: "Companies", label: c.company,
       sub: `${c.count.toLocaleString()} open ${c.count === 1 ? "role" : "roles"}`,
-      icon: <IconGlobe size={16} />, run: go(`/jobs?q=${encodeURIComponent(c.company)}`),
+      icon: <IconGlobe size={16} />, run: go(`/companies/${slugify(c.company)}`),
     }))
     return [...cmds, ...jobs, ...companies, ...people]
     // eslint-disable-next-line react-hooks/exhaustive-deps
