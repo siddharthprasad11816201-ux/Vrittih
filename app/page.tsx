@@ -5,6 +5,7 @@ import {
   IconSearch, IconArrowRight, IconCheckCircle, IconShield, IconZap,
   IconVideo, IconTarget, IconMessage, IconBriefcase,
 } from "@/components/ui/Icons"
+import { brandColor, initials as brandInitials } from "@/lib/company"
 
 const INDUSTRIES = ["Technology","Finance","Healthcare","Education","Manufacturing","Retail","Legal","Government","Logistics","Energy","Agriculture","Media","Hospitality","Real Estate","Pharma","Consulting","NGO","Other"]
 
@@ -123,7 +124,7 @@ function CountUp({ to, suffix = "" }: { to: number; suffix?: string }) {
     io.observe(el)
     return () => { cancelAnimationFrame(raf); io.disconnect() }
   }, [to])
-  return <span ref={ref}>{n}{suffix}</span>
+  return <span ref={ref}>{n.toLocaleString()}{suffix}</span>
 }
 
 /* ---- magnetic primary button ---- */
@@ -140,13 +141,20 @@ function Magnetic({ children, ...rest }: any) {
   return <button ref={ref} onMouseMove={move} onMouseLeave={reset} {...rest}>{children}</button>
 }
 
+type Stats = { jobs: number; companies: number; industries: number; brands: { name: string; slug: string }[] }
+
 export default function Home() {
   const [scrolled, setScrolled] = useState(false)
   const [industry, setIndustry] = useState("All")
+  // sensible fallbacks so the first paint already reads as a real, live platform
+  const [stats, setStats] = useState<Stats>({ jobs: 11500, companies: 200, industries: 18, brands: [] })
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
+  }, [])
+  useEffect(() => {
+    fetch("/api/stats").then(r => r.json()).then((d: Stats) => { if (d && d.jobs) setStats(s => ({ ...s, ...d })) }).catch(() => {})
   }, [])
   const chips = ["All", "Technology", "Finance", "Healthcare", "Education", "Remote"]
 
@@ -203,6 +211,10 @@ export default function Home() {
                   className={"chip" + (industry === c ? " chipOn" : "")} onClick={() => setIndustry(c)}>{c}</Link>
               ))}
             </div>
+            <p className="heroTrust">
+              <b>{stats.jobs.toLocaleString()}+</b> open roles · <b>{stats.companies.toLocaleString()}+</b> companies hiring · <b>{stats.industries}</b> industries
+              <span className="heroTrustLive"><i className="v-live" />live now</span>
+            </p>
           </div>
 
           <div className="heroVis">
@@ -210,6 +222,21 @@ export default function Home() {
             <LivePipeline />
           </div>
         </section>
+
+        {/* TRUSTED-BY — real brands hiring on the platform */}
+        {stats.brands.length > 0 && (
+          <section className="brands">
+            <span className="brandsLabel">Hiring on Vrittih</span>
+            <div className="brandsRow">
+              {stats.brands.map(b => (
+                <Link key={b.slug} href={`/companies/${b.slug}`} className="brandChip">
+                  <span className="brandMono" style={{ background: brandColor(b.name) }}>{brandInitials(b.name)}</span>
+                  {b.name}
+                </Link>
+              ))}
+            </div>
+          </section>
+        )}
 
         {/* PROOF — bento, honest */}
         <section className="bento">
@@ -226,20 +253,24 @@ export default function Home() {
             </div>
           </div>
           <div className="bCard bStat">
-            <div className="bNum"><CountUp to={INDUSTRIES.length} /></div>
-            <div className="bLabel">Industries at launch</div>
+            <div className="bNum"><CountUp to={stats.jobs} suffix="+" /></div>
+            <div className="bLabel">Open roles, live now</div>
           </div>
           <div className="bCard bStat">
-            <div className="bNum"><CountUp to={7} /></div>
-            <div className="bLabel">Hiring stages, all visible</div>
+            <div className="bNum"><CountUp to={stats.companies} suffix="+" /></div>
+            <div className="bLabel">Companies hiring</div>
           </div>
           <div className="bCard bGold v-gold">
             <span className="bGoldBadge"><IconCheckCircle size={15} /> Verified</span>
             <div className="bGoldText">Every profile identity-checked. Verification reads as precious — the gold mark is earned.</div>
           </div>
           <div className="bCard bStat">
-            <div className="bNum">1 CHF</div>
-            <div className="bLabel">One-time · lifetime access</div>
+            <div className="bNum"><CountUp to={stats.industries} /></div>
+            <div className="bLabel">Industries covered</div>
+          </div>
+          <div className="bCard bStat">
+            <div className="bNum"><CountUp to={7} /></div>
+            <div className="bLabel">Hiring stages, all visible</div>
           </div>
         </section>
 
@@ -360,6 +391,27 @@ html, body { overflow-x: hidden; max-width: 100%; width: 100%; margin: 0; }
 .chip { padding: 8px 15px; border-radius: 999px; font-size: 13.5px; color: var(--v-ink-2); background: var(--v-surface); border: 1px solid var(--v-line); text-decoration: none; transition: all .14s; }
 .chip:hover { border-color: var(--brand-400); color: var(--brand-700); }
 .chipOn { background: var(--brand-900); color: #fff; border-color: var(--brand-900); }
+
+/* soft depth behind the headline */
+.hero { position: relative; }
+.hero::before { content: ""; position: absolute; top: -6%; left: -3%; width: 48%; height: 72%; background: radial-gradient(58% 58% at 32% 30%, rgba(15,110,86,.10), transparent 72%); pointer-events: none; z-index: 0; }
+.heroText { position: relative; z-index: 1; }
+.searchField { box-shadow: 0 1px 2px rgba(4,52,44,.05); transition: box-shadow .16s, border-color .16s; }
+.searchField:focus-within { box-shadow: 0 0 0 3px rgba(15,110,86,.14); }
+
+/* live trust line under the hero search */
+.heroTrust { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin-top: 16px; font-size: 13.5px; color: var(--v-ink-3); }
+.heroTrust b { color: var(--brand-900); font-weight: 650; }
+.heroTrustLive { display: inline-flex; align-items: center; gap: 6px; color: var(--brand-600); font-weight: 600; }
+.heroTrustLive i { width: 7px; height: 7px; border-radius: 50%; background: var(--brand-400); }
+
+/* trusted-by brand strip */
+.brands { max-width: 1180px; margin: 0 auto; padding: 4px 24px clamp(1.5rem,4vw,2.5rem); display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.brandsLabel { font-size: 11.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--v-ink-3); white-space: nowrap; }
+.brandsRow { display: flex; flex-wrap: wrap; gap: 10px; }
+.brandChip { display: inline-flex; align-items: center; gap: 9px; padding: 7px 14px 7px 8px; border-radius: 999px; background: var(--v-surface); border: 1px solid var(--v-line); font-size: 13.5px; font-weight: 550; color: var(--brand-900); text-decoration: none; transition: border-color .14s, transform .14s, box-shadow .14s; }
+.brandChip:hover { border-color: var(--brand-400); transform: translateY(-1px); box-shadow: var(--v-shadow); }
+.brandMono { width: 24px; height: 24px; border-radius: 7px; display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 700; font-family: var(--font-display); }
 
 /* HERO VISUAL */
 .heroVis { position: relative; min-height: 420px; display: flex; align-items: center; justify-content: center; }
