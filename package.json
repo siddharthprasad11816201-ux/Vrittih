@@ -19,7 +19,9 @@
         "seed:edurankai": "node prisma/seed-edurankai.mjs",
         "db:push": "prisma db push",
         "db:postgres": "node scripts/use-db.mjs postgres",
-        "db:sqlite": "node scripts/use-db.mjs sqlite"
+        "db:sqlite": "node scripts/use-db.mjs sqlite",
+        "deploy:db": "node scripts/deploy-db.mjs",
+        "deploy:db:full": "node scripts/deploy-db.mjs --jobs"
     },
     "dependencies": {
         "@prisma/client": "^5.22.0",
