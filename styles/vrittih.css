@@ -138,6 +138,7 @@
 @keyframes v-rise { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
 @keyframes v-pulse { 0%,100% { opacity:1; } 50% { opacity:.35; } }
 @keyframes v-shimmer { from { background-position: -200% 0; } to { background-position: 200% 0; } }
+@keyframes vspin { to { transform: rotate(360deg); } }
 .v-skeleton {
   background: linear-gradient(90deg, var(--v-surface-2) 25%, var(--brand-100) 37%, var(--v-surface-2) 63%);
   background-size: 200% 100%; animation: v-shimmer 1.4s linear infinite; border-radius: var(--v-r-sm);
