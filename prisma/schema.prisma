@@ -497,6 +497,11 @@ model Job {
   applications Application[]
   skills        JobSkill[]
   community     JobCommunity?
+
+  @@index([company])
+  @@index([active])
+  @@index([postedById])
+  @@index([createdAt])
 }
 
 model Application {

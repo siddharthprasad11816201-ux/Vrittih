@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { encryptVector, decryptVector, euclideanDistance } from "@/lib/faceVector"
-import { writeFile, mkdir } from "fs/promises"
-import path from "path"
 
 export async function POST(req: NextRequest) {
   try {
@@ -33,16 +31,19 @@ export async function POST(req: NextRequest) {
       })
     }
 
-    // Save profile picture if provided
+    // Save profile picture if provided — stored in the DB (portable + serverless-safe),
+    // served from /api/media/:id, same as the rest of the media pipeline.
     let avatarUrl = user.avatar
     if (imageBase64) {
       const base64Data = imageBase64.replace(/^data:image\/\w+;base64,/, "")
       const buffer = Buffer.from(base64Data, "base64")
-      const dir = path.join(process.cwd(), "public", "uploads", "avatars")
-      await mkdir(dir, { recursive: true })
-      const filename = `${payload.userId}_face_${Date.now()}.jpg`
-      await writeFile(path.join(dir, filename), buffer)
-      avatarUrl = `/uploads/avatars/${filename}`
+      if (buffer.length > 0 && buffer.length <= 3_000_000) {
+        const asset = await prisma.mediaAsset.create({
+          data: { ownerId: payload.userId, kind: "avatar", mime: "image/jpeg", size: buffer.length, filename: `face_${Date.now()}.jpg`, data: buffer },
+          select: { id: true },
+        })
+        avatarUrl = `/api/media/${asset.id}`
+      }
     }
 
     const encrypted = encryptVector(vector)

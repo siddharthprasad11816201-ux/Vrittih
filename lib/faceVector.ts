@@ -1,7 +1,12 @@
 import crypto from "crypto"
 
 // Real key always comes from FACE_VECTOR_KEY in prod; this fallback is dev-only.
-const KEY = process.env.FACE_VECTOR_KEY || "vrittih_face_key_32bytes_secure!"
+const DEV_KEY = "vrittih_face_key_32bytes_secure!"
+const KEY = process.env.FACE_VECTOR_KEY || DEV_KEY
+// Fail closed: biometric templates must not be encrypted with a public dev key.
+if (process.env.NODE_ENV === "production" && KEY === DEV_KEY) {
+  throw new Error("FACE_VECTOR_KEY must be set in production — refusing to encrypt face templates with the dev fallback key.")
+}
 const KEY32 = KEY.padEnd(32).slice(0,32)
 
 export function encryptVector(vector: number[]): string {

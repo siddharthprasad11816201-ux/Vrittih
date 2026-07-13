@@ -5,7 +5,13 @@
  */
 import { createHmac, timingSafeEqual } from "crypto"
 
-const SECRET = process.env.JWT_SECRET || "dev_secret_change_in_production"
+const DEV_SECRET = "dev_secret_change_in_production"
+const SECRET = process.env.JWT_SECRET || DEV_SECRET
+// Fail closed: never sign/verify with the known dev fallback in production, or
+// anyone could forge session tokens and take over accounts.
+if (process.env.NODE_ENV === "production" && SECRET === DEV_SECRET) {
+  throw new Error("JWT_SECRET must be set in production — refusing to run with the dev fallback secret.")
+}
 const EXPIRY = process.env.JWT_EXPIRY || "7d"
 
 export interface JWTPayload {
