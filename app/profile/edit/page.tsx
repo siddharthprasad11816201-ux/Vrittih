@@ -2,6 +2,7 @@
 import { useEffect, useState, type ChangeEvent } from "react"
 import { useRouter } from "next/navigation"
 import AppShell from "@/components/vrittih/AppShell"
+import { processImage } from "@/lib/clientImage"
 export default function EditProfile() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -85,12 +86,33 @@ export default function EditProfile() {
   async function uploadFile(e: any, type: string) {
     const file = e.target.files?.[0]; if (!file) return
     setUploading(true); setUploadMsg("")
-    const fd = new FormData(); fd.append("file", file); fd.append("type", type)
-    const res = await fetch("/api/upload", { method:"POST", body: fd })
-    const data = await res.json()
-    if (data.success) { setUploadMsg(`${type === "resume" ? "Resume" : "Avatar"} uploaded successfully`); const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user) }
-    else setUploadMsg(data.error || "Upload failed")
-    setUploading(false)
+    try {
+      let res: Response
+      if (type === "avatar" && file.type.startsWith("image/")) {
+        // resize + re-encode in-browser so we upload ~40-80 KB, not the raw photo
+        setUploadMsg("Optimising image…")
+        const img = await processImage(file, { box: 512, mode: "cover", maxBytes: 220_000 })
+        res = await fetch("/api/upload", {
+          method: "POST", headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ kind: "avatar", dataUrl: img.dataUrl, width: img.width, height: img.height, filename: file.name }),
+        })
+      } else {
+        // résumés / documents: multipart (no base64 inflation on large PDFs)
+        const fd = new FormData(); fd.append("file", file); fd.append("type", type)
+        res = await fetch("/api/upload", { method: "POST", body: fd })
+      }
+      const data = await res.json()
+      if (data.success) {
+        const kb = data.size ? ` (${Math.round(data.size / 1024)} KB)` : ""
+        setUploadMsg(`${type === "resume" ? "Résumé" : "Photo"} uploaded${kb}`)
+        const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user)
+      } else setUploadMsg(data.error || "Upload failed")
+    } catch (err: any) {
+      setUploadMsg(err?.message || "Upload failed")
+    } finally {
+      setUploading(false)
+      if (e?.target) e.target.value = "" // allow re-selecting the same file
+    }
   }
 
   if (!user) return <AppShell><div style={S.loading}>Loading...</div></AppShell>

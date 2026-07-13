@@ -82,6 +82,27 @@ model User {
   emailDomains         EmailDomain[]
   ownedWorkspaces      Workspace[]          @relation("WorkspaceOwner")
   workspaceMemberships WorkspaceMember[]
+  media                MediaAsset[]
+}
+
+// Uploaded media (avatars, company logos, résumés, photos). Bytes live in the DB
+// so uploads survive serverless/ephemeral filesystems and behave identically on
+// SQLite (BLOB) and Postgres (bytea) — no external object store needed. Images are
+// resized + re-encoded in-house (client-side canvas) before they ever reach here.
+model MediaAsset {
+  id        String   @id @default(cuid())
+  ownerId   String
+  kind      String   // avatar | logo | resume | photo | cover
+  mime      String
+  size      Int      // bytes
+  width     Int?
+  height    Int?
+  filename  String?
+  data      Bytes
+  createdAt DateTime @default(now())
+  owner     User     @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  @@index([ownerId, kind])
 }
 
 // ===================== Vrittih CRM (Phase 0) =====================
