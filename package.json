@@ -16,6 +16,7 @@
         "seed:demo": "node prisma/seed-demo.mjs",
         "seed:scale": "node prisma/seed-scale.mjs",
         "seed:companies": "node prisma/seed-companies.mjs",
+        "seed:edurankai": "node prisma/seed-edurankai.mjs",
         "db:push": "prisma db push"
     },
     "dependencies": {
