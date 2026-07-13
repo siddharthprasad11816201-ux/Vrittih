@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { ci } from "@/lib/db"
 import { requireAdmin } from "@/lib/admin"
 
 export async function GET(req: NextRequest) {
@@ -11,7 +12,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1")
     const limit = 20
     const where: any = {}
-    if (q) where.OR = [{ title:{ contains:q } },{ company:{ contains:q } }]
+    if (q) where.OR = [{ title:ci(q) },{ company:ci(q) }]
     const [jobs, total] = await Promise.all([
       prisma.job.findMany({
         where, skip:(page-1)*limit, take:limit,

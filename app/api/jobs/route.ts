@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { computeMatch, candidateFromUser, jobFromRecord } from "@/lib/matching"
+import { ci } from "@/lib/db"
 import { z } from "zod"
 
 const jobSchema = z.object({
@@ -30,9 +31,9 @@ export async function GET(req: NextRequest) {
     const mine = searchParams.get("mine") === "true"
     const where: any = { active: true }
     if (q) where.OR = [
-      { title: { contains: q } },
-      { company: { contains: q } },
-      { description: { contains: q } },
+      { title: ci(q) },
+      { company: ci(q) },
+      { description: ci(q) },
     ]
     if (industry) where.industry = industry
     if (type) where.type = type

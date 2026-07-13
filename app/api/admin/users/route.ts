@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { ci } from "@/lib/db"
 import { requireAdmin, requireSuperAdmin, logAction } from "@/lib/admin"
 import { hashPassword } from "@/lib/hash"
 
@@ -17,7 +18,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1")
     const limit = 20
     const where: any = {}
-    if (q) where.OR = [{ name: { contains: q } }, { email: { contains: q } }]
+    if (q) where.OR = [{ name: ci(q) }, { email: ci(q) }]
     if (role) where.role = role
     if (paid === "true") where.paid = true
     if (paid === "false") where.paid = false

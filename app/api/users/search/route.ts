@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { ci } from "@/lib/db"
 import { verifyToken } from "@/lib/jwt"
 
 export async function GET(req: NextRequest) {
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
     const q = searchParams.get("q") || ""
     const where: any = {}
     if (email) where.email = email
-    if (q) where.OR = [{ name:{ contains:q } },{ email:{ contains:q } }]
+    if (q) where.OR = [{ name:ci(q) },{ email:ci(q) }]
     if (!email && !q) return NextResponse.json({ users: [] })
     const user = email
       ? await prisma.user.findUnique({ where:{ email }, select:{ id:true,name:true,email:true,avatar:true,headline:true } })

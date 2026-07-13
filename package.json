@@ -17,7 +17,9 @@
         "seed:scale": "node prisma/seed-scale.mjs",
         "seed:companies": "node prisma/seed-companies.mjs",
         "seed:edurankai": "node prisma/seed-edurankai.mjs",
-        "db:push": "prisma db push"
+        "db:push": "prisma db push",
+        "db:postgres": "node scripts/use-db.mjs postgres",
+        "db:sqlite": "node scripts/use-db.mjs sqlite"
     },
     "dependencies": {
         "@prisma/client": "^5.22.0",

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { tokenize, rank, scoreFields } from "@/lib/search"
+import { ci } from "@/lib/db"
 
 export const dynamic = "force-dynamic"
 
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
   if (!tokens.length) return NextResponse.json({ q: raw, jobs: [], people: [], companies: [] })
 
   const contains = (fields: string[]) => ({
-    OR: tokens.flatMap((t) => fields.map((f) => ({ [f]: { contains: t } }))),
+    OR: tokens.flatMap((t) => fields.map((f) => ({ [f]: ci(t) }))),
   })
 
   const [jobCand, peopleCand, companyRows] = await Promise.all([

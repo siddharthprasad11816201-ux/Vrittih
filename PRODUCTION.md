@@ -4,26 +4,33 @@ The app is functionally complete and clean (no stubs/mocks). This is the checkli
 to take it from "runs on one laptop" to "handles 1 lakh+ users." Items marked
 **[code fixed]** are already done; **[needs your infra]** requires a resource only you can provide.
 
-## 1. Database → Postgres  **[needs your infra]**
+## 1. Database → Postgres  **[code fixed + needs your infra]**
 SQLite (the current dev DB) is single-writer and file-locked — it will not survive
-real concurrency. `pg` is already installed.
-- In `prisma/schema.prisma` change `provider = "sqlite"` → `provider = "postgresql"`.
-- Set `DATABASE_URL="postgresql://user:pass@host:5432/vrittih"`.
-- Run `npx prisma migrate deploy` (or `prisma db push`) against the Postgres instance.
-- JSON is stored in `String` columns (portable); optionally switch hot ones to `Jsonb` later.
-Managed options: Supabase, Neon, RDS, Railway.
+real concurrency. `pg` is already installed. The whole app is now Postgres-portable:
+- **[code fixed]** Case-insensitive search: SQLite `LIKE` is case-insensitive but
+  Postgres `LIKE` is case-sensitive. `lib/db.ts` `ci()` adds `mode:"insensitive"`
+  automatically when `DATABASE_URL` is Postgres, so search keeps working. Used by
+  every search endpoint (jobs, companies, people, admin, CRM, mail).
+- **[code fixed]** No SQLite-only features remain (no `skipDuplicates`, no raw SQL);
+  `Bytes` media and `String`-JSON columns are portable to Postgres.
+- Flip the provider: **`npm run db:postgres`** (reversible with `npm run db:sqlite`).
+- Set `DATABASE_URL="postgresql://user:pass@host/vrittih?sslmode=require"`.
+- `npx prisma db push` to create the schema, then `npm run seed:admin`
+  (+ `seed:companies` after any job import).
+Managed options: Neon, Supabase, Railway, RDS.
 
-## 2. Payments → Stripe (CHF, multi-currency)  **[built — needs your keys]**
-**Done in code:** Stripe hosted Checkout over REST (`lib/stripe.ts`), a **live-FX** engine
-using ECB reference rates (`lib/fx.ts`), and a rebuilt `/pay` where the price shows as
-**1 CHF** but the customer **pays in their own currency at the live rate** (cards, Apple/
-Google Pay, 3DS — works in Europe). Routes: `create-checkout`, `confirm` (redirect return),
-`webhook` (authoritative). Payment now attaches to the **real signed-in user** (the old
-`temp_user_id` bug is gone).
-**You provide:** `STRIPE_SECRET_KEY` (sk_test_… to trial), and `STRIPE_WEBHOOK_SECRET` after
-adding the `checkout.session.completed` webhook at dashboard.stripe.com → Developers → Webhooks,
-pointed at `https://your-domain/api/payment/webhook`. Razorpay (India/INR) is retired — it
-cannot settle CHF.
+## 2. Payments → Razorpay (CHF display, pay in home currency)  **[built — needs your keys]**
+**Done in code:** Razorpay Orders + client Checkout (`lib/razorpay.ts`), a **live-FX**
+engine using ECB reference rates (`lib/fx.ts`), and `/pay` + `/pricing` where the price
+shows as **CHF** but the customer **pays in their own currency at the live rate** (cards,
+UPI, wallets — works across regions). Routes: `create-order`, `verify` (signature-checked),
+`rates`. Payment attaches to the **real signed-in user** (the old `temp_user_id` bug is gone).
+The admin **Gateway** panel (`/admin/gateway`) reflects real env-configured connection state
+and persists the active gateway. Stripe has been removed (it was unused).
+**You provide:** `RAZORPAY_KEY_ID` + `RAZORPAY_KEY_SECRET` (and `NEXT_PUBLIC_RAZORPAY_KEY_ID`),
+and `ACTIVE_PAYMENT_GATEWAY=razorpay`. For live card capture in Europe, enable international
+cards on your Razorpay account (or add a region-appropriate gateway later — the panel supports
+switching once its keys are set).
 
 ## 3. Realtime chat & interviews  **[code fixed + needs hosting]**
 - Client URLs are now env-driven: set `NEXT_PUBLIC_WS_URL=wss://…` (chat) and

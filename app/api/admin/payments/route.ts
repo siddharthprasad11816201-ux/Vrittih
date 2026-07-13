@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { ci } from "@/lib/db"
 import { requireAdmin, requireSuperAdmin, logAction } from "@/lib/admin"
 import { getSetting } from "@/lib/settings"
 
@@ -12,7 +13,7 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1")
     const limit = 20
     const where: any = { paid: true }
-    if (q) where.OR = [{ name: { contains: q } }, { email: { contains: q } }]
+    if (q) where.OR = [{ name: ci(q) }, { email: ci(q) }]
 
     const [payments, paidCount, total, fee, currency] = await Promise.all([
       prisma.user.findMany({

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { ci } from "@/lib/db"
 import { verifyToken } from "@/lib/jwt"
 
 export async function GET(req: NextRequest) {
@@ -16,7 +17,7 @@ export async function GET(req: NextRequest) {
     if (folder === "sent") where = { fromId: payload.userId, deletedAt: null }
     if (folder === "starred") where = { toId: payload.userId, starred: true, deletedAt: null }
     if (folder === "archived") where = { toId: payload.userId, archived: true, deletedAt: null }
-    if (q) where.OR = [{ subject:{ contains:q } },{ body:{ contains:q } }]
+    if (q) where.OR = [{ subject:ci(q) },{ body:ci(q) }]
     const mails = await prisma.mail.findMany({
       where,
       orderBy: { createdAt: "desc" },

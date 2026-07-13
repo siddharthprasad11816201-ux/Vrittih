@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { ci } from "@/lib/db"
 import { verifyToken } from "@/lib/jwt"
 import { ensureWorkspace, canWrite, logActivity } from "@/lib/workspace"
 import { track } from "@/lib/analytics"
@@ -47,8 +48,8 @@ export async function GET(req: NextRequest) {
   const where: any = { workspaceId, deletedAt: null }
   if (stage && (STAGES as readonly string[]).includes(stage)) where.stage = stage
   if (q) where.OR = [
-    { firstName: { contains: q } }, { lastName: { contains: q } },
-    { email: { contains: q } }, { company: { contains: q } },
+    { firstName: ci(q) }, { lastName: ci(q) },
+    { email: ci(q) }, { company: ci(q) },
   ]
 
   const orderBy =

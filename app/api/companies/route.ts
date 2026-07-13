@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { ci } from "@/lib/db"
 
 export const dynamic = "force-dynamic"
 
@@ -13,7 +14,7 @@ export async function GET(req: NextRequest) {
   const pageSize = 24
 
   const where = q
-    ? { OR: [{ name: { contains: q } }, { industry: { contains: q } }, { tagline: { contains: q } }] }
+    ? { OR: [{ name: ci(q) }, { industry: ci(q) }, { tagline: ci(q) }] }
     : {}
 
   const orderBy =
