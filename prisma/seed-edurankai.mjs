@@ -53,13 +53,22 @@ function industryFor(dept) {
   return "Technology"
 }
 
+// `website` is only set where the domain is verified live — an unverified link is
+// worse than none. Copy for Originals / Sambandh is taken from their own sites.
 const BRAND_META = {
-  "EduRankAI": { tagline: "AI for education, research and public good", industry: "Technology", hq: "Guwahati, India", about: "EduRankAI builds AI-native products across education, research integrity, and public good — from foundational models to student tools. We hire people who want to own real outcomes and do work that matters, across engineering, research, safety, design and operations." },
+  "EduRankAI": { tagline: "AI for education, research and public good", industry: "Technology", hq: "Guwahati, India", website: "https://www.edurankai.in", about: "EduRankAI builds AI-native products across education, research integrity, and public good — from foundational models to student tools. We hire people who want to own real outcomes and do work that matters, across engineering, research, safety, design and operations." },
   "AquinTutor.ai": { tagline: "The AI tutor that teaches, not just answers", industry: "Education", hq: "Remote", about: "AquinTutor.ai is EduRankAI's flagship AI tutor — pedagogy-first, built to teach reasoning rather than hand out answers. Join us to shape how millions learn." },
   "Viśvambhara": { tagline: "Aerospace & deep-tech for the next frontier", industry: "Manufacturing", hq: "Guwahati, India", about: "Viśvambhara is EduRankAI's aerospace and deep-tech initiative, taking on hard problems in flight, materials and systems engineering." },
   "HEI": { tagline: "Truth reporting for higher-education integrity", industry: "Government", hq: "Remote", about: "HEI (Higher Education Integrity) builds the truth-reporting infrastructure that holds institutions accountable — data pipelines, evidence, and public findings." },
   "Karate.support": { tagline: "Technology for the global martial-arts community", industry: "Other", hq: "Remote", about: "Karate.support builds tools for the worldwide martial-arts community — federations, dojos, athletes and events." },
+  "Originals": { tagline: "Real. Verified. Nearby.", industry: "Retail", hq: "India", website: "https://www.orignals.shop", about: "Originals is EduRankAI's verified local marketplace — real, verified goods from sellers near you, with buying and earning in one place." },
+  "Sambandh": { tagline: "India's verified, honesty-first dating", industry: "Technology", hq: "India", website: "https://www.sambandh.online", about: "Sambandh is verified, honesty-first dating for India — every member face-verified, with the AI Lakshan Book supporting honesty and compatibility." },
 }
+
+// Product companies that exist but have no roles in the careers catalog yet. They
+// get a real company page (0 open roles is the truth) rather than being invented
+// roles they aren't hiring for.
+const EXTRA_BRANDS = ["Originals", "Sambandh"]
 
 // ---- clear prior import ----
 const prev = await p.user.findMany({ where: { source: "edurankai" }, select: { id: true } })
@@ -76,7 +85,7 @@ const hash = await bcrypt.hash("EduRankAI@2026!", 10)
 
 // ---- brand employers + company pages ----
 const brandUser = {}
-const brands = [...new Set(roles.map((r) => brandFor(r.department_name)))]
+const brands = [...new Set([...roles.map((r) => brandFor(r.department_name)), ...EXTRA_BRANDS])]
 for (const brand of brands) {
   const meta = BRAND_META[brand] || { tagline: "Hiring now", industry: "Technology", hq: "Remote", about: `${brand} is hiring.` }
   const email = `careers+${slugify(brand)}@edurankai.in`
@@ -89,8 +98,8 @@ for (const brand of brands) {
   const slug = slugify(brand)
   await p.company.upsert({
     where: { slug },
-    update: { ownerId: u.id, verified: true, tagline: meta.tagline, industry: meta.industry, headquarters: meta.hq, about: meta.about },
-    create: { slug, name: brand, ownerId: u.id, verified: true, tagline: meta.tagline, industry: meta.industry, headquarters: meta.hq, about: meta.about, size: "51-200" },
+    update: { ownerId: u.id, verified: true, tagline: meta.tagline, industry: meta.industry, headquarters: meta.hq, about: meta.about, website: meta.website ?? null },
+    create: { slug, name: brand, ownerId: u.id, verified: true, tagline: meta.tagline, industry: meta.industry, headquarters: meta.hq, about: meta.about, website: meta.website ?? null, size: "51-200" },
   })
 }
 console.log(`created ${brands.length} brands: ${brands.join(", ")}`)
