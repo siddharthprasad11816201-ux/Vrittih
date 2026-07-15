@@ -17,6 +17,8 @@ const jobSchema = z.object({
   remote: z.boolean().default(false),
   applyUrl: z.string().max(500).optional(),   // company / department careers page
   govUrl: z.string().max(500).optional(),     // official government portal listing
+  closesAt: z.coerce.date().optional(),       // application deadline (was silently dropped)
+  govBody: z.string().max(160).optional(),    // recruiting authority, for public-sector roles
   skills: z.array(z.string()).optional(),
 })
 
@@ -41,6 +43,17 @@ export async function GET(req: NextRequest) {
     if (industry) where.industry = industry
     if (type) where.type = type
     if (remote === "true") where.remote = true
+
+    // Never show a listing whose deadline has passed — the core complaint about
+    // public portals is finding a notice and only then learning it closed.
+    // (AND, so it composes with the `q` OR above.)
+    const now = new Date()
+    where.AND = [{ OR: [{ closesAt: null }, { closesAt: { gte: now } }] }]
+    if (searchParams.get("closing") === "soon") {
+      const in7 = new Date(now.getTime() + 7 * 86400000)
+      where.AND.push({ closesAt: { gte: now, lte: in7 } })
+    }
+    if (searchParams.get("gov") === "true") where.AND.push({ govBody: { not: null } })
 
     // "mine=true" — an employer's own postings (active or not)
     if (mine) {

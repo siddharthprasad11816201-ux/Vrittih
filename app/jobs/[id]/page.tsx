@@ -60,6 +60,19 @@ export default function JobDetail({ params }: { params: { id: string } }) {
 
           {job.salary && <div className={styles.salaryBadge} style={{display:"inline-flex",alignItems:"center",gap:7}}><IconBanknote size={15} /> {job.salary}</div>}
 
+          {job.closesAt && (() => {
+            const days = Math.ceil((new Date(job.closesAt).getTime() - Date.now()) / 86400000)
+            const closed = days < 0
+            const urgent = !closed && days <= 7
+            const on = new Date(job.closesAt).toLocaleDateString(undefined, { day: "numeric", month: "long", year: "numeric" })
+            return (
+              <div style={{ ...A.deadline, ...(closed ? A.deadlineClosed : urgent ? A.deadlineUrgent : {}) }}>
+                <b>{closed ? "Applications closed" : days === 0 ? "Closes today" : days === 1 ? "Closes tomorrow" : `Closes in ${days} days`}</b>
+                <span style={{ opacity: .8 }}>· last date {on}</span>
+              </div>
+            )
+          })()}
+
           <div className={styles.tags}>
             {job.remote && <span className={styles.tag}>Remote</span>}
             <span className={styles.tag}>{job.industry}</span>
@@ -187,4 +200,12 @@ const A: Record<string, any> = {
   optSubOn: { fontSize: 12, color: "rgba(255,255,255,.8)" },
   ext: { fontSize: 16, color: "var(--v-ink-3, #7C877F)", flexShrink: 0 },
   note: { fontSize: 12, color: "var(--v-ink-3, #7C877F)", lineHeight: 1.5, margin: "2px 0 0" },
+  // Deadline banner — for public-sector notices this is the single most important fact.
+  deadline: {
+    display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, margin: "12px 0 0",
+    padding: "9px 14px", borderRadius: 999, fontSize: 13.5, width: "fit-content",
+    background: "var(--brand-100, #E1F5EE)", color: "var(--brand-900, #04342C)",
+  },
+  deadlineUrgent: { background: "#FDF0DC", color: "#7A4B12" },
+  deadlineClosed: { background: "#F3F0EA", color: "#6B6B6B" },
 }

@@ -492,6 +492,14 @@ model Job {
   // these add the official routes for aggregated / public-sector listings.
   applyUrl     String?       // the company's or department's own careers page for this role
   govUrl       String?       // the official government portal listing (public-sector roles)
+  // "Is this still open?" is the whole game for public-sector listings — people
+  // waste hours on portals only to find a notice has closed. null = no stated date.
+  closesAt     DateTime?     // application deadline
+  govBody      String?       // recruiting authority, e.g. "Staff Selection Commission"
+  // Ingestion provenance. externalId is the source's own id so re-running an
+  // import updates rather than duplicates.
+  sourceKey    String?       // JobSource.key, e.g. "ncs" — null for natively posted jobs
+  externalId   String?
   active        Boolean       @default(true)
   views         Int           @default(0)
   postedById   String
@@ -502,10 +510,33 @@ model Job {
   skills        JobSkill[]
   community     JobCommunity?
 
+  @@unique([sourceKey, externalId])
   @@index([company])
   @@index([active])
   @@index([postedById])
   @@index([createdAt])
+  @@index([closesAt])
+  @@index([sourceKey])
+}
+
+// A registered ingestion source (a government portal, a partner feed, an API
+// client). Each source has an adapter in lib/sources that turns whatever the
+// portal publishes into normalised listings; this row tracks health so a silently
+// broken scraper is visible instead of quietly serving stale jobs.
+model JobSource {
+  key         String    @id                      // "ncs", "ssc", …
+  name        String
+  homepage    String
+  kind        String    @default("government")   // government | private | partner
+  region      String?                            // "India", "Assam", …
+  active      Boolean   @default(true)
+  lastRunAt   DateTime?
+  lastOk      Boolean?
+  lastMessage String?
+  found       Int       @default(0)              // listings seen on the last run
+  imported    Int       @default(0)              // created + updated on the last run
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model Application {

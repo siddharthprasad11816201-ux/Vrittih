@@ -50,7 +50,7 @@ export default function PostJob() {
         benefits: form.benefits || null,
         experience: form.experience || null,
         openings: parseInt(form.openings) || 1,
-        deadline: form.deadline ? new Date(form.deadline) : null,
+        closesAt: form.deadline || undefined,
         skills,
       })
     })
