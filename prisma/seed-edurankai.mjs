@@ -120,6 +120,10 @@ for (const r of roles) {
     type: jobType(r.engagement_type),
     salary: r.salary ? String(r.salary).slice(0, 120) : null,
     remote: /remote|virtual|global|worldwide/i.test(r.location || ""),
+    // The employer's own apply route. Verified live: www is canonical (the apex
+    // 308-redirects) and /apply?role=<slug> is the real apply action from the
+    // careers page. These are private-company roles, so govUrl stays null.
+    applyUrl: r.slug ? `https://www.edurankai.in/apply?role=${encodeURIComponent(r.slug)}` : null,
     description: description(r), active: true, views: 0, postedById: brandUser[brand],
   })
   if (batch.length >= 500) await flush()
