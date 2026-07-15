@@ -9,12 +9,21 @@ export type NormalisedListing = {
   /** The source's own stable id for this listing. Used to dedupe on re-runs. */
   externalId: string
   title: string
-  /** The recruiting authority, e.g. "Staff Selection Commission". */
+  /** The hiring organisation — a recruiting authority ("Staff Selection
+   *  Commission") or a company name ("Acme Ltd") for private sources. */
   govBody: string
   description: string
   location: string
-  /** Official notice / apply page on the portal. Required — we never invent it. */
-  govUrl: string
+  /**
+   * Link back to the ORIGINAL posting. At least one of govUrl / applyUrl is
+   * REQUIRED and is never invented: an aggregated employer has no account here,
+   * so a listing we can't send the candidate back to is a dead end. Ingest skips
+   * any listing that has neither.
+   */
+  /** Official notice / apply page on a government portal. */
+  govUrl?: string
+  /** The employer's own job post, for aggregated private companies. */
+  applyUrl?: string
   /** Application deadline, if the notice states one. null when genuinely unknown. */
   closesAt?: Date | null
   type?: string

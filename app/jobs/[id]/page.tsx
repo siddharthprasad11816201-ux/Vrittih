@@ -123,15 +123,30 @@ export default function JobDetail({ params }: { params: { id: string } }) {
             <div style={A.box}>
               <h2 style={A.head}>Apply for this role</h2>
               <p style={A.sub}>
-                {job.govUrl || job.applyUrl
-                  ? "Choose how you’d like to apply — all routes reach the same employer."
-                  : "Apply here and follow every stage live."}
+                {job.aggregated
+                  ? `${job.company} isn’t on Vrittih — we found this role for you. Apply on their official posting.`
+                  : job.govUrl || job.applyUrl
+                    ? "Choose how you’d like to apply — all routes reach the same employer."
+                    : "Apply here and follow every stage live."}
               </p>
 
-              <button onClick={() => setShowForm(true)} style={A.primary}>
-                <span style={A.optMain}>Apply on Vrittih</span>
-                <span style={A.optSubOn}>Tracked live through all 7 stages</span>
-              </button>
+              {/* Native apply only where the employer actually has an account here.
+                  For aggregated listings it would be a black hole — nobody would
+                  ever receive the application. */}
+              {!job.aggregated && (
+                <button onClick={() => setShowForm(true)} style={A.primary}>
+                  <span style={A.optMain}>Apply on Vrittih</span>
+                  <span style={A.optSubOn}>Tracked live through all 7 stages</span>
+                </button>
+              )}
+
+              {job.aggregated && !job.govUrl && !job.applyUrl && (
+                <p style={A.warn}>
+                  We don’t have a link to the original posting for this role yet, so we can’t
+                  send you to a real application. Rather than waste your time, please search for
+                  it on {job.company}’s own site.
+                </p>
+              )}
 
               {job.govUrl && (
                 <a href={job.govUrl} target="_blank" rel="noopener noreferrer" style={A.opt}>
@@ -156,6 +171,16 @@ export default function JobDetail({ params }: { params: { id: string } }) {
               {(job.govUrl || job.applyUrl) && (
                 <p style={A.note}>
                   Applying on an external site happens outside Vrittih, so we can’t show live status for it.
+                </p>
+              )}
+
+              {/* Attribution — required by the sources we aggregate, and honest
+                  about the fact that we are not the employer. */}
+              {job.aggregated && job.source && (
+                <p style={A.note}>
+                  Listing sourced from{" "}
+                  <a href={job.source.homepage} target="_blank" rel="noopener noreferrer" style={A.srcLink}>{job.source.name}</a>
+                  . Vrittih is not affiliated with {job.company} and does not process this application.
                 </p>
               )}
             </div>
@@ -208,4 +233,9 @@ const A: Record<string, any> = {
   },
   deadlineUrgent: { background: "#FDF0DC", color: "#7A4B12" },
   deadlineClosed: { background: "#F3F0EA", color: "#6B6B6B" },
+  srcLink: { color: "var(--brand-600, #0F6E56)", fontWeight: 600 },
+  warn: {
+    fontSize: 12.5, lineHeight: 1.55, color: "#7A4B12", background: "#FDF3E3",
+    border: "1px solid #F0DFC0", borderRadius: 9, padding: "10px 12px", margin: "0 0 10px",
+  },
 }

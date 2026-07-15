@@ -71,8 +71,12 @@ export async function ingestSource(adapter: SourceAdapter): Promise<IngestReport
   const now = new Date()
 
   for (const l of result.listings) {
+    // An aggregated employer has no account here, so we cannot receive their
+    // applications. A listing we can't link back to would strand the candidate —
+    // skip it rather than publish a dead end.
     const govUrl = safeExternalUrl(l.govUrl)
-    if (!l.externalId || !l.title || !govUrl) { report.skipped++; continue } // no official link -> not listed
+    const applyUrl = safeExternalUrl(l.applyUrl)
+    if (!l.externalId || !l.title || !(govUrl || applyUrl)) { report.skipped++; continue }
     seen.add(l.externalId)
 
     const closed = !!(l.closesAt && l.closesAt.getTime() < now.getTime())
@@ -87,6 +91,7 @@ export async function ingestSource(adapter: SourceAdapter): Promise<IngestReport
       salary: l.salary ? String(l.salary).slice(0, 120) : null,
       remote: !!l.remote,
       govUrl,
+      applyUrl,
       closesAt: l.closesAt ?? null,
       active: !closed,
       postedById: employerId,

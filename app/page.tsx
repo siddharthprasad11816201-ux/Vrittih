@@ -146,8 +146,9 @@ type Stats = { jobs: number; companies: number; industries: number; brands: { na
 export default function Home() {
   const [scrolled, setScrolled] = useState(false)
   const [industry, setIndustry] = useState("All")
-  // sensible fallbacks so the first paint already reads as a real, live platform
-  const [stats, setStats] = useState<Stats>({ jobs: 11500, companies: 200, industries: 18, brands: [] })
+  // Never invent numbers. Start empty and only show counts once the real ones
+  // load — a hardcoded fallback would advertise roles that don't exist.
+  const [stats, setStats] = useState<Stats | null>(null)
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12)
     window.addEventListener("scroll", onScroll, { passive: true })
@@ -211,10 +212,12 @@ export default function Home() {
                   className={"chip" + (industry === c ? " chipOn" : "")} onClick={() => setIndustry(c)}>{c}</Link>
               ))}
             </div>
-            <p className="heroTrust">
-              <b>{stats.jobs.toLocaleString()}+</b> open roles · <b>{stats.companies.toLocaleString()}+</b> companies hiring · <b>{stats.industries}</b> industries
-              <span className="heroTrustLive"><i className="v-live" />live now</span>
-            </p>
+            {stats && stats.jobs > 0 && (
+              <p className="heroTrust">
+                <b>{stats.jobs.toLocaleString()}</b> open {stats.jobs === 1 ? "role" : "roles"} · <b>{stats.companies.toLocaleString()}</b> {stats.companies === 1 ? "company" : "companies"} hiring · <b>{stats.industries}</b> {stats.industries === 1 ? "industry" : "industries"}
+                <span className="heroTrustLive"><i className="v-live" />live now</span>
+              </p>
+            )}
           </div>
 
           <div className="heroVis">
@@ -224,7 +227,7 @@ export default function Home() {
         </section>
 
         {/* TRUSTED-BY — real brands hiring on the platform */}
-        {stats.brands.length > 0 && (
+        {stats && stats.brands.length > 0 && (
           <section className="brands">
             <span className="brandsLabel">Hiring on Vrittih</span>
             <div className="brandsRow">
@@ -253,11 +256,11 @@ export default function Home() {
             </div>
           </div>
           <div className="bCard bStat">
-            <div className="bNum"><CountUp to={stats.jobs} suffix="+" /></div>
+            <div className="bNum"><CountUp to={stats?.jobs ?? 0} /></div>
             <div className="bLabel">Open roles, live now</div>
           </div>
           <div className="bCard bStat">
-            <div className="bNum"><CountUp to={stats.companies} suffix="+" /></div>
+            <div className="bNum"><CountUp to={stats?.companies ?? 0} /></div>
             <div className="bLabel">Companies hiring</div>
           </div>
           <div className="bCard bGold v-gold">
@@ -265,7 +268,7 @@ export default function Home() {
             <div className="bGoldText">Every profile identity-checked. Verification reads as precious — the gold mark is earned.</div>
           </div>
           <div className="bCard bStat">
-            <div className="bNum"><CountUp to={stats.industries} /></div>
+            <div className="bNum"><CountUp to={stats?.industries ?? 0} /></div>
             <div className="bLabel">Industries covered</div>
           </div>
           <div className="bCard bStat">
