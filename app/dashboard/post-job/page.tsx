@@ -13,7 +13,8 @@ export default function PostJob() {
     title:"", company:"", industry:"Technology", location:"",
     type:"FULLTIME", remote:false, description:"",
     salaryMin:"", salaryMax:"", salaryCurrency:"CHF", salaryPeriod:"year",
-    experience:"", openings:"1", deadline:"", requirements:"", benefits:""
+    experience:"", openings:"1", deadline:"", requirements:"", benefits:"",
+    applyUrl:"", govUrl:""
   })
   const [skills, setSkills] = useState<string[]>([])
   const [skillInput, setSkillInput] = useState("")
@@ -43,6 +44,8 @@ export default function PostJob() {
         title: form.title, company: form.company, industry: form.industry,
         location: form.location, type: form.type, remote: form.remote,
         description: form.description, salary,
+        applyUrl: form.applyUrl || undefined,
+        govUrl: form.govUrl || undefined,
         requirements: form.requirements || null,
         benefits: form.benefits || null,
         experience: form.experience || null,
@@ -155,6 +158,21 @@ export default function PostJob() {
               </div>
               <div style={S.fg}><label style={S.label}>Benefits & perks</label>
                 <textarea value={form.benefits} onChange={e=>setForm(p=>({...p,benefits:e.target.value}))} style={S.textarea} rows={3} placeholder="Health insurance, equity, flexible hours, remote work, learning budget..." />
+              </div>
+            </div>
+
+            {/* Where to apply */}
+            <div style={S.section}>
+              <h2 style={S.sectionTitle}>Where to apply</h2>
+              <p style={{fontSize:12.5,color:"#7C877F",margin:"-6px 0 14px",lineHeight:1.5}}>
+                Candidates can always apply on Vrittih with live status tracking. Add the official routes
+                below and they’ll be offered as extra options on the job page. Leave blank if not applicable.
+              </p>
+              <div style={S.fg}><label style={S.label}>Company / department careers page</label>
+                <input value={form.applyUrl} onChange={e=>setForm(p=>({...p,applyUrl:e.target.value}))} style={S.input} placeholder="https://careers.yourcompany.com/role-123" />
+              </div>
+              <div style={S.fg}><label style={S.label}>Official government portal listing</label>
+                <input value={form.govUrl} onChange={e=>setForm(p=>({...p,govUrl:e.target.value}))} style={S.input} placeholder="https://recruitment.gov.in/notice/456 (public-sector roles)" />
               </div>
             </div>
 

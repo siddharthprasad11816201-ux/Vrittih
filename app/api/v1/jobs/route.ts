@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { authApiKey } from "@/lib/apikey"
+import { safeExternalUrl } from "@/lib/url"
 
 export const dynamic = "force-dynamic"
 
@@ -42,6 +43,8 @@ export async function POST(req: NextRequest) {
           type: normType(j.type || j.employmentType),
           salary: j.salary ? String(j.salary) : null,
           remote: !!(j.remote ?? /remote/i.test(j.location || "")),
+          applyUrl: safeExternalUrl(j.applyUrl ?? j.apply_url ?? j.url),
+          govUrl: safeExternalUrl(j.govUrl ?? j.gov_url ?? j.governmentUrl),
           active: j.active !== false,
           postedById: ctx.employerId,
         },

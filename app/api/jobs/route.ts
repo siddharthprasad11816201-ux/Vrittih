@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { computeMatch, candidateFromUser, jobFromRecord } from "@/lib/matching"
 import { ci } from "@/lib/db"
+import { safeExternalUrl } from "@/lib/url"
 import { z } from "zod"
 
 const jobSchema = z.object({
@@ -14,6 +15,8 @@ const jobSchema = z.object({
   type: z.string(),
   salary: z.string().optional(),
   remote: z.boolean().default(false),
+  applyUrl: z.string().max(500).optional(),   // company / department careers page
+  govUrl: z.string().max(500).optional(),     // official government portal listing
   skills: z.array(z.string()).optional(),
 })
 
@@ -108,11 +111,13 @@ export async function POST(req: NextRequest) {
     if (!parsed.success)
       return NextResponse.json({ error: "Validation failed", issues: parsed.error.flatten().fieldErrors }, { status: 400 })
 
-    const { skills, ...jobData } = parsed.data
+    const { skills, applyUrl, govUrl, ...jobData } = parsed.data
 
     const job = await prisma.job.create({
       data: {
         ...jobData,
+        applyUrl: safeExternalUrl(applyUrl),
+        govUrl: safeExternalUrl(govUrl),
         postedById: payload.userId,
         skills: skills?.length ? {
           create: await Promise.all(skills.map(async (name) => {

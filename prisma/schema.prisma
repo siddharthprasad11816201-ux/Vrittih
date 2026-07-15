@@ -488,6 +488,10 @@ model Job {
   type         String
   salary       String?
   remote       Boolean       @default(false)
+  // Where a candidate can apply. Vrittih's own tracked flow is always available;
+  // these add the official routes for aggregated / public-sector listings.
+  applyUrl     String?       // the company's or department's own careers page for this role
+  govUrl       String?       // the official government portal listing (public-sector roles)
   active        Boolean       @default(true)
   views         Int           @default(0)
   postedById   String

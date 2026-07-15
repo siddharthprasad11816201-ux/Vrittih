@@ -7,6 +7,7 @@ import CompanyLogo from "@/components/vrittih/CompanyLogo"
 import styles from "@/styles/jobdetail.module.css"
 import { IconBanknote } from "@/components/ui/Icons"
 import { slugify } from "@/lib/company"
+import { hostLabel } from "@/lib/url"
 
 export default function JobDetail({ params }: { params: { id: string } }) {
   const { id } = params
@@ -106,9 +107,45 @@ export default function JobDetail({ params }: { params: { id: string } }) {
               </div>
             </div>
           ) : (
-            <button onClick={() => setShowForm(true)} className={styles.applyBtn}>
-              Apply now
-            </button>
+            <div style={A.box}>
+              <h2 style={A.head}>Apply for this role</h2>
+              <p style={A.sub}>
+                {job.govUrl || job.applyUrl
+                  ? "Choose how you’d like to apply — all routes reach the same employer."
+                  : "Apply here and follow every stage live."}
+              </p>
+
+              <button onClick={() => setShowForm(true)} style={A.primary}>
+                <span style={A.optMain}>Apply on Vrittih</span>
+                <span style={A.optSubOn}>Tracked live through all 7 stages</span>
+              </button>
+
+              {job.govUrl && (
+                <a href={job.govUrl} target="_blank" rel="noopener noreferrer" style={A.opt}>
+                  <span style={A.optBody}>
+                    <span style={A.optMain}>Apply on the official government portal</span>
+                    <span style={A.optSub}>{hostLabel(job.govUrl)} · opens the official site</span>
+                  </span>
+                  <span style={A.ext}>↗</span>
+                </a>
+              )}
+
+              {job.applyUrl && (
+                <a href={job.applyUrl} target="_blank" rel="noopener noreferrer" style={A.opt}>
+                  <span style={A.optBody}>
+                    <span style={A.optMain}>Apply on the {job.company} website</span>
+                    <span style={A.optSub}>{hostLabel(job.applyUrl)} · opens the employer’s own site</span>
+                  </span>
+                  <span style={A.ext}>↗</span>
+                </a>
+              )}
+
+              {(job.govUrl || job.applyUrl) && (
+                <p style={A.note}>
+                  Applying on an external site happens outside Vrittih, so we can’t show live status for it.
+                </p>
+              )}
+            </div>
           )}
         </div>
 
@@ -126,4 +163,28 @@ export default function JobDetail({ params }: { params: { id: string } }) {
       </div>
     </AppShell>
   )
+}
+
+// Apply options — Vrittih's tracked flow plus the official external routes.
+const A: Record<string, any> = {
+  box: { border: "1px solid var(--v-line, #E6E3DA)", borderRadius: 14, padding: 20, background: "var(--v-surface, #fff)", marginTop: 8 },
+  head: { fontSize: 17, fontWeight: 650, color: "var(--brand-900, #04342C)", margin: 0 },
+  sub: { fontSize: 13.5, color: "var(--v-ink-3, #7C877F)", margin: "6px 0 16px", lineHeight: 1.5 },
+  primary: {
+    display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 3, width: "100%",
+    background: "var(--brand-600, #0F6E56)", color: "#fff", border: "none", borderRadius: 11,
+    padding: "13px 16px", cursor: "pointer", textAlign: "left", marginBottom: 10,
+  },
+  opt: {
+    display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, width: "100%",
+    border: "1px solid var(--v-line-2, #D9D3C4)", borderRadius: 11, padding: "13px 16px",
+    textDecoration: "none", marginBottom: 10, background: "var(--v-bg, #FAF8F2)", boxSizing: "border-box",
+    color: "var(--v-ink, #14201B)",
+  },
+  optBody: { display: "flex", flexDirection: "column", gap: 3, minWidth: 0 },
+  optMain: { fontSize: 14.5, fontWeight: 600, color: "inherit" },
+  optSub: { fontSize: 12, color: "var(--v-ink-3, #7C877F)" },
+  optSubOn: { fontSize: 12, color: "rgba(255,255,255,.8)" },
+  ext: { fontSize: 16, color: "var(--v-ink-3, #7C877F)", flexShrink: 0 },
+  note: { fontSize: 12, color: "var(--v-ink-3, #7C877F)", lineHeight: 1.5, margin: "2px 0 0" },
 }
