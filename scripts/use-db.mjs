@@ -10,9 +10,8 @@
 import { readFileSync, writeFileSync, existsSync } from "fs"
 
 const map = { postgres: "postgresql", postgresql: "postgresql", pg: "postgresql", sqlite: "sqlite", sqlite3: "sqlite" }
-const provider = map[(process.argv[2] || "").toLowerCase()]
+const arg = (process.argv[2] || "").toLowerCase()
 const force = process.argv.includes("--force")
-if (!provider) { console.error("Usage: node scripts/use-db.mjs <sqlite|postgres> [--force]"); process.exit(1) }
 
 // DATABASE_URL from the process env (host) or, failing that, the .env file (local).
 function databaseUrl() {
@@ -28,6 +27,12 @@ function databaseUrl() {
 
 const url = databaseUrl()
 const urlIsPg = /^postgres(ql)?:\/\//.test(url)
+
+// "auto" — match the provider to whatever DATABASE_URL actually is. Used by the
+// build so local (file:) builds SQLite and a host (postgres://) builds Postgres,
+// with no manual flipping and no way to get the two out of sync.
+const provider = arg === "auto" ? (urlIsPg ? "postgresql" : "sqlite") : map[arg]
+if (!provider) { console.error("Usage: node scripts/use-db.mjs <sqlite|postgres|auto> [--force]"); process.exit(1) }
 
 if (provider === "postgresql" && !urlIsPg && !force) {
   console.error("")

@@ -8,7 +8,7 @@
         "dev:chat": "node server/chat.js",
         "dev:signal": "node server/signal.js",
         "dev:worker": "node server/worker.js",
-        "build": "prisma generate && next build",
+        "build": "node scripts/use-db.mjs auto && prisma generate && next build",
         "postinstall": "prisma generate",
         "start": "next start",
         "lint": "eslint",
