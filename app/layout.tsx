@@ -1,6 +1,17 @@
 import type { Metadata, Viewport } from "next"
+import { Inter } from "next/font/google"
 import "@/styles/globals.css"
 import "@/styles/vrittih.css"
+
+// The design system specifies Inter 400/500/600/700. next/font downloads it at
+// build time and self-hosts it, so there is no runtime request to Google and the
+// app keeps working offline / behind a strict CSP.
+const inter = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
+  display: "swap",
+})
 import PWARegister from "@/components/PWARegister"
 import InstallPrompt from "@/components/InstallPrompt"
 
@@ -22,7 +33,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body>
         {children}
         <PWARegister />
