@@ -62,11 +62,18 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
+  const [authLoaded, setAuthLoaded] = useState(false)
   const [q, setQ] = useState("")
   const [isMobile, setIsMobile] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
 
-  useEffect(() => { fetch("/api/auth/me").then(r => r.json()).then(d => setUser(d.user || null)).catch(() => {}) }, [])
+  useEffect(() => {
+    fetch("/api/auth/me")
+      .then(r => r.json())
+      .then(d => setUser(d.user || null))
+      .catch(() => setUser(null))
+      .finally(() => setAuthLoaded(true))
+  }, [])
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 900px)")
     const on = () => setIsMobile(mq.matches)
@@ -117,13 +124,26 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
           ))}
         </nav>
 
-        <Link href="/settings" style={S.userChip}>
-          <span style={S.avatar}>{initials}</span>
-          <span style={{ minWidth: 0 }}>
-            <span style={S.userName}>{user?.name || "Account"}</span>
-            <span style={S.userRole}>{isEmployer ? "Employer" : "Job seeker"}</span>
-          </span>
-        </Link>
+        {/* Showing a generic "Account · Job seeker" chip while the session is
+            actually rejected makes the app look signed-in when it isn't — the
+            candidate only finds out when an action fails. Say it plainly. */}
+        {authLoaded && !user ? (
+          <Link href={`/login?next=${encodeURIComponent(pathname || "/dashboard")}`} style={S.userChip}>
+            <span style={{ ...S.avatar, background: "var(--v-surface-2)", color: "var(--v-ink-3)" }}>—</span>
+            <span style={{ minWidth: 0 }}>
+              <span style={S.userName}>Sign in</span>
+              <span style={S.userRole}>You’re signed out</span>
+            </span>
+          </Link>
+        ) : (
+          <Link href="/settings" style={S.userChip}>
+            <span style={S.avatar}>{initials}</span>
+            <span style={{ minWidth: 0 }}>
+              <span style={S.userName}>{user?.name || "Account"}</span>
+              <span style={S.userRole}>{isEmployer ? "Employer" : "Job seeker"}</span>
+            </span>
+          </Link>
+        )}
       </aside>
 
       <div style={S.main}>

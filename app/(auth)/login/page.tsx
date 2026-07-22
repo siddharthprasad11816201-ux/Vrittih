@@ -16,9 +16,19 @@ export default function LoginPage() {
   const [passkeyLoading, setPasskeyLoading] = useState(false)
   const [ok, setOk] = useState(false)
 
+  // Honour ?next= so a candidate sent here mid-application lands back on the job
+  // they were applying to, not on a generic dashboard. Only same-origin paths are
+  // accepted — an open redirect would let a phishing link bounce users off-site
+  // straight after they hand over their password.
+  const nextPath = (() => {
+    if (typeof window === "undefined") return ""
+    const raw = new URLSearchParams(window.location.search).get("next") || ""
+    return /^\/(?!\/)/.test(raw) ? raw : ""
+  })()
+
   const succeed = (uid?: string, extra?: string) => {
     setOk(true)
-    setTimeout(() => router.push(extra || "/dashboard"), 550)
+    setTimeout(() => router.push(extra || nextPath || "/dashboard"), 550)
   }
 
   async function passkeySignIn() {

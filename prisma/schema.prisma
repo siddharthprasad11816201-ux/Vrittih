@@ -418,8 +418,72 @@ model Employee {
   updatedAt      DateTime  @updatedAt
   leaves         LeaveRequest[]
   attendance     Attendance[]
+  compensation   Compensation?
   @@unique([employerId, userId])
   @@index([employerId, status])
+}
+
+// ===================== Payroll =====================
+// An employee's current salary structure. Components are stored as JSON so an
+// employer can model any pay stack (basic, HRA, allowances, PF, professional tax,
+// insurance) without a schema change per country.
+//
+// IMPORTANT: this is a payroll ENGINE, not a statutory-compliance product. Rates
+// and rules are supplied by the employer and are not warranted to satisfy any
+// jurisdiction's tax or social-security law. Have your finance team or chartered
+// accountant verify the structure before you pay anyone from it.
+model Compensation {
+  id            String   @id @default(cuid())
+  employeeId    String   @unique
+  currency      String   @default("INR")
+  annualCTC     Float                       // cost to company, in `currency`
+  components    String   @default("[]")     // JSON [{name,kind:earning|deduction,calc:fixed|pct_basic|pct_ctc,value,statutory?}]
+  effectiveFrom DateTime @default(now())
+  note          String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  employee      Employee @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+}
+
+// One payroll cycle for one employer (a calendar month).
+model PayrollRun {
+  id          String    @id @default(cuid())
+  employerId  String
+  periodYear  Int
+  periodMonth Int                            // 1-12
+  status      String    @default("DRAFT")    // DRAFT | APPROVED | PAID | CANCELLED
+  currency    String    @default("INR")
+  totalGross  Float     @default(0)
+  totalDeduct Float     @default(0)
+  totalNet    Float     @default(0)
+  headcount   Int       @default(0)
+  note        String?
+  approvedAt  DateTime?
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  payslips    Payslip[]
+
+  @@unique([employerId, periodYear, periodMonth])
+  @@index([employerId, status])
+}
+
+model Payslip {
+  id         String     @id @default(cuid())
+  runId      String
+  employeeId String
+  currency   String
+  gross      Float
+  deductions Float
+  net        Float
+  lines      String     @default("[]")       // JSON [{name,kind,amount}] — the full breakdown
+  lopDays    Float      @default(0)          // loss-of-pay days applied
+  paidDays   Float      @default(0)
+  createdAt  DateTime   @default(now())
+  run        PayrollRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, employeeId])
+  @@index([employeeId])
 }
 
 model Attendance {

@@ -26,6 +26,14 @@ export default function JobDetail({ params }: { params: { id: string } }) {
       .then(d => { setJob(d.job); setLoading(false) })
   }, [id])
 
+  // Restore a cover letter the candidate wrote before being sent to sign in.
+  useEffect(() => {
+    try {
+      const draft = sessionStorage.getItem(`vrittih:draft:${id}`)
+      if (draft) { setCoverLetter(draft); setShowForm(true); sessionStorage.removeItem(`vrittih:draft:${id}`) }
+    } catch {}
+  }, [id])
+
   async function apply() {
     setApplying(true)
     setError("")
@@ -34,8 +42,20 @@ export default function JobDetail({ params }: { params: { id: string } }) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ jobId: id, coverLetter }),
     })
-    const data = await res.json()
-    if (!res.ok) { setError(data.error); setApplying(false); return }
+    const data = await res.json().catch(() => ({}))
+    if (!res.ok) {
+      // A rejected session is not the candidate's fault and "Not authenticated"
+      // tells them nothing. Send them to sign in and bring them straight back to
+      // this job, with the cover letter they already wrote preserved.
+      if (res.status === 401) {
+        try { sessionStorage.setItem(`vrittih:draft:${id}`, coverLetter) } catch {}
+        router.push(`/login?next=${encodeURIComponent(`/jobs/${id}`)}`)
+        return
+      }
+      setError(data.error || "Could not submit your application. Please try again.")
+      setApplying(false)
+      return
+    }
     setApplied(true)
     setShowForm(false)
     setApplying(false)
