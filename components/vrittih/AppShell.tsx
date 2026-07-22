@@ -7,6 +7,7 @@ import {
   IconActivity, IconBriefcase, IconTarget, IconFileText, IconUsers, IconTrendingUp,
   IconClipboard, IconMessage, IconMail, IconVideo, IconNetwork, IconUser, IconSettings,
   IconSearch, IconBell, IconShield, IconScan, IconMenu, IconX, IconHome, IconBookmark, IconGlobe,
+  IconBanknote,
 } from "@/components/ui/Icons"
 
 type Item = { href: string; label: string; icon: ReactNode }
@@ -19,6 +20,7 @@ function nav(isEmployer: boolean, isAdmin: boolean): Group[] {
         { href: "/dashboard/recruiter", label: "Candidates", icon: <IconUsers size={17} /> },
         { href: "/dashboard/pipeline", label: "Pipeline", icon: <IconTrendingUp size={17} /> },
         { href: "/hrms", label: "HRMS", icon: <IconClipboard size={17} /> },
+        { href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={17} /> },
         { href: "/jobs", label: "All jobs", icon: <IconBriefcase size={17} /> },
         { href: "/companies", label: "Companies", icon: <IconGlobe size={17} /> },
       ] }
