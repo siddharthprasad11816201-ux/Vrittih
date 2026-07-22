@@ -14,10 +14,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     })
     if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 })
 
-    // Aggregated listings (sourceKey set) belong to a company that hasn't
-    // registered here — we cannot receive applications on their behalf, so the
-    // page must send the candidate to the original posting. Attach the source so
-    // the UI can attribute it and link back.
+    // A listing is "aggregated" only if it was ingested from a registered external
+    // JobSource — i.e. the employer has no account here, so we genuinely cannot
+    // receive the application and must send the candidate to the original posting.
+    //
+    // sourceKey alone is NOT sufficient: seed imports also set it (purely to make
+    // re-imports idempotent) for companies that ARE native employers here. Keying
+    // off sourceKey wrongly marked every natively-posted role as external and hid
+    // the apply button on them. Only a matching JobSource row means aggregated.
     const source = job.sourceKey
       ? await prisma.jobSource.findUnique({
           where: { key: job.sourceKey },
@@ -25,7 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         })
       : null
 
-    return NextResponse.json({ job: { ...job, source, aggregated: !!job.sourceKey } })
+    return NextResponse.json({ job: { ...job, source, aggregated: !!source } })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

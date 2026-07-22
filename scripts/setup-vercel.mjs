@@ -23,8 +23,13 @@ if (!scope) {
   process.exit(1)
 }
 
+// Windows resolves `npx` only as npx.cmd, which execFileSync cannot spawn directly.
+const NPX = process.platform === "win32" ? "npx.cmd" : "npx"
 const vercel = (a, opts = {}) =>
-  execFileSync("npx", ["vercel", ...a, "--scope", scope], { encoding: "utf8", stdio: opts.stdio || "pipe", input: opts.input })
+  execFileSync(NPX, ["vercel", ...a, "--scope", scope], {
+    encoding: "utf8", stdio: opts.stdio || "pipe", input: opts.input,
+    shell: process.platform === "win32",
+  })
 
 // Values that are safe to keep in source: they are public identifiers or the
 // caller's own infrastructure, not secrets that grant account access.
