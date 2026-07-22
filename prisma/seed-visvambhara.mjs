@@ -16,6 +16,12 @@ import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
 import { CATALOG, FRONTIER, CORE_INSTITUTE, MISSIONS } from "./data/visvambhara-catalog.mjs"
 
+// The expansion catalog (generated + credibility-reviewed) carries its own context
+// and skills per division, so new domains need no edits here. Optional: the seed
+// works with or without it.
+let EXPANSION = []
+try { ({ EXPANSION } = await import("./data/visvambhara-expansion.mjs")) } catch { /* not generated yet */ }
+
 const p = new PrismaClient()
 const argv = process.argv.slice(2)
 const CORE_ONLY = argv.includes("--core")
@@ -82,22 +88,62 @@ const DIVISION_SKILLS = {
 const DEFAULT_SKILLS = ["strong engineering fundamentals", "Python or MATLAB", "analytical problem solving", "clear technical communication"]
 
 // Responsibilities scaffold — combined with the role title for specificity.
-function responsibilities(title, division, frontier, fellowship, missionGoal) {
+// Not every division is an engineering division. A space-law intern does not
+// "execute tests" and is not mentored by an engineer — writing it that way reads
+// auto-generated and tells a serious candidate we did not think about their field.
+const TRACK_MODE = {
+  "Applied Science & Research": "science",
+  "Earth Observation & Applications": "science",
+  "Research & Advanced Technologies": "science",
+  "Human Systems & Life Sciences": "life",
+  "Business, Policy & Legal": "advisory",
+  "Sustainability & Environment": "advisory",
+  "Design & Experience": "design",
+  "Education & Knowledge": "education",
+}
+
+const MODES = {
+  engineering: {
+    mentor: "senior engineer", peers: "engineer", group: "engineering group",
+    verbs: "Build and validate models, run analyses or execute tests, and defend your results in technical review.",
+  },
+  science: {
+    mentor: "senior researcher", peers: "researcher", group: "research group",
+    verbs: "Design and run experiments or simulations, reduce the data honestly, and defend your conclusions — including the error bars — in technical review.",
+  },
+  life: {
+    mentor: "principal investigator", peers: "researcher", group: "research group",
+    verbs: "Run protocols or analyses under supervision, handle human- and biological-subject data to the standards it demands, and present results with their limitations stated.",
+  },
+  advisory: {
+    mentor: "senior specialist", peers: "colleague", group: "programme team",
+    verbs: "Work from primary sources — regulation, treaty text, filings, financial data — and produce the written analysis a decision-maker can actually act on.",
+  },
+  design: {
+    mentor: "senior designer", peers: "designer", group: "design and engineering review",
+    verbs: "Take work from sketch to validated design — prototypes, models or interfaces — and defend your decisions against real user and engineering constraints.",
+  },
+  education: {
+    mentor: "senior instructional designer", peers: "colleague", group: "faculty and engineering reviewers",
+    verbs: "Build learning material or tooling, test it with real learners, and iterate on what the evidence says rather than what you hoped.",
+  },
+}
+
+function responsibilities(title, division, frontier, fellowship, missionGoal, track) {
+  const m = MODES[TRACK_MODE[track] || "engineering"]
   const focus = title.replace(/\s*(Intern|Research Fellow)$/i, "").trim()
-  const subject = fellowship && missionGoal
-    ? "the mission objective above"
-    : `real ${focus.toLowerCase()} work`
+  const subject = fellowship && missionGoal ? "the mission objective above" : `real ${focus.toLowerCase()} work`
   const base = [
-    `Own a scoped piece of ${subject} — analysis, design or test — with a named senior engineer as your mentor.`,
-    `Build and validate models, run analyses or execute tests, and defend your results in technical review.`,
-    `Document what you did to a standard another engineer can pick up and repeat, including assumptions and uncertainty.`,
-    `Work across ${division.toLowerCase()} and the interfacing teams; aerospace problems are never solved by one discipline alone.`,
+    `Own a scoped piece of ${subject}, with a named ${m.mentor} as your mentor.`,
+    m.verbs,
+    `Document what you did to a standard another ${m.peers} can pick up and repeat, including your assumptions and what you are uncertain about.`,
+    `Work across ${division.toLowerCase()} and the interfacing teams; the hard problems here are never solved by one discipline alone.`,
     fellowship
       ? `Publish or present your findings to the research group at the close of the term, including negative results and why they matter.`
-      : `Present your findings at the end of the internship to the engineering group, including what did not work and why.`,
+      : `Present your findings at the end of the internship to the ${m.group}, including what did not work and why.`,
   ]
   if (frontier) {
-    base.splice(1, 0, `Survey the state of the art, identify what is genuinely unknown, and design an experiment or simulation that would move the question forward.`)
+    base.splice(1, 0, `Survey the state of the art, identify what is genuinely unknown, and design an experiment or study that would move the question forward.`)
   }
   return base
 }
@@ -121,7 +167,7 @@ const FRONTIER_NOTE =
   "established physical law such as conservation of energy. If a line of enquiry turns out to be a dead end, publishing that is a " +
   "real result and is treated as one. Scientific credibility is a condition of the work, not an obstacle to it."
 
-function buildDescription({ title, division, track, institute, lab, centre, frontier, missionGoal, fellowship }) {
+function buildDescription({ title, division, track, institute, lab, centre, frontier, missionGoal, fellowship, context, skills }) {
   const parts = []
   const focus = title.replace(/\s*(Intern|Research Fellow)$/i, "").trim()
 
@@ -131,25 +177,26 @@ function buildDescription({ title, division, track, institute, lab, centre, fron
   } else if (institute || centre) {
     parts.push(`${institute || centre}${lab ? ` · ${lab}` : ""}\n\n${CORE_INSTITUTE.vision}`)
   } else {
-    parts.push(DIVISION_CONTEXT[division] || `Viśvambhara's ${division} group builds flight hardware and the analysis behind it.`)
+    parts.push(context || DIVISION_CONTEXT[division] || `Viśvambhara's ${division} group builds flight hardware and the analysis behind it.`)
   }
 
   parts.push(`\nAbout the role\n` + (fellowship
     ? `As a ${title}, you will lead a strand of this Grand Challenge within ${centre || "the Institute"}. Fellows are given a genuine open question, the resources to attack it, and the freedom to report what they actually find.`
     : `As a ${title.replace(/\s*Intern$/, " intern").trim()}, you will work on ${focus.toLowerCase()} within ${division}. This is not a shadowing programme — interns at Viśvambhara are given a real problem, real data and real responsibility, with the mentorship to succeed at it.`))
 
-  parts.push(`\nWhat you'll do\n` + responsibilities(title, division, frontier, fellowship, missionGoal).map((x) => `• ${x}`).join("\n"))
+  parts.push(`\nWhat you'll do\n` + responsibilities(title, division, frontier, fellowship, missionGoal, track).map((x) => `• ${x}`).join("\n"))
 
-  const skills = DIVISION_SKILLS[division] || DEFAULT_SKILLS
-  parts.push(`\nWhat you'll bring\n` + skills.map((x) => `• ${x}`).join("\n") +
+  const need = (skills && skills.length) ? skills : (DIVISION_SKILLS[division] || DEFAULT_SKILLS)
+  parts.push(`\nWhat you'll bring\n` + need.map((x) => `• ${x}`).join("\n") +
     `\n• Curiosity, rigour and the honesty to say "I don't know yet"`)
 
   parts.push(`\nWho should apply\n` + eligibility(frontier).map((x) => `• ${x}`).join("\n"))
 
+  const mode = MODES[TRACK_MODE[track] || "engineering"]
   parts.push(`\nWhat we offer\n` +
-    [`A real engineering problem that matters, not busywork.`,
-     `A named mentor and weekly technical review with senior engineers.`,
-     `Access to design tools, compute, lab and test facilities appropriate to the work.`,
+    [`A real problem that matters, not busywork.`,
+     `A named mentor and weekly review with our ${mode.mentor}s.`,
+     `Access to the tools, compute, lab, archives or test facilities the work actually needs.`,
      `A written reference and, for strong performers, a pathway to a full-time offer.`,
      `Work that is credited: your name on the report you wrote.`].map((x) => `• ${x}`).join("\n"))
 
@@ -189,6 +236,12 @@ if (!CORE_ONLY) {
   }
   for (const m of MISSIONS) {
     postings.push({ title: m.role, division: "Grand Challenge Programmes", track: "Research & Advanced Technologies", centre: CORE_INSTITUTE.name, frontier: true, missionGoal: m.goal, fellowship: true })
+  }
+  // expansion domains carry their own reviewed context + skills
+  for (const d of EXPANSION) {
+    for (const title of d.roles) {
+      postings.push({ title, division: d.division, track: d.track, frontier: !!d.frontier, context: d.context, skills: d.skills })
+    }
   }
 }
 
