@@ -64,20 +64,50 @@ export async function GET(req: NextRequest) {
       delete where.active
     }
 
-    const [jobs, total] = await Promise.all([
-      prisma.job.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { createdAt: "desc" },
-        include: {
-          postedBy: { select: { id: true, name: true } },
-          skills: { include: { skill: true } },
-          _count: { select: { applications: true } },
-        },
-      }),
-      prisma.job.count({ where }),
-    ])
+    const include = {
+      postedBy: { select: { id: true, name: true } },
+      skills: { include: { skill: true } },
+      _count: { select: { applications: true } },
+    }
+
+    // Plain browse (no search term, not an employer's own list) is diversified by
+    // company. Ordering purely by newest let a single bulk import bury every other
+    // employer — one company posting 1,400 roles meant page after page of only
+    // them, and the rest of the board was effectively invisible. Round-robin takes
+    // each company's newest, then each company's next, and so on: recency still
+    // decides order *within* a company, but no employer can crowd out the others.
+    const browsing = !q && !mine
+    let jobs: any[], total: number
+
+    if (browsing) {
+      const [rows, count] = await Promise.all([
+        prisma.job.findMany({ where, orderBy: { createdAt: "desc" }, select: { id: true, company: true }, take: 5000 }),
+        prisma.job.count({ where }),
+      ])
+      const byCompany = new Map<string, string[]>()
+      for (const r of rows) {
+        const list = byCompany.get(r.company) || []
+        list.push(r.id)
+        byCompany.set(r.company, list)
+      }
+      const lists = [...byCompany.values()]
+      const ordered: string[] = []
+      for (let i = 0; ordered.length < rows.length; i++) {
+        for (const l of lists) if (i < l.length) ordered.push(l[i])
+      }
+      const pageIds = ordered.slice(skip, skip + limit)
+      const found = pageIds.length
+        ? await prisma.job.findMany({ where: { id: { in: pageIds } }, include })
+        : []
+      const pos = new Map(pageIds.map((id, i) => [id, i]))
+      jobs = found.sort((a, b) => (pos.get(a.id) ?? 0) - (pos.get(b.id) ?? 0))
+      total = count
+    } else {
+      ;[jobs, total] = await Promise.all([
+        prisma.job.findMany({ where, skip, take: limit, orderBy: { createdAt: "desc" }, include }),
+        prisma.job.count({ where }),
+      ])
+    }
 
     // If the viewer is a signed-in job seeker, attach a personalised match score.
     let jobsOut: any[] = jobs
