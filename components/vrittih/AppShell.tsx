@@ -156,8 +156,8 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
             onClick={() => window.dispatchEvent(new Event("vrittih:open-command"))}
             style={S.search} aria-label="Search (Ctrl+K)">
             <IconSearch size={15} />
-            <span style={S.searchPlaceholder}>Search or jump to…</span>
-            <kbd style={S.kbd}>⌘K</kbd>
+            <span style={S.searchPlaceholder} className="v-search-label">Search or jump to…</span>
+            <kbd style={S.kbd} className="v-search-kbd">⌘K</kbd>
           </button>
           <Link href="/notifications" style={S.iconBtn} aria-label="Notifications"><IconBell size={17} /></Link>
           <Link href="/settings" style={S.avatarSm}>{initials}</Link>

@@ -40,9 +40,13 @@ html, body { max-width: 100%; overflow-x: hidden; }
   /* Fixed-width columns and panels must be free to shrink. */
   [style*="min-width"]:not([data-keep-width]) { min-width: 0 !important; }
 
-  /* Long flex rows (toolbars, filter strips, action bars) wrap instead of
-     pushing the layout wider than the screen. */
-  [style*="display: flex"]:not([data-no-wrap]) { flex-wrap: wrap; }
+  /* NOTE: an earlier version wrapped every flex container here. That broke the
+     app top bar — it is a flex row, so the avatar wrapped onto a second line and
+     the header looked shredded on every signed-in page. Blanket wrapping is
+     wrong: bars, nav rows and button pairs are meant to stay on one line and
+     shrink instead. Containers that genuinely should wrap now opt in with
+     data-wrap, and shrinking is handled by releasing min-width below. */
+  [data-wrap] { flex-wrap: wrap; }
 
   /* Anything explicitly sized wider than the viewport comes back in. */
   [style*="width: 4"], [style*="width: 5"], [style*="width: 6"],
@@ -80,6 +84,21 @@ html, body { max-width: 100%; overflow-x: hidden; }
      and does not inherit a desktop min-width from a child. */
   .v-app { min-width: 0; }
   .v-app > div { min-width: 0; }
+
+  /* Top bar stays ONE row and shrinks. The search collapses to its icon rather
+     than squeezing the title and pushing the avatar onto a second line. */
+  .v-app header { flex-wrap: nowrap !important; gap: 8px !important; padding: 0 12px !important; }
+  .v-app header h1 { font-size: 16px !important; min-width: 0; }
+  .v-search-label, .v-search-kbd { display: none !important; }
+  .v-app header > button[aria-label^="Search"] {
+    width: 38px !important; max-width: 38px !important; flex: 0 0 38px !important;
+    justify-content: center !important; padding: 0 !important;
+  }
+}
+
+/* Very small phones: drop the page title rather than truncate everything. */
+@media (max-width: 380px) {
+  .v-app header h1 { display: none !important; }
 }
 
 /* =========================== marketing pages ============================== */
