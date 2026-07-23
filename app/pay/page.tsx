@@ -1,134 +1,251 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { IconCheckCircle, IconLock, IconArrowRight, IconBriefcase } from "@/components/ui/Icons"
+import { IconCheckCircle, IconLock, IconArrowRight } from "@/components/ui/Icons"
+import { PLANS } from "@/lib/plans"
 
 declare global { interface Window { Razorpay: any } }
+
+/*
+  Billing is MONTHLY (confirmed by the owner): Basic 1 CHF/mo, Pro 12 CHF/mo,
+  employer tiers 49/149/349 CHF/mo. This page previously said "One-time fee.
+  Lifetime access. No subscription, ever." in five places — charging a recurring
+  fee to someone who was promised lifetime access is how you earn chargebacks and
+  a reputation you cannot undo, so all of that copy is gone.
+
+  Currency: the conversion is backend logic. We detect the visitor's currency
+  from their locale, show the price in it, and keep the CHF reference and rate
+  out of the way — available on request, not shoved in the buyer's face.
+*/
+
+// map a browser locale/region to the currency we support for it
+const REGION_CCY: Record<string, string> = {
+  IN: "INR", CH: "CHF", US: "USD", GB: "GBP", SG: "SGD", JP: "JPY", CA: "CAD", AU: "AUD",
+  DE: "EUR", FR: "EUR", IT: "EUR", ES: "EUR", NL: "EUR", IE: "EUR", AT: "EUR", BE: "EUR", PT: "EUR", FI: "EUR",
+}
+
+function detectCurrency(supported: string[]): string {
+  try {
+    const loc = Intl.DateTimeFormat().resolvedOptions().locale || navigator.language || ""
+    const region = (loc.split("-")[2] || loc.split("-")[1] || "").toUpperCase()
+    const guess = REGION_CCY[region]
+    if (guess && supported.includes(guess)) return guess
+  } catch { /* fall through */ }
+  return supported.includes("CHF") ? "CHF" : supported[0]
+}
 
 export default function PayPage() {
   const router = useRouter()
   const [me, setMe] = useState<any>(null)
-  const [prices, setPrices] = useState<any[]>([])
+  const [rates, setRates] = useState<any[]>([])
   const [live, setLive] = useState(true)
-  const [currency, setCurrency] = useState("CHF")
-  const [type, setType] = useState<"jobseeker" | "employer">("jobseeker")
+  const [currency, setCurrency] = useState("")
+  const [audience, setAudience] = useState<"individual" | "employer">("individual")
+  const [planId, setPlanId] = useState("basic")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
+  const [showFx, setShowFx] = useState(false)
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r => r.json()).then(d => { if (d.user) { setMe(d.user); if (d.user.role === "EMPLOYER") setType("employer") } })
-    fetch("/api/payment/rates").then(r => r.json()).then(d => { setPrices(d.prices || []); setLive(d.live !== false) })
-    // preload Razorpay checkout
+    fetch("/api/auth/me").then(r => r.json()).then(d => {
+      if (d.user) { setMe(d.user); if (d.user.role === "EMPLOYER") { setAudience("employer"); setPlanId("emp_starter") } }
+    }).catch(() => {})
+    fetch("/api/payment/rates").then(r => r.json()).then(d => {
+      const list = d.prices || []
+      setRates(list); setLive(d.live !== false)
+      setCurrency(c => c || detectCurrency(list.map((p: any) => p.code)))
+    }).catch(() => {})
     if (!document.getElementById("rzp-sdk")) {
       const s = document.createElement("script")
       s.id = "rzp-sdk"; s.src = "https://checkout.razorpay.com/v1/checkout.js"; document.body.appendChild(s)
     }
   }, [])
 
-  const price = prices.find(p => p.code === currency)
-  const fmt = (p: any) => p ? `${p.symbol}${p.amount.toLocaleString(undefined, { minimumFractionDigits: p.code === "JPY" ? 0 : 2, maximumFractionDigits: p.code === "JPY" ? 0 : 2 })}` : "…"
+  const plans = useMemo(() => PLANS.filter(p => p.audience === audience && p.priceCHF > 0), [audience])
+  const plan = plans.find(p => p.id === planId) || plans[0]
+  const rate = rates.find(r => r.code === currency)
+
+  // rates come back priced for 1 CHF; scale to the plan
+  const localAmount = rate && plan ? rate.amount * plan.priceCHF : null
+  const money = (n: number | null) => {
+    if (n == null || !rate) return "…"
+    const zero = rate.code === "JPY"
+    return `${rate.symbol}${n.toLocaleString(undefined, { minimumFractionDigits: zero ? 0 : 2, maximumFractionDigits: zero ? 0 : 2 })}`
+  }
 
   async function pay() {
+    if (!plan) return
     setBusy(true); setError("")
     try {
-      const d = await fetch("/api/payment/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currency, type }) }).then(r => r.json())
-      if (!d.orderId) { setError(d.error || "Could not start payment."); setBusy(false); return }
-      if (!window.Razorpay) { setError("Payment window failed to load — check your connection and retry."); setBusy(false); return }
+      const d = await fetch("/api/payment/create-order", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ currency, planId: plan.id, type: audience === "employer" ? "employer" : "jobseeker" }),
+      }).then(r => r.json())
+
+      if (!d.orderId) {
+        setError(d.error || "We couldn't start the payment. Please try again in a moment.")
+        setBusy(false); return
+      }
+      if (!window.Razorpay) { setError("The payment window didn't load — check your connection and retry."); setBusy(false); return }
+
       const rzp = new window.Razorpay({
         key: d.keyId, amount: d.amount, currency: d.currency, order_id: d.orderId,
-        name: "Vrittih", description: "Lifetime membership · 1 CHF",
+        name: "Vrittih", description: `${plan.name} · ${plan.priceCHF} CHF / month`,
         prefill: { email: me?.email, name: me?.name },
-        theme: { color: "#0F6E56" },
+        theme: { color: "#0D7A5F" },
         handler: async (resp: any) => {
-          const v = await fetch("/api/payment/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(resp) }).then(r => r.json())
-          if (v.success) { setSuccess(true); setTimeout(() => router.push("/dashboard"), 2000) }
-          else setError(v.error || "Payment could not be verified.")
+          const v = await fetch("/api/payment/verify", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(resp),
+          }).then(r => r.json())
+          if (v.success) { setSuccess(true); setTimeout(() => router.push("/dashboard"), 1800) }
+          else setError(v.error || "We couldn't verify that payment. Nothing has been charged twice — contact us and we'll sort it.")
         },
         modal: { ondismiss: () => setBusy(false) },
       })
-      rzp.on("payment.failed", (r: any) => { setError(r.error?.description || "Payment failed. Please try again."); setBusy(false) })
+      rzp.on("payment.failed", (r: any) => { setError(r.error?.description || "The payment didn't go through. Please try again."); setBusy(false) })
       rzp.open()
-    } catch { setError("Network error. Please try again."); setBusy(false) }
+    } catch {
+      setError("Network error. Please try again.")
+      setBusy(false)
+    }
   }
 
   if (success) return (
-    <div style={S.page}><div style={S.card}>
-      <div style={S.okIc}><IconCheckCircle size={30} /></div>
-      <h1 style={S.h1}>You're in.</h1>
-      <p style={S.sub}>Payment confirmed — welcome to Vrittih. Taking you to your dashboard…</p>
-      <Link href="/dashboard" style={S.payBtn}>Go to dashboard <IconArrowRight size={15} /></Link>
+    <div className="pw"><div className="pcard center">
+      <div className="okIc"><IconCheckCircle size={30} /></div>
+      <h1 className="h1">You're in.</h1>
+      <p className="sub">Subscription active — welcome to Vrittih. Taking you to your dashboard…</p>
+      <Link href="/dashboard" className="btn">Go to dashboard <IconArrowRight size={15} /></Link>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
     </div></div>
   )
 
   return (
-    <div style={S.page}>
-      <div style={S.card}>
-        <Link href="/" style={S.brand}><span style={S.brandMark}><IconBriefcase size={16} /></span>Vrittih</Link>
-        <h1 style={S.h1}>Join Vrittih</h1>
-        <p style={S.sub}>One-time fee. Lifetime access. No subscription, ever.</p>
+    <div className="pw">
+      <div className="pcard">
+        <Link href="/" className="brand">
+          <span className="mark" aria-hidden><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#fff" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></svg></span>
+          Vrittih
+        </Link>
 
-        <div style={S.priceBox}>
-          <div style={S.priceMain}>{fmt(price)}</div>
-          <div style={S.priceSub}>= 1 CHF{currency !== "CHF" && price ? ` · live rate ${price.rate}` : ""} · once</div>
-        </div>
+        <h1 className="h1">Choose your plan</h1>
+        <p className="sub">Billed monthly. Cancel any time — you keep access until the period ends.</p>
 
-        <label style={S.label}>Pay in your currency</label>
-        <select value={currency} onChange={e => setCurrency(e.target.value)} style={S.select}>
-          {prices.map(p => <option key={p.code} value={p.code}>{p.code} — {p.symbol}{p.amount.toLocaleString(undefined, { maximumFractionDigits: p.code === "JPY" ? 0 : 2 })} · {p.name}</option>)}
-        </select>
-        <p style={S.fxNote}>{live ? "Charged in your currency at the live ECB reference rate." : "Live rate feed unavailable — using latest known rate."}</p>
-
-        <div style={S.roleRow}>
-          {(["jobseeker", "employer"] as const).map(r => (
-            <button key={r} onClick={() => setType(r)} style={{ ...S.roleBtn, ...(type === r ? S.roleOn : {}) }}>
-              <div style={S.roleLabel}>{r === "jobseeker" ? "Job seeker" : "Employer"}</div>
-              <div style={S.roleDesc}>{r === "jobseeker" ? "Looking for work" : "Hiring talent"}</div>
+        <div className="seg">
+          {(["individual", "employer"] as const).map(a => (
+            <button key={a} onClick={() => { setAudience(a); setPlanId(a === "employer" ? "emp_starter" : "basic") }}
+              className={"segBtn" + (audience === a ? " on" : "")}>
+              {a === "individual" ? "For me" : "For my company"}
             </button>
           ))}
         </div>
 
-        <ul style={S.list}>
-          {(type === "jobseeker"
-            ? ["Apply to every job", "Full profile, résumé & verification", "Network, messaging & interviews", "Lifetime access"]
-            : ["Post jobs & manage applicants", "Drag-and-drop hiring pipeline", "Interviews, assessments & HRMS", "Lifetime access"]
-          ).map(f => <li key={f} style={S.li}><IconCheckCircle size={15} /> {f}</li>)}
-        </ul>
+        <div className="plans">
+          {plans.map(p => {
+            const amt = rate ? rate.amount * p.priceCHF : null
+            return (
+              <button key={p.id} onClick={() => setPlanId(p.id)} className={"plan" + (plan?.id === p.id ? " sel" : "")}>
+                <span className="planTop">
+                  <span className="planName">{p.name}{p.popular && <em className="pop">Popular</em>}</span>
+                  <span className="planPrice">{rate ? money(amt) : `${p.priceCHF} CHF`}<em>/mo</em></span>
+                </span>
+                <span className="planTag">{p.tagline}</span>
+              </button>
+            )
+          })}
+        </div>
 
-        {error && <div style={S.err}>{error}</div>}
+        {plan && (
+          <ul className="feats">
+            {plan.features.map(f => (
+              <li key={f}><IconCheckCircle size={15} /> {f}</li>
+            ))}
+          </ul>
+        )}
 
-        <button onClick={pay} disabled={busy} style={{ ...S.payBtn, opacity: busy ? .7 : 1 }}>
-          <IconLock size={15} /> {busy ? "Opening secure checkout…" : `Pay ${fmt(price)} by card`}
+        {error && <div className="err">{error}</div>}
+
+        <button onClick={pay} disabled={busy || !plan || !rate} className={"btn wide" + (busy || !rate ? " off" : "")}>
+          <IconLock size={15} />
+          {busy ? "Opening secure checkout…" : plan ? `Subscribe — ${money(localAmount)} / month` : "Choose a plan"}
         </button>
-        <p style={S.trust}>Secure checkout by Razorpay · cards, UPI, netbanking & wallets · encrypted</p>
+
+        <p className="fine">
+          Secure checkout by Razorpay · cards, UPI, netbanking &amp; wallets.
+          {" "}
+          <button type="button" className="linkBtn" onClick={() => setShowFx(v => !v)}>
+            {showFx ? "Hide pricing details" : "How is this priced?"}
+          </button>
+        </p>
+
+        {showFx && plan && (
+          <div className="fx">
+            Plans are priced in Swiss francs ({plan.priceCHF} CHF / month) and charged in your local
+            currency at the {live ? "live European Central Bank reference rate" : "most recent known rate"}.
+            {rate && ` Today that's ${money(localAmount)} for ${plan.name}.`}
+            <div className="fxRow">
+              <label htmlFor="ccy">Pay in</label>
+              <select id="ccy" value={currency} onChange={e => setCurrency(e.target.value)}>
+                {rates.map(r => <option key={r.code} value={r.code}>{r.code}</option>)}
+              </select>
+            </div>
+          </div>
+        )}
       </div>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
     </div>
   )
 }
 
-const S: Record<string, any> = {
-  page: { minHeight: "100vh", background: "linear-gradient(160deg,#0F6E56,#0A5442 55%,#04342C)", display: "flex", alignItems: "center", justifyContent: "center", padding: "1.5rem", fontFamily: "var(--font-sans)" },
-  card: { background: "#fff", borderRadius: 20, padding: "2.25rem", width: "100%", maxWidth: 420, boxShadow: "0 30px 80px rgba(4,52,44,.35)" },
-  brand: { display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none", color: "#04342C", fontFamily: "var(--font-display)", fontSize: 18, fontWeight: 600, marginBottom: 18 },
-  brandMark: { width: 32, height: 32, borderRadius: 9, background: "#0F6E56", color: "#fff", display: "grid", placeItems: "center" },
-  h1: { fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "#14201B", letterSpacing: "-.02em" },
-  sub: { fontSize: 14, color: "#4A5750", marginTop: 5, marginBottom: 18 },
-  priceBox: { background: "#E1F5EE", borderRadius: 14, padding: "18px 20px", textAlign: "center", marginBottom: 18 },
-  priceMain: { fontFamily: "var(--font-display)", fontSize: 40, fontWeight: 600, color: "#0B6B45", letterSpacing: "-.02em", lineHeight: 1 },
-  priceSub: { fontSize: 12.5, color: "#4A5750", marginTop: 8 },
-  label: { display: "block", fontSize: 12.5, fontWeight: 600, color: "#4A5750", marginBottom: 6 },
-  select: { width: "100%", border: "1px solid #D9D3C4", borderRadius: 11, padding: "11px 13px", fontSize: 14, outline: "none", background: "#fff", color: "#14201B", fontFamily: "inherit" },
-  fxNote: { fontSize: 11.5, color: "#7C877F", margin: "7px 0 16px" },
-  roleRow: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 16 },
-  roleBtn: { background: "#fff", border: "1.5px solid #E8E3D7", borderRadius: 12, padding: "11px 12px", cursor: "pointer", textAlign: "left" },
-  roleOn: { borderColor: "#0F6E56", background: "#E1F5EE" },
-  roleLabel: { fontSize: 13.5, fontWeight: 600, color: "#14201B" },
-  roleDesc: { fontSize: 11.5, color: "#7C877F", marginTop: 1 },
-  list: { listStyle: "none", padding: 0, margin: "0 0 18px", display: "flex", flexDirection: "column", gap: 8 },
-  li: { display: "flex", alignItems: "center", gap: 9, fontSize: 13.5, color: "#2c3a33" },
-  payBtn: { width: "100%", display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 8, background: "#0F6E56", color: "#fff", border: "none", borderRadius: 12, padding: "13px", fontSize: 15, fontWeight: 600, cursor: "pointer", textDecoration: "none" },
-  trust: { textAlign: "center", fontSize: 11.5, color: "#7C877F", marginTop: 12 },
-  err: { background: "#FBEBEB", border: "1px solid #E7C9C9", borderRadius: 9, padding: "10px 13px", fontSize: 13, color: "#A32D2D", marginBottom: 12 },
-  okIc: { width: 60, height: 60, borderRadius: "50%", background: "#E1F5EE", color: "#0B6B45", display: "grid", placeItems: "center", margin: "0 auto 16px" },
-}
+const CSS = `
+.pw{--bg:#FAFAF8;--card:#fff;--ink:#101828;--ink2:#667085;--ink3:#98A2B3;--line:#EAECF0;--line2:#F2F4F1;
+ --g:#0D7A5F;--gh:#0B6C54;--gt:rgba(13,122,95,.08);--gt2:rgba(13,122,95,.14);
+ --sh:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.05);--shH:0 10px 26px rgba(16,24,40,.07);
+ --e:cubic-bezier(.22,1,.36,1);
+ min-height:100vh;background:var(--bg);color:var(--ink);display:flex;align-items:flex-start;justify-content:center;
+ padding:clamp(24px,6vw,64px) 20px;
+ font-family:var(--font-inter),Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased}
+.pw *{box-sizing:border-box}
+.pcard{width:100%;max-width:520px;background:var(--card);border:1px solid var(--line);border-radius:20px;box-shadow:var(--sh);padding:clamp(22px,4vw,34px)}
+.pcard.center{text-align:center}
+.brand{display:inline-flex;align-items:center;gap:9px;font-size:17px;font-weight:600;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+.mark{width:28px;height:28px;border-radius:8px;background:var(--g);display:grid;place-items:center}
+.h1{font-size:clamp(26px,4vw,32px);font-weight:600;letter-spacing:-.03em;margin:22px 0 0}
+.sub{font-size:15px;line-height:1.6;color:var(--ink2);margin:8px 0 0}
+.okIc{width:56px;height:56px;border-radius:50%;background:var(--gt);color:var(--g);display:grid;place-items:center;margin:0 auto}
+
+.seg{display:flex;gap:4px;background:var(--line2);padding:4px;border-radius:14px;margin-top:22px}
+.segBtn{flex:1;padding:9px 12px;border:none;background:none;border-radius:11px;font:inherit;font-size:14px;font-weight:600;color:var(--ink2);cursor:pointer;transition:background .15s,color .15s}
+.segBtn.on{background:var(--card);color:var(--ink);box-shadow:var(--sh)}
+
+.plans{display:flex;flex-direction:column;gap:10px;margin-top:16px}
+.plan{display:flex;flex-direction:column;gap:4px;text-align:left;padding:14px 16px;border:1.5px solid var(--line);border-radius:16px;background:var(--card);cursor:pointer;font:inherit;transition:border-color .15s,transform .15s var(--e),box-shadow .15s}
+.plan:hover{border-color:var(--ink3)}
+.plan.sel{border-color:var(--g);background:var(--gt);box-shadow:var(--sh)}
+.planTop{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.planName{font-size:16px;font-weight:600;display:inline-flex;align-items:center;gap:8px}
+.pop{font-style:normal;font-size:11px;font-weight:700;color:var(--g);background:var(--gt2);padding:2px 8px;border-radius:999px}
+.planPrice{font-size:20px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.planPrice em{font-style:normal;font-size:13px;font-weight:500;color:var(--ink3);margin-left:2px}
+.planTag{font-size:13.5px;color:var(--ink2)}
+
+.feats{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}
+.feats li{display:flex;gap:9px;align-items:flex-start;font-size:14.5px;color:var(--ink2)}
+.feats li svg{color:var(--g);flex-shrink:0;margin-top:1px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;background:var(--g);color:#fff;border:none;border-radius:14px;padding:14px 24px;font:inherit;font-size:15.5px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s,transform .1s var(--e)}
+.btn:hover{background:var(--gh)}
+.btn:active{transform:scale(.97)}
+.btn.wide{width:100%;margin-top:20px}
+.btn.off{opacity:.55;cursor:not-allowed}
+
+.err{margin-top:16px;padding:11px 14px;border-radius:12px;background:#FEF3F2;color:#B42318;font-size:14px;line-height:1.5}
+.fine{font-size:12.5px;color:var(--ink3);text-align:center;margin:12px 0 0;line-height:1.6}
+.linkBtn{background:none;border:none;padding:0;font:inherit;font-size:12.5px;color:var(--g);font-weight:600;cursor:pointer;text-decoration:underline}
+.fx{margin-top:12px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--bg);font-size:13px;line-height:1.6;color:var(--ink2)}
+.fxRow{display:flex;align-items:center;gap:8px;margin-top:10px}
+.fxRow label{font-size:12.5px;color:var(--ink3)}
+.fxRow select{font:inherit;font-size:13px;padding:6px 10px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink)}
+`
