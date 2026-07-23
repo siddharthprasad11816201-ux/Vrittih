@@ -278,7 +278,7 @@ const S: Record<string,any> = {
   main: { display:"flex", flexDirection:"column", gap:12 },
   card: { background:"#fff", border:"0.5px solid rgba(0,0,0,.08)", borderRadius:14, padding:"1.5rem" },
   cardTitle: { fontSize:16, fontWeight:600, color:"#0A0A0F", marginBottom:16, paddingBottom:10, borderBottom:"0.5px solid rgba(0,0,0,.07)" },
-  row: { display:"flex", gap:12, marginBottom:12 },
+  row: { display:"flex", flexWrap:"wrap" as const, gap:12, marginBottom:12 },
   input: { width:"100%", border:"0.5px solid rgba(0,0,0,.13)", borderRadius:8, padding:"8px 11px", fontSize:13, color:"#0A0A0F", outline:"none", fontFamily:"inherit" },
   saveBtn: { background:"#6366F1", color:"#fff", border:"none", padding:"9px 20px", borderRadius:8, fontSize:13, fontWeight:500, cursor:"pointer", marginTop:4 },
   savedMsg: { background:"#ECFDF5", border:"0.5px solid #A7F3D0", borderRadius:8, padding:"8px 12px", fontSize:13, color:"#047857", marginBottom:12 },

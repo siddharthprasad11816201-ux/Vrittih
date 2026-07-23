@@ -39,3 +39,17 @@
 .todoCircle { width: 16px; height: 16px; border-radius: 50%; border: 1.5px solid rgba(0,0,0,0.15); flex-shrink: 0; }
 .loading { display: flex; align-items: center; justify-content: center; min-height: 100vh; font-size: 14px; color: #7B7B8F; gap: 8px; }
 
+
+
+/* CSS-module classes are invisible to the global inline-style mobile layer
+   (it matches [style*="grid-template-columns"], which classes never render),
+   so these grids have to collapse themselves. */
+@media (max-width: 1000px) {
+  .shell { grid-template-columns: 1fr; }
+  .content { padding: 1rem; }
+  .statsRow { grid-template-columns: repeat(2, 1fr); }
+  .twoCol { grid-template-columns: 1fr; }
+}
+@media (max-width: 560px) {
+  .statsRow { grid-template-columns: 1fr; }
+}

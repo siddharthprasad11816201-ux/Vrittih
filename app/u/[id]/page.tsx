@@ -41,7 +41,7 @@ export default function PublicProfilePage({ params }: { params: { id: string } }
           <div style={S.cover} />
           <div style={S.headBody}>
             {user.avatar ? <img src={user.avatar} alt={user.name} style={S.avatarImg} /> : <div style={S.avatar}>{initials}</div>}
-            <div style={S.headRow}>
+            <div style={S.headRow} data-wrap>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <h1 style={S.name}>{user.name}</h1>

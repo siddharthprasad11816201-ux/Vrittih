@@ -64,7 +64,7 @@ export default function NetworkPage() {
             <p style={S.sub}>Build your professional network</p>
           </div>
 
-          <div style={S.tabs}>
+          <div style={S.tabs} data-wrap>
             {TABS.map(t => (
               <button key={t.key} onClick={() => setTab(t.key as any)} style={{...S.tab,...(tab===t.key?S.tabOn:{})}}>
                 {t.label}
@@ -176,7 +176,7 @@ const S: Record<string,any> = {
   header: { marginBottom:"1.5rem" },
   title: { fontSize:22, fontWeight:600, color:"#0A0A0F", letterSpacing:"-.3px" },
   sub: { fontSize:13, color:"#7B7B8F", marginTop:3 },
-  tabs: { display:"flex", gap:4, marginBottom:"1.5rem", background:"#fff", padding:4, borderRadius:12, border:"0.5px solid rgba(0,0,0,.07)", width:"fit-content" },
+  tabs: { display:"flex", gap:4, marginBottom:"1.5rem", background:"#fff", padding: 5, borderRadius:12, border:"0.5px solid rgba(0,0,0,.07)", width:"fit-content" },
   tab: { display:"flex", alignItems:"center", gap:7, padding:"7px 16px", borderRadius:9, border:"none", background:"none", fontSize:13, color:"#7B7B8F", cursor:"pointer", transition:"all .15s", fontWeight:400 },
   tabOn: { background:"#0F6E56", color:"#fff", fontWeight:500 },
   badge: { background:"rgba(0,0,0,.08)", color:"#7B7B8F", borderRadius:999, fontSize:11, fontWeight:600, padding:"1px 7px" },

@@ -226,7 +226,7 @@ export default function TakeTest() {
 
         <div style={S.qSidebar}>
           <div style={S.qNavTitle}>Questions</div>
-          <div style={S.qNavGrid}>
+          <div style={S.qNavGrid} data-keep-cols>
             {test.questions.map((_: any, i: number) => {
               const isAnswered = !!answers[test.questions[i].id]
               const isCurrent = i === current
@@ -294,10 +294,10 @@ const S: Record<string,any> = {
   rules:{ background:"#F9F9FC",borderRadius:10,padding:"1rem",marginBottom:"1.5rem",textAlign:"left" as const },
   startBtn:{ width:"100%",background:"#0F6E56",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:8 },
   cancelBtn:{ width:"100%",background:"none",border:"0.5px solid rgba(0,0,0,.1)",color:"#6b7280",borderRadius:10,padding:"11px",fontSize:13,cursor:"pointer" },
-  testShell:{ display:"flex",flexDirection:"column" as const,height:"100vh",background:"#FAF8F2",overflow:"hidden" },
-  testHead:{ display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 2rem",background:"#fff",borderBottom:"0.5px solid rgba(0,0,0,.07)",flexShrink:0 },
+  testShell:{ display:"flex",flexDirection:"column" as const,minHeight: "100dvh",background:"#FAF8F2",overflow: "visible" },
+  testHead:{ display:"flex", flexWrap: "wrap" as const, gap: 8,alignItems:"center",justifyContent:"space-between",padding:"12px 2rem",background:"#fff",borderBottom:"0.5px solid rgba(0,0,0,.07)",flexShrink:0 },
   testTitle:{ fontSize:15,fontWeight:600,color:"#0A0A0F",flex:1 },
-  testMeta:{ display:"flex",gap:12,alignItems:"center" },
+  testMeta:{ display:"flex", flexWrap: "wrap" as const,gap:12,alignItems:"center" },
   timer:{ fontSize:16,fontWeight:700,color:"#0F6E56",fontVariantNumeric:"tabular-nums" as const },
   timerWarn:{ color:"#DC2626" },
   qCount:{ fontSize:13,color:"#9ca3af" },
@@ -305,7 +305,7 @@ const S: Record<string,any> = {
   submitBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"8px 18px",fontSize:13,fontWeight:500,cursor:"pointer",marginLeft:12 },
   progressWrap:{ height:3,background:"#E5E7EB",flexShrink:0 },
   progressFill:{ height:3,background:"#0F6E56",transition:"width .3s" },
-  testBody:{ flex:1,display:"grid",gridTemplateColumns:"1fr 220px",gap:0,overflow:"hidden" },
+  testBody:{ flex:1,display:"grid",gridTemplateColumns:"1fr 220px",gap:0,overflow: "visible" },
   questionCard:{ padding:"2rem",overflow:"auto" },
   qNum:{ fontSize:12,color:"#9ca3af",marginBottom:12,textTransform:"uppercase" as const,letterSpacing:".05em" },
   qText:{ fontSize:18,fontWeight:600,color:"#0A0A0F",lineHeight:1.5,marginBottom:"1.5rem" },

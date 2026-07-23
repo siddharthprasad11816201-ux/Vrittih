@@ -419,7 +419,7 @@ const S: Record<string,any> = {
   infoVal:{ fontSize:13,color:"#0A0A0F",fontWeight:500 },
   pill:{ fontSize:11,fontWeight:500,padding:"2px 10px",borderRadius:999 },
   divider:{ height:"0.5px",background:"rgba(0,0,0,.06)",margin:"1.25rem 0" },
-  row:{ display:"flex",gap:12,marginBottom:12 },
+  row:{ display:"flex", flexWrap:"wrap" as const,gap:12,marginBottom:12 },
   fg:{ flex:1,display:"flex",flexDirection:"column" as const,gap:5,marginBottom:12 },
   label:{ fontSize:12,fontWeight:500,color:"#7B7B8F" },
   input:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"8px 11px",fontSize:13,color:"#0A0A0F",outline:"none",fontFamily:"inherit" },

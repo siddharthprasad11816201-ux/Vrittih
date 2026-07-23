@@ -215,7 +215,7 @@ const S: Record<string,any> = {
   err:{ background:"#FEF2F2",border:"0.5px solid #FECACA",borderRadius:8,padding:"10px 14px",fontSize:13,color:"#B91C1C",marginBottom:"1rem" },
   section:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.5rem",marginBottom:12 },
   sectionTitle:{ fontSize:15,fontWeight:600,color:"#0A0A0F",marginBottom:"1.25rem" },
-  row:{ display:"flex",gap:12 },
+  row:{ display:"flex", flexWrap: "wrap" as const,gap:12 },
   fg:{ display:"flex",flexDirection:"column" as const,gap:5,marginBottom:12,flex:1 },
   label:{ fontSize:12,fontWeight:500,color:"#7B7B8F" },
   input:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"9px 11px",fontSize:13,color:"#0A0A0F",outline:"none",fontFamily:"inherit",width:"100%" },

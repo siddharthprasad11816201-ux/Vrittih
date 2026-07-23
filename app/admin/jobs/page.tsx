@@ -213,6 +213,7 @@ const CSS = `
 .ajPage:disabled { opacity:.4; cursor:default; }
 
 .ajBulk { position:fixed; bottom:26px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:10px; padding:10px 12px 10px 18px; border-radius:14px; z-index:60; }
+@media (max-width:640px){ .ajBulk{ left:12px; right:12px; transform:none; flex-wrap:wrap; justify-content:center; padding:10px 12px; } }
 .ajBulkN { font-size:13px; font-weight:700; color:#0A0A0F; margin-right:4px; }
 .ajBulkBtn { background:#0F6E56; color:#fff; border:none; border-radius:9px; padding:8px 15px; font-size:13px; font-weight:600; cursor:pointer; }
 .ajBulkBtn.danger { background:#A32D2D; }

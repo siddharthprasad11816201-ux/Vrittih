@@ -120,7 +120,7 @@ export default function JobMatchPage() {
 const S: Record<string,any> = {
   page:{ background:"#FAF8F2",minHeight:"calc(100vh - 60px)",padding:"2rem" },
   wrap:{ maxWidth:900,margin:"0 auto" },
-  header:{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.25rem" },
+  header:{ display:"flex", flexWrap: "wrap" as const, gap: 12,justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.25rem" },
   title:{ fontSize:22,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px" },
   sub:{ fontSize:13,color:"#7B7B8F",marginTop:4 },
   browseBtn:{ background:"#0F6E56",color:"#fff",padding:"9px 18px",borderRadius:9,fontSize:13,fontWeight:500,textDecoration:"none" },
@@ -128,7 +128,7 @@ const S: Record<string,any> = {
   skillsLabel:{ fontSize:12,color:"#9ca3af",fontWeight:500 },
   skillChip:{ background:"#E1F5EE",color:"#0F6E56",fontSize:12,padding:"3px 10px",borderRadius:999,border:"0.5px solid rgba(15,110,86,.15)" },
   addSkillsBtn:{ fontSize:12,color:"#0F6E56",textDecoration:"none",marginLeft:"auto",fontWeight:500 },
-  filterBar:{ display:"flex",alignItems:"center",gap:8,marginBottom:"1.25rem" },
+  filterBar:{ display:"flex", flexWrap: "wrap" as const, rowGap: 8,alignItems:"center",gap:8,marginBottom:"1.25rem" },
   filterLabel:{ fontSize:13,color:"#9ca3af" },
   filterBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.12)",borderRadius:8,padding:"5px 14px",fontSize:13,cursor:"pointer",color:"#7B7B8F" },
   filterBtnOn:{ background:"#0F6E56",color:"#fff",border:"0.5px solid #0F6E56",fontWeight:500 },

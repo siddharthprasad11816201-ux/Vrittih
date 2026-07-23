@@ -138,9 +138,9 @@ export default function ProfilePage() {
           <div style={S.between}><h2 style={S.h2}>Experience</h2><button onClick={() => setShowExp(v => !v)} style={S.linkBtn}><IconPlus size={14} /> Add</button></div>
           {showExp && (
             <div style={S.form}>
-              <div style={S.row2}><input placeholder="Title *" value={exp.title} onChange={e => setExp({ ...exp, title: e.target.value })} style={S.input} /><input placeholder="Company *" value={exp.company} onChange={e => setExp({ ...exp, company: e.target.value })} style={S.input} /></div>
+              <div style={S.row2} data-wrap><input placeholder="Title *" value={exp.title} onChange={e => setExp({ ...exp, title: e.target.value })} style={S.input} /><input placeholder="Company *" value={exp.company} onChange={e => setExp({ ...exp, company: e.target.value })} style={S.input} /></div>
               <input placeholder="Location" value={exp.location} onChange={e => setExp({ ...exp, location: e.target.value })} style={S.input} />
-              <div style={S.row2}><label style={S.lbl}>Start<input type="date" value={exp.startDate} onChange={e => setExp({ ...exp, startDate: e.target.value })} style={S.input} /></label><label style={S.lbl}>End (blank = present)<input type="date" value={exp.endDate} onChange={e => setExp({ ...exp, endDate: e.target.value })} style={S.input} /></label></div>
+              <div style={S.row2} data-wrap><label style={S.lbl}>Start<input type="date" value={exp.startDate} onChange={e => setExp({ ...exp, startDate: e.target.value })} style={S.input} /></label><label style={S.lbl}>End (blank = present)<input type="date" value={exp.endDate} onChange={e => setExp({ ...exp, endDate: e.target.value })} style={S.input} /></label></div>
               <textarea placeholder="Description" value={exp.description} onChange={e => setExp({ ...exp, description: e.target.value })} rows={3} style={S.textarea} />
               <div style={{ display: "flex", gap: 8 }}><button onClick={addExp} style={S.primary}>Add experience</button><button onClick={() => setShowExp(false)} style={S.ghost}>Cancel</button></div>
             </div>
@@ -165,8 +165,8 @@ export default function ProfilePage() {
           {showEdu && (
             <div style={S.form}>
               <input placeholder="School *" value={edu.school} onChange={e => setEdu({ ...edu, school: e.target.value })} style={S.input} />
-              <div style={S.row2}><input placeholder="Degree *" value={edu.degree} onChange={e => setEdu({ ...edu, degree: e.target.value })} style={S.input} /><input placeholder="Field of study" value={edu.field} onChange={e => setEdu({ ...edu, field: e.target.value })} style={S.input} /></div>
-              <div style={S.row2}><input placeholder="Start year *" value={edu.startYear} onChange={e => setEdu({ ...edu, startYear: e.target.value.replace(/\D/g, "").slice(0, 4) })} style={S.input} /><input placeholder="End year" value={edu.endYear} onChange={e => setEdu({ ...edu, endYear: e.target.value.replace(/\D/g, "").slice(0, 4) })} style={S.input} /></div>
+              <div style={S.row2} data-wrap><input placeholder="Degree *" value={edu.degree} onChange={e => setEdu({ ...edu, degree: e.target.value })} style={S.input} /><input placeholder="Field of study" value={edu.field} onChange={e => setEdu({ ...edu, field: e.target.value })} style={S.input} /></div>
+              <div style={S.row2} data-wrap><input placeholder="Start year *" value={edu.startYear} onChange={e => setEdu({ ...edu, startYear: e.target.value.replace(/\D/g, "").slice(0, 4) })} style={S.input} /><input placeholder="End year" value={edu.endYear} onChange={e => setEdu({ ...edu, endYear: e.target.value.replace(/\D/g, "").slice(0, 4) })} style={S.input} /></div>
               <div style={{ display: "flex", gap: 8 }}><button onClick={addEdu} style={S.primary}>Add education</button><button onClick={() => setShowEdu(false)} style={S.ghost}>Cancel</button></div>
             </div>
           )}

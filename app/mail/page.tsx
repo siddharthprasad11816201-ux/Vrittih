@@ -182,7 +182,7 @@ export default function MailPage() {
 const MAIL_CSS = `
 .mailMobileBar{ display:none; }
 .mailBack{ display:none; }
-@media (max-width:820px){
+@media (max-width:900px){
   .mailShell{ grid-template-columns:1fr !important; }
   .mailSide{ display:none !important; }
   .mailMobileBar{ display:flex; flex-direction:column; gap:10px; padding:12px 14px; border-bottom:0.5px solid rgba(0,0,0,.07); background:#fff; }

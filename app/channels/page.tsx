@@ -193,7 +193,10 @@ export default function ChannelsPage() {
 }
 
 const S: Record<string,any> = {
-  shell:{ display:"grid",gridTemplateColumns:"220px 1fr",height:"calc(100vh - 60px)",overflow:"hidden",background:"#FAF8F2" },
+  // minHeight + visible overflow, not fixed height + hidden: the global mobile layer
+  // collapses this grid to one column at <=900px, and with overflow:hidden the second
+  // pane (the channel itself) would be rendered below the fold and unreachable.
+  shell:{ display:"grid",gridTemplateColumns:"220px 1fr",minHeight:"calc(100dvh - 60px)",overflow:"visible",background:"#FAF8F2" },
   sidebar:{ background:"#04342C",display:"flex",flexDirection:"column" as const,overflow:"hidden" },
   sideHead:{ display:"flex",justifyContent:"space-between",alignItems:"center",padding:"1rem 1.25rem",borderBottom:"0.5px solid rgba(255,255,255,.07)" },
   sideTitle:{ fontSize:14,fontWeight:600,color:"#fff" },
