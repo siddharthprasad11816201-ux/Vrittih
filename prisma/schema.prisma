@@ -573,6 +573,7 @@ model Job {
   applications Application[]
   skills        JobSkill[]
   community     JobCommunity?
+  form          ApplicationForm?
 
   @@unique([sourceKey, externalId])
   @@index([company])
@@ -614,10 +615,59 @@ model Application {
   interview   DateTime?
   notes       String?
   source      String?       // "indeed" for imported applications, else null
+  // What the candidate actually submitted, frozen at submit time. Their live
+  // profile can change afterwards; an employer must be able to see what they were
+  // sent, and a candidate must not be judged on a version they did not send.
+  snapshot    String?       // JSON { name, headline, email, phone, location, experience[], education[], skills[] }
+  resumeUrl   String?       // the résumé attached to THIS application
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   job         Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
   timeline    StatusEvent[]
+  answers     ApplicationAnswer[]
+  documents   ApplicationDocument[]
   @@index([jobId, status])
+  @@index([userId])
+}
+
+// What a given job requires of an applicant. Employers differ: some want a CV
+// only, some want screening questions, documents and an assessment. Stored per
+// job so the applicant sees exactly what is being asked before they start.
+model ApplicationForm {
+  id             String   @id @default(cuid())
+  jobId          String   @unique
+  useProfile     Boolean  @default(true)   // prefill from the candidate's profile
+  requireResume  Boolean  @default(true)
+  coverLetter    String   @default("optional") // required | optional | off
+  questions      String   @default("[]")   // JSON [{id,label,type,options[],required,help}]
+  documents      String   @default("[]")   // JSON [{id,label,required,accept,help}]
+  testId         String?                   // assessment the candidate must complete
+  testRequired   Boolean  @default(false)
+  instructions   String?                   // shown at the top of the application
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  job            Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+}
+
+model ApplicationAnswer {
+  id            String      @id @default(cuid())
+  applicationId String
+  questionId    String
+  label         String      // frozen: the question as it was asked
+  value         String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  @@index([applicationId])
+}
+
+model ApplicationDocument {
+  id            String      @id @default(cuid())
+  applicationId String
+  slotId        String      // matches the requirement's id
+  label         String      // frozen: what was asked for
+  mediaId       String      // -> MediaAsset, served from /api/media/:id
+  filename      String?
+  size          Int         @default(0)
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  @@index([applicationId])
 }
 
 model StatusEvent {

@@ -58,14 +58,62 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     const payload = verifyToken(token)
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
-    const { jobId, coverLetter } = await req.json()
+    const { jobId, coverLetter, answers, documents, snapshot, resumeUrl } = await req.json()
     if (!jobId) return NextResponse.json({ error: "Job ID required" }, { status: 400 })
     const existing = await prisma.application.findFirst({ where:{ userId:payload.userId, jobId } })
     if (existing) return NextResponse.json({ error: "Already applied" }, { status: 409 })
-    const job = await prisma.job.findUnique({ where:{ id:jobId }, include:{ postedBy:{ select:{ id:true,name:true } } } })
+    const job = await prisma.job.findUnique({ where:{ id:jobId }, include:{ postedBy:{ select:{ id:true,name:true } }, form:true } })
     if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 })
+
+    // Enforce the employer's requirements server-side. The client shows them, but
+    // a required document or answer must not be skippable by calling the API directly.
+    const parse = (s?: string | null) => { try { const v = JSON.parse(s || "[]"); return Array.isArray(v) ? v : [] } catch { return [] } }
+    const reqQuestions = parse(job.form?.questions)
+    const reqDocs = parse(job.form?.documents)
+    const givenAnswers: any[] = Array.isArray(answers) ? answers : []
+    const givenDocs: any[] = Array.isArray(documents) ? documents : []
+
+    const missing: string[] = []
+    if (job.form?.coverLetter === "required" && !String(coverLetter || "").trim()) missing.push("Cover letter")
+    for (const q of reqQuestions) {
+      if (!q.required) continue
+      const a = givenAnswers.find(x => x && x.questionId === q.id)
+      if (!a || !String(a.value ?? "").trim()) missing.push(q.label)
+    }
+    for (const d of reqDocs) {
+      if (!d.required) continue
+      const f = givenDocs.find(x => x && x.slotId === d.id && x.mediaId)
+      if (!f) missing.push(d.label)
+    }
+    if (missing.length) {
+      return NextResponse.json({ error: `Please complete: ${missing.join(", ")}`, missing }, { status: 400 })
+    }
+
     const application = await prisma.application.create({
-      data: { userId:payload.userId, jobId, coverLetter, status:"APPLIED", timeline:{ create:{ status:"APPLIED", note:"Application submitted" } } }
+      data: {
+        userId: payload.userId, jobId, coverLetter, status: "APPLIED",
+        // Freeze what was actually sent — the candidate's live profile may change
+        // later, and neither side should be arguing about which version applied.
+        snapshot: snapshot ? JSON.stringify(snapshot).slice(0, 40000) : null,
+        resumeUrl: resumeUrl || null,
+        timeline: { create: { status: "APPLIED", note: "Application submitted" } },
+        answers: givenAnswers.length ? {
+          create: givenAnswers.slice(0, 30).map((a: any) => ({
+            questionId: String(a.questionId || "").slice(0, 60),
+            label: String(a.label || "").slice(0, 300),
+            value: String(a.value ?? "").slice(0, 5000),
+          })).filter((a: any) => a.questionId),
+        } : undefined,
+        documents: givenDocs.length ? {
+          create: givenDocs.slice(0, 15).map((d: any) => ({
+            slotId: String(d.slotId || "").slice(0, 60),
+            label: String(d.label || "").slice(0, 200),
+            mediaId: String(d.mediaId || "").slice(0, 60),
+            filename: d.filename ? String(d.filename).slice(0, 200) : null,
+            size: Number(d.size) || 0,
+          })).filter((d: any) => d.slotId && d.mediaId),
+        } : undefined,
+      },
     })
     // Notify applicant
     await createNotification({

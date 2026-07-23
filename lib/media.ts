@@ -1,7 +1,7 @@
 // Media validation + limits. Kept server-side so the API is the source of truth
 // even though images are also processed client-side before upload.
 
-export type MediaKind = "avatar" | "logo" | "resume" | "photo" | "cover"
+export type MediaKind = "avatar" | "logo" | "resume" | "photo" | "cover" | "document"
 
 const IMAGE_MIMES = ["image/jpeg", "image/png", "image/webp"]
 const DOC_MIMES = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"]
@@ -14,10 +14,13 @@ export const MEDIA_RULES: Record<MediaKind, { mimes: string[]; maxBytes: number 
   photo: { mimes: IMAGE_MIMES, maxBytes: 3_000_000 },
   cover: { mimes: IMAGE_MIMES, maxBytes: 3_000_000 },
   resume: { mimes: DOC_MIMES, maxBytes: 8_000_000 },
+  // Application attachments: certificates, ID proofs, portfolios, transcripts.
+  // Images allowed because a photographed certificate is what most people have.
+  document: { mimes: [...DOC_MIMES, ...IMAGE_MIMES], maxBytes: 10_000_000 },
 }
 
 export function isMediaKind(k: string): k is MediaKind {
-  return k === "avatar" || k === "logo" || k === "resume" || k === "photo" || k === "cover"
+  return k === "avatar" || k === "logo" || k === "resume" || k === "photo" || k === "cover" || k === "document"
 }
 
 export function validateUpload(kind: MediaKind, mime: string, size: number): string | null {

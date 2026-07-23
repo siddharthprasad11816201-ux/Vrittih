@@ -153,11 +153,13 @@ export default function JobDetail({ params }: { params: { id: string } }) {
               {/* Native apply only where the employer actually has an account here.
                   For aggregated listings it would be a black hole — nobody would
                   ever receive the application. */}
+              {/* The full application: profile prefilled but editable, plus any
+                  questions, documents or assessment this employer requires. */}
               {!job.aggregated && (
-                <button onClick={() => setShowForm(true)} style={A.primary}>
+                <Link href={`/jobs/${id}/apply`} style={{ ...A.primary, textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
                   <span style={A.optMain}>Apply on Vrittih</span>
-                  <span style={A.optSubOn}>Tracked live through all 7 stages</span>
-                </button>
+                  <span style={A.optSubOn}>Your profile fills it in · tracked live through all 7 stages</span>
+                </Link>
               )}
 
               {job.aggregated && !job.govUrl && !job.applyUrl && (
