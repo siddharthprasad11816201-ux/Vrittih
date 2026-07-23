@@ -1,8 +1,8 @@
 "use client"
-import { useEffect, useRef, useState, useCallback } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { io, Socket } from "socket.io-client"
-import { IconMic, IconMicOff, IconCamera, IconCameraOff, IconMonitor, IconHand, IconMessage, IconVideo, IconUser, IconUsers } from "@/components/ui/Icons"
+import { IconMic, IconMicOff, IconCamera, IconCameraOff, IconMonitor, IconHand, IconMessage, IconVideo, IconUser, IconUsers, IconShield, IconX, IconPhoneOff, IconCheck } from "@/components/ui/Icons"
 
 // Production sets NEXT_PUBLIC_SIGNAL_URL to an https:// endpoint; dev falls back to localhost.
 const SIGNAL_URL = process.env.NEXT_PUBLIC_SIGNAL_URL
@@ -23,6 +23,8 @@ interface Peer {
   pc?: RTCPeerConnection
 }
 
+const SPEAK_THRESHOLD = 14 // measured mic energy (0-255) above room noise
+
 export default function InterviewRoom() {
   const params = useParams()
   const router = useRouter()
@@ -38,7 +40,11 @@ export default function InterviewRoom() {
   const [handRaised, setHandRaised] = useState(false)
   const [messages, setMessages] = useState<any[]>([])
   const [chatInput, setChatInput] = useState("")
-  const [showChat, setShowChat] = useState(false)
+  const [panel, setPanel] = useState<"chat" | "people" | null>(null)
+  const [unread, setUnread] = useState(0)
+  const [levels, setLevels] = useState<Record<string, number>>({})
+  const [quality, setQuality] = useState<Record<string, "good" | "fair" | "poor">>({})
+  const [pinned, setPinned] = useState<string | null>(null)
   const [joined, setJoined] = useState(false)
   const [roomCount, setRoomCount] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -47,6 +53,7 @@ export default function InterviewRoom() {
   const peerStreams = useRef<Map<string,HTMLVideoElement|null>>(new Map())
   const peerConnections = useRef<Map<string,RTCPeerConnection>>(new Map())
   const timerRef = useRef<any>(null)
+  const chatEndRef = useRef<HTMLDivElement | null>(null)
 
   useEffect(() => {
     Promise.all([
@@ -108,7 +115,7 @@ export default function InterviewRoom() {
         if (pc && candidate) await pc.addIceCandidate(candidate)
       })
 
-      socket.on("peer-left", ({ socketId, user }) => {
+      socket.on("peer-left", ({ socketId }) => {
         peerConnections.current.get(socketId)?.close()
         peerConnections.current.delete(socketId)
         setPeers(prev => prev.filter(p => p.socketId !== socketId))
@@ -175,7 +182,6 @@ export default function InterviewRoom() {
       setScreenStream(null)
       setScreenSharing(false)
       socketRef.current?.emit("screen-share-stop", { roomCode:code })
-      // Revert to camera
       if (localStream) {
         peerConnections.current.forEach(pc => {
           const sender = pc.getSenders().find(s => s.track?.kind === "video")
@@ -189,7 +195,6 @@ export default function InterviewRoom() {
         setScreenStream(screen)
         setScreenSharing(true)
         socketRef.current?.emit("screen-share-start", { roomCode:code })
-        // Replace video track for all peers
         peerConnections.current.forEach(pc => {
           const sender = pc.getSenders().find(s => s.track?.kind === "video")
           if (sender) sender.replaceTrack(screen.getVideoTracks()[0])
@@ -217,157 +222,380 @@ export default function InterviewRoom() {
 
   const formatTime = (s: number) => `${String(Math.floor(s/3600)).padStart(2,"0")}:${String(Math.floor((s%3600)/60)).padStart(2,"0")}:${String(s%60).padStart(2,"0")}`
 
-  if (!interview || !me) return <div style={S.loading}>Loading interview room...</div>
+  /* Speaking detection — Web Audio analyser per stream. A measured signal, not a
+     decorative animation: the ring only reacts when that mic is genuinely above
+     the room noise floor. Entirely client-side. */
+  useEffect(() => {
+    if (!joined) return
+    const AC = (window as any).AudioContext || (window as any).webkitAudioContext
+    if (!AC) return
+    const ctx: AudioContext = new AC()
+    // Buffer must be ArrayBuffer-backed for getByteFrequencyData's type signature.
+    const nodes: { id: string; an: AnalyserNode; src: MediaStreamAudioSourceNode; buf: Uint8Array<ArrayBuffer> }[] = []
+    const add = (id: string, stream: MediaStream | null | undefined) => {
+      if (!stream || !stream.getAudioTracks().length) return
+      try {
+        const src = ctx.createMediaStreamSource(stream)
+        const an = ctx.createAnalyser()
+        an.fftSize = 512; an.smoothingTimeConstant = .75
+        src.connect(an)
+        nodes.push({ id, an, src, buf: new Uint8Array(new ArrayBuffer(an.frequencyBinCount)) })
+      } catch {}
+    }
+    add("local", localStream)
+    peers.forEach(p => add(p.socketId, p.stream))
+    let raf = 0
+    const tick = () => {
+      const next: Record<string, number> = {}
+      for (const n of nodes) {
+        n.an.getByteFrequencyData(n.buf)
+        let sum = 0
+        for (let i = 0; i < n.buf.length; i++) sum += n.buf[i]
+        next[n.id] = sum / n.buf.length
+      }
+      setLevels(next)
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => { cancelAnimationFrame(raf); nodes.forEach(n => { try { n.src.disconnect() } catch {} }); ctx.close().catch(() => {}) }
+  }, [joined, localStream, peers])
 
+  /* Connection quality read from the real peer connection, not guessed. */
+  useEffect(() => {
+    if (!joined) return
+    const t = setInterval(async () => {
+      const out: Record<string, "good" | "fair" | "poor"> = {}
+      for (const [id, pc] of peerConnections.current) {
+        try {
+          const stats = await pc.getStats()
+          let loss = 0, packets = 0, rtt = 0
+          stats.forEach((r: any) => {
+            if (r.type === "inbound-rtp" && r.kind === "video") { loss += r.packetsLost || 0; packets += r.packetsReceived || 0 }
+            if (r.type === "candidate-pair" && r.state === "succeeded" && r.currentRoundTripTime) rtt = r.currentRoundTripTime
+          })
+          const pct = packets ? loss / (loss + packets) : 0
+          out[id] = pct > .05 || rtt > .4 ? "poor" : pct > .02 || rtt > .2 ? "fair" : "good"
+        } catch {}
+      }
+      setQuality(out)
+    }, 3000)
+    return () => clearInterval(t)
+  }, [joined])
+
+  /* Keyboard shortcuts, ignored while typing. */
+  useEffect(() => {
+    if (!joined) return
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement
+      if (el && (el.tagName === "INPUT" || el.tagName === "TEXTAREA" || el.isContentEditable)) return
+      const k = e.key.toLowerCase()
+      if (k === "m") { e.preventDefault(); toggleAudio() }
+      else if (k === "v") { e.preventDefault(); toggleVideo() }
+      else if (k === "s") { e.preventDefault(); toggleScreen() }
+      else if (k === "h") { e.preventDefault(); raiseHand() }
+      else if (k === "c") { e.preventDefault(); setPanel(p => p === "chat" ? null : "chat") }
+      else if (k === "p") { e.preventDefault(); setPanel(p => p === "people" ? null : "people") }
+    }
+    window.addEventListener("keydown", onKey)
+    return () => window.removeEventListener("keydown", onKey)
+  }, [joined]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (panel === "chat") { setUnread(0); chatEndRef.current?.scrollIntoView({ behavior: "smooth" }) }
+    else if (messages.length) setUnread(u => u + 1)
+  }, [messages]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!interview || !me) return <div className="mLoad">Loading room…</div>
+
+  /* ─────────────────────────── LOBBY ─────────────────────────── */
   if (!joined) return (
-    <div style={S.lobby}>
-      <div style={S.lobbyCard}>
-        <div style={S.lobbyIcon}><IconVideo size={34} /></div>
-        <h1 style={S.lobbyTitle}>{interview.title}</h1>
-        <p style={S.lobbySub}>{interview.type.replace("_"," ")} · {interview.participants?.length} participant{interview.participants?.length!==1?"s":""}</p>
-        <div style={S.lobbyInfo}>
-          <div style={S.lobbyRow}><span style={S.lobbyLabel}>Room code</span><span style={S.lobbyCode}>{code}</span></div>
-          <div style={S.lobbyRow}><span style={S.lobbyLabel}>Scheduled</span><span style={S.lobbyVal}>{new Date(interview.scheduledAt).toLocaleString("en-IN",{dateStyle:"medium",timeStyle:"short"})}</span></div>
-          <div style={S.lobbyRow}><span style={S.lobbyLabel}>Duration</span><span style={S.lobbyVal}>{interview.duration} minutes</span></div>
-          <div style={S.lobbyRow}><span style={S.lobbyLabel}>Host</span><span style={S.lobbyVal}>{interview.host?.name}</span></div>
-        </div>
-        {interview.notes && <div style={S.lobbyNotes}>{interview.notes}</div>}
-        <button onClick={joinRoom} style={S.joinBtn}>Join interview</button>
-        <button onClick={() => router.push("/interviews")} style={S.backBtn}>Back</button>
+    <div className="mRoot mLobby">
+      <div className="mLobbyCard">
+        <div className="mLobbyIcon"><IconVideo size={26} /></div>
+        <h1 className="mLobbyTitle">{interview.title}</h1>
+        <p className="mLobbySub">{String(interview.type||"").replace(/_/g," ").toLowerCase()} · hosted by {interview.host?.name}</p>
+        <dl className="mLobbyInfo">
+          <div><dt>Room</dt><dd className="mMono">{code}</dd></div>
+          <div><dt>Scheduled</dt><dd>{new Date(interview.scheduledAt).toLocaleString("en-GB",{dateStyle:"medium",timeStyle:"short"})}</dd></div>
+          <div><dt>Duration</dt><dd>{interview.duration} min</dd></div>
+        </dl>
+        {interview.notes && <p className="mLobbyNotes">{interview.notes}</p>}
+        <button onClick={joinRoom} className="mJoin">Join now</button>
+        <button onClick={() => router.push("/interviews")} className="mBack">Back to interviews</button>
+        <p className="mLobbyFine"><IconShield size={12} /> Peer-to-peer and encrypted in transit. Your camera starts only after you join.</p>
       </div>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
     </div>
   )
 
-  const allVideos = [
-    { socketId:"local", name:me.name, stream:localStream, isLocal:true },
-    ...peers.filter(p=>p.stream).map(p=>({ socketId:p.socketId, name:p.name, stream:p.stream, isLocal:false }))
+  const tiles = [
+    { id:"local", name:me.name, stream:localStream, isLocal:true, muted:!audioOn, camOff:!videoOn, hand:handRaised },
+    ...peers.filter(p=>p.stream).map(p=>({ id:p.socketId, name:p.name, stream:p.stream, isLocal:false, muted:false, camOff:false, hand:false }))
   ]
+  const focus = pinned && tiles.find(t => t.id === pinned) ? pinned : (screenSharing ? "local" : null)
+  const cols = tiles.length <= 1 ? 1 : tiles.length <= 4 ? 2 : tiles.length <= 9 ? 3 : 4
 
-  return (
-    <div style={S.room}>
-      {/* Header */}
-      <div style={S.roomHead}>
-        <div style={S.roomTitle}>{interview.title}</div>
-        <div style={S.roomMeta}>
-          <span style={S.timer}>{formatTime(duration)}</span>
-          <span style={S.pCount}>{roomCount} in room</span>
+  const Tile = ({ t, big }: any) => {
+    const speaking = (levels[t.id] || 0) > SPEAK_THRESHOLD && !t.muted
+    const q = t.isLocal ? "good" : (quality[t.id] || "good")
+    return (
+      <div className={"mTile" + (speaking ? " speaking" : "") + (big ? " big" : "")} onDoubleClick={() => setPinned(pinned === t.id ? null : t.id)}>
+        <video
+          ref={el => {
+            if (!el) return
+            if (t.isLocal) localVideoRef.current = el
+            else peerStreams.current.set(t.id, el)
+            if (el.srcObject !== t.stream) el.srcObject = t.stream ?? null
+          }}
+          autoPlay playsInline muted={t.isLocal} className="mVideo"
+        />
+        {t.camOff && <div className="mCamOff"><span className="mAvatar">{(t.name||"?").slice(0,2).toUpperCase()}</span></div>}
+        <div className="mTileTop">
+          {t.hand && <span className="mBadge amber"><IconHand size={11} /> Hand up</span>}
+          {t.isLocal && screenSharing && <span className="mBadge"><IconMonitor size={11} /> Sharing</span>}
+          {pinned === t.id && <span className="mBadge">Pinned</span>}
         </div>
-        <div style={S.roomCode}>Room: {code}</div>
+        <div className="mTileBot">
+          <span className="mName">
+            {t.muted ? <IconMicOff size={12} /> : <IconMic size={12} />}
+            {t.name}{t.isLocal ? " (You)" : ""}
+          </span>
+          <span className={"mQ " + q} title={`Connection ${q}`}><i /><i /><i /></span>
+        </div>
       </div>
+    )
+  }
 
-      {/* Video grid */}
-      <div style={S.videoGrid}>
-        {allVideos.map(v => (
-          <div key={v.socketId} style={S.videoTile}>
-            <video
-              ref={el => {
-                if (!el) return
-                if (v.isLocal) localVideoRef.current = el
-                else peerStreams.current.set(v.socketId, el)
-                if (el.srcObject !== v.stream) el.srcObject = v.stream ?? null
-              }}
-              autoPlay playsInline muted={v.isLocal}
-              style={S.videoEl}
-            />
-            <div style={S.videoLabel}>{v.name}{v.isLocal?" (You)":""}</div>
-            {!videoOn && v.isLocal && <div style={S.videoOff}><span style={{color:"rgba(255,255,255,.5)"}}><IconUser size={32} /></span></div>}
-          </div>
-        ))}
-        {allVideos.length === 1 && (
-          <div style={S.waitingTile}>
-            <span style={{color:"rgba(255,255,255,.45)"}}><IconUsers size={32} /></span>
-            <p style={{fontSize:14,color:"rgba(255,255,255,.5)",marginTop:8}}>Waiting for others to join...</p>
+  /* ─────────────────────────── ROOM ─────────────────────────── */
+  return (
+    <div className="mRoot">
+      <header className="mBar">
+        <div className="mBarL">
+          <span className="mDot" /> <b>{interview.title}</b>
+          <span className="mSep">·</span>
+          <span className="mMono">{formatTime(duration)}</span>
+        </div>
+        <div className="mBarR">
+          <span className="mChip"><IconShield size={12} /> Encrypted</span>
+          <span className="mChip"><IconUsers size={12} /> {Math.max(roomCount, tiles.length)}</span>
+          <span className="mChip mMono">{code}</span>
+        </div>
+      </header>
+
+      <main className={"mStage" + (panel ? " withPanel" : "")}>
+        <div className={"mGrid" + (focus ? " focused" : "")} style={focus ? undefined : { gridTemplateColumns: `repeat(${cols}, 1fr)` }}>
+          {focus ? (
+            <>
+              <div className="mFocus"><Tile t={tiles.find(t => t.id === focus)} big /></div>
+              <div className="mStrip">{tiles.filter(t => t.id !== focus).map(t => <Tile key={t.id} t={t} />)}</div>
+            </>
+          ) : tiles.map(t => <Tile key={t.id} t={t} />)}
+        </div>
+
+        {tiles.length === 1 && (
+          <div className="mWait">
+            <IconUsers size={22} />
+            <p>Waiting for others to join</p>
+            <span>Share the room code <b className="mMono">{code}</b></span>
           </div>
         )}
-      </div>
 
-      {/* Controls */}
-      <div style={S.controls}>
-        <div style={S.controlsLeft}>
-          <button onClick={toggleAudio} style={{...S.ctrlBtn,...(!audioOn?S.ctrlBtnOff:{})}} title={audioOn?"Mute":"Unmute"}>
-            {audioOn?<IconMic size={19} />:<IconMicOff size={19} />}
-          </button>
-          <button onClick={toggleVideo} style={{...S.ctrlBtn,...(!videoOn?S.ctrlBtnOff:{})}} title={videoOn?"Stop video":"Start video"}>
-            {videoOn?<IconCamera size={19} />:<IconCameraOff size={19} />}
-          </button>
-          <button onClick={toggleScreen} style={{...S.ctrlBtn,...(screenSharing?S.ctrlBtnOn:{})}} title="Share screen">
-            <IconMonitor size={19} />
-          </button>
-          <button onClick={raiseHand} style={{...S.ctrlBtn,...(handRaised?S.ctrlBtnOn:{})}} title="Raise hand">
-            <IconHand size={19} />
-          </button>
-          <button onClick={() => setShowChat(!showChat)} style={{...S.ctrlBtn,...(showChat?S.ctrlBtnOn:{})}} title="Chat">
-            <IconMessage size={19} />
-          </button>
-        </div>
-        <button onClick={endCall} style={S.endBtn}>End call</button>
-      </div>
+        {panel && (
+          <aside className="mPanel">
+            <div className="mPanelTabs">
+              <button className={panel === "chat" ? "on" : ""} onClick={() => setPanel("chat")}>Chat</button>
+              <button className={panel === "people" ? "on" : ""} onClick={() => setPanel("people")}>People ({tiles.length})</button>
+              <button className="mPanelX" onClick={() => setPanel(null)} aria-label="Close panel"><IconX size={15} /></button>
+            </div>
 
-      {/* Chat panel */}
-      {showChat && (
-        <div style={S.chatPanel}>
-          <div style={S.chatHead}>In-call messages</div>
-          <div style={S.chatMessages}>
-            {messages.map((m,i) => (
-              <div key={i} style={m.system?S.sysMsg:S.chatMsg}>
-                {!m.system&&<span style={S.chatName}>{m.user?.name}: </span>}
-                <span style={{fontSize:13}}>{m.message}</span>
-                <span style={S.chatTime}>{new Date(m.timestamp).toLocaleTimeString("en-IN",{hour:"2-digit",minute:"2-digit"})}</span>
+            {panel === "chat" ? (
+              <>
+                <div className="mMsgs">
+                  {messages.length === 0 && <p className="mEmpty">No messages yet.</p>}
+                  {messages.map((m, i) => m.system ? (
+                    <p key={i} className="mSys">{m.message}</p>
+                  ) : (
+                    <div key={i} className="mMsg">
+                      <span className="mMsgWho">{m.user?.name || m.name || "Someone"}</span>
+                      <span className="mMsgTxt">{m.message}</span>
+                    </div>
+                  ))}
+                  <div ref={chatEndRef} />
+                </div>
+                <form className="mCompose" onSubmit={e => { e.preventDefault(); sendChat() }}>
+                  <input value={chatInput} onChange={e => setChatInput(e.target.value)} placeholder="Message everyone…" />
+                  <button type="submit" disabled={!chatInput.trim()}>Send</button>
+                </form>
+              </>
+            ) : (
+              <div className="mPeople">
+                {tiles.map(t => (
+                  <div key={t.id} className="mPerson">
+                    <span className="mAvatarSm">{(t.name||"?").slice(0,2).toUpperCase()}</span>
+                    <span className="mPersonName">{t.name}{t.isLocal ? " (You)" : ""}</span>
+                    {(levels[t.id] || 0) > SPEAK_THRESHOLD && !t.muted && <span className="mBadge">Speaking</span>}
+                    {t.muted ? <IconMicOff size={14} /> : <IconMic size={14} />}
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <div style={S.chatInput}>
-            <input value={chatInput} onChange={e=>setChatInput(e.target.value)} onKeyDown={e=>{if(e.key==="Enter")sendChat()}} placeholder="Type a message..." style={S.chatInputEl} />
-            <button onClick={sendChat} style={S.chatSend}>Send</button>
-          </div>
-        </div>
-      )}
+            )}
+          </aside>
+        )}
+      </main>
+
+      <div className="mDock">
+        <button onClick={toggleAudio} className={"mCtl" + (audioOn ? "" : " danger")} data-tip={`${audioOn ? "Mute" : "Unmute"} · M`}>
+          {audioOn ? <IconMic size={18} /> : <IconMicOff size={18} />}
+        </button>
+        <button onClick={toggleVideo} className={"mCtl" + (videoOn ? "" : " danger")} data-tip={`${videoOn ? "Stop video" : "Start video"} · V`}>
+          {videoOn ? <IconCamera size={18} /> : <IconCameraOff size={18} />}
+        </button>
+        <button onClick={toggleScreen} className={"mCtl" + (screenSharing ? " on" : "")} data-tip="Share screen · S">
+          <IconMonitor size={18} />
+        </button>
+        <button onClick={raiseHand} className={"mCtl" + (handRaised ? " on" : "")} data-tip="Raise hand · H">
+          <IconHand size={18} />
+        </button>
+        <button onClick={() => setPanel(p => p === "chat" ? null : "chat")} className={"mCtl" + (panel === "chat" ? " on" : "")} data-tip="Chat · C">
+          <IconMessage size={18} />
+          {unread > 0 && panel !== "chat" && <span className="mUnread">{unread > 9 ? "9+" : unread}</span>}
+        </button>
+        <button onClick={() => setPanel(p => p === "people" ? null : "people")} className={"mCtl" + (panel === "people" ? " on" : "")} data-tip="People · P">
+          <IconUsers size={18} />
+        </button>
+        <span className="mDockSep" />
+        <button onClick={endCall} className="mLeave" data-tip="Leave"><IconPhoneOff size={17} /> <span>Leave</span></button>
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
     </div>
   )
 }
 
-const S: Record<string,any> = {
-  loading:{display:"flex",alignItems:"center",justifyContent:"center",minHeight:"100vh",background:"#04342C",color:"#fff",fontSize:14},
-  lobby:{minHeight:"100vh",background:"#04342C",display:"flex",alignItems:"center",justifyContent:"center",padding:"2rem"},
-  lobbyCard:{background:"rgba(255,255,255,.05)",border:"0.5px solid rgba(255,255,255,.1)",borderRadius:20,padding:"2.5rem",width:"100%",maxWidth:460,textAlign:"center" as const},
-  lobbyIcon:{fontSize:56,marginBottom:"1rem"},
-  lobbyTitle:{fontSize:22,fontWeight:600,color:"#fff",letterSpacing:"-.3px",marginBottom:6},
-  lobbySub:{fontSize:14,color:"rgba(255,255,255,.5)",marginBottom:"1.5rem"},
-  lobbyInfo:{background:"rgba(255,255,255,.04)",borderRadius:12,padding:"1rem",marginBottom:"1.25rem",textAlign:"left" as const},
-  lobbyRow:{display:"flex",justifyContent:"space-between",padding:"6px 0",borderBottom:"0.5px solid rgba(255,255,255,.06)"},
-  lobbyLabel:{fontSize:12,color:"rgba(255,255,255,.4)"},
-  lobbyCode:{fontSize:14,fontWeight:700,color:"#9FD4C3",letterSpacing:"2px"},
-  lobbyVal:{fontSize:13,color:"rgba(255,255,255,.8)"},
-  lobbyNotes:{background:"rgba(255,255,255,.04)",borderRadius:8,padding:"10px 12px",fontSize:13,color:"rgba(255,255,255,.6)",marginBottom:"1.25rem",textAlign:"left" as const},
-  joinBtn:{width:"100%",background:"#0F6E56",color:"#fff",border:"none",borderRadius:10,padding:"13px",fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:8},
-  backBtn:{width:"100%",background:"none",border:"0.5px solid rgba(255,255,255,.15)",color:"rgba(255,255,255,.6)",borderRadius:10,padding:"11px",fontSize:14,cursor:"pointer"},
-  room:{display:"flex",flexDirection:"column" as const,height:"100vh",background:"#04342C",overflow:"hidden"},
-  roomHead:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"12px 1.5rem",borderBottom:"0.5px solid rgba(255,255,255,.06)",flexShrink:0},
-  roomTitle:{fontSize:15,fontWeight:600,color:"#fff"},
-  roomMeta:{display:"flex",alignItems:"center",gap:12},
-  timer:{fontSize:13,color:"#9FD4C3",fontWeight:600,fontVariantNumeric:"tabular-nums"},
-  pCount:{fontSize:12,color:"rgba(255,255,255,.4)"},
-  roomCode:{fontSize:12,color:"rgba(255,255,255,.3)"},
-  videoGrid:{flex:1,display:"grid",gridTemplateColumns:"repeat(auto-fit,minmax(280px,1fr))",gap:8,padding:"1rem",overflow:"hidden"},
-  videoTile:{position:"relative" as const,background:"#1A1A2E",borderRadius:14,overflow:"hidden",aspectRatio:"16/9"},
-  videoEl:{width:"100%",height:"100%",objectFit:"cover" as const,transform:"scaleX(-1)"},
-  videoLabel:{position:"absolute" as const,bottom:8,left:10,fontSize:12,color:"#fff",background:"rgba(0,0,0,.5)",padding:"2px 8px",borderRadius:6},
-  videoOff:{position:"absolute" as const,inset:0,background:"#1A1A2E",display:"flex",alignItems:"center",justifyContent:"center"},
-  waitingTile:{background:"rgba(255,255,255,.03)",borderRadius:14,display:"flex",flexDirection:"column" as const,alignItems:"center",justifyContent:"center",aspectRatio:"16/9"},
-  controls:{display:"flex",alignItems:"center",justifyContent:"space-between",padding:"1rem 1.5rem",background:"rgba(0,0,0,.3)",flexShrink:0},
-  controlsLeft:{display:"flex",gap:10},
-  ctrlBtn:{width:48,height:48,borderRadius:12,background:"rgba(255,255,255,.1)",border:"0.5px solid rgba(255,255,255,.1)",color:"#fff",fontSize:20,cursor:"pointer",display:"flex",alignItems:"center",justifyContent:"center",transition:"all .15s"},
-  ctrlBtnOff:{background:"#DC2626",border:"0.5px solid #DC2626"},
-  ctrlBtnOn:{background:"#0F6E56",border:"0.5px solid #0F6E56"},
-  endBtn:{background:"#DC2626",color:"#fff",border:"none",borderRadius:10,padding:"10px 24px",fontSize:14,fontWeight:600,cursor:"pointer"},
-  chatPanel:{position:"fixed" as const,right:16,bottom:80,width:300,background:"#1A1A2E",border:"0.5px solid rgba(255,255,255,.1)",borderRadius:14,overflow:"hidden",display:"flex",flexDirection:"column" as const,maxHeight:400},
-  chatHead:{padding:"10px 14px",fontSize:13,fontWeight:600,color:"#fff",borderBottom:"0.5px solid rgba(255,255,255,.07)"},
-  chatMessages:{flex:1,overflowY:"auto" as const,padding:"10px 14px",display:"flex",flexDirection:"column" as const,gap:6},
-  chatMsg:{fontSize:13,color:"rgba(255,255,255,.8)",lineHeight:1.5},
-  sysMsg:{fontSize:12,color:"rgba(255,255,255,.4)",fontStyle:"italic" as const},
-  chatName:{fontWeight:600,color:"#9FD4C3"},
-  chatTime:{fontSize:11,color:"rgba(255,255,255,.3)",marginLeft:6},
-  chatInput:{display:"flex",gap:6,padding:"8px 10px",borderTop:"0.5px solid rgba(255,255,255,.07)"},
-  chatInputEl:{flex:1,background:"rgba(255,255,255,.08)",border:"none",borderRadius:8,padding:"6px 10px",fontSize:13,color:"#fff",outline:"none"},
-  chatSend:{background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,cursor:"pointer"},
+const CSS = `
+.mRoot{--bg:#0B0F14;--surface:#141A21;--surface2:#1B222B;--line:rgba(255,255,255,.09);
+ --ink:#E8EDF2;--ink2:#93A1B0;--ink3:#64717F;--g:#12B76A;--brand:#0D7A5F;--danger:#F04438;--amber:#F79009;
+ --e:cubic-bezier(.22,1,.36,1);
+ position:fixed;inset:0;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;
+ font-family:var(--font-inter),Inter,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
+.mRoot *{box-sizing:border-box}
+.mMono{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+.mLoad{position:fixed;inset:0;display:grid;place-items:center;background:#0B0F14;color:#93A1B0;font-family:Inter,sans-serif}
+
+/* top bar */
+.mBar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line);background:rgba(20,26,33,.7);backdrop-filter:blur(14px) saturate(160%);flex-wrap:nowrap}
+.mBarL{display:flex;align-items:center;gap:9px;font-size:14px;min-width:0;overflow:hidden;white-space:nowrap}
+.mBarL b{font-weight:600;overflow:hidden;text-overflow:ellipsis}
+.mSep{color:var(--ink3)}
+.mDot{width:8px;height:8px;border-radius:50%;background:var(--danger);box-shadow:0 0 0 4px rgba(240,68,56,.16);flex-shrink:0;animation:mPulse 2s infinite}
+.mBarR{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.mChip{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--ink2);background:var(--surface2);border:1px solid var(--line);padding:5px 10px;border-radius:999px}
+
+/* stage */
+.mStage{flex:1;display:flex;gap:14px;padding:14px;min-height:0;position:relative}
+.mGrid{flex:1;display:grid;gap:12px;min-height:0}
+.mGrid.focused{display:grid;grid-template-rows:1fr auto}
+.mFocus{min-height:0}
+.mStrip{display:flex;gap:10px;overflow-x:auto;padding-top:10px}
+.mStrip .mTile{width:190px;flex:0 0 190px;aspect-ratio:16/10}
+
+/* tiles */
+.mTile{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:18px;overflow:hidden;min-height:0;
+ box-shadow:0 1px 2px rgba(0,0,0,.3);transition:box-shadow .2s var(--e),transform .2s var(--e)}
+.mTile.big{height:100%}
+.mTile.speaking{box-shadow:0 0 0 2px var(--g),0 8px 30px rgba(18,183,106,.18)}
+.mVideo{width:100%;height:100%;object-fit:cover;display:block;background:#0E141A}
+.mCamOff{position:absolute;inset:0;display:grid;place-items:center;background:var(--surface)}
+.mAvatar{width:66px;height:66px;border-radius:50%;background:var(--surface2);color:var(--ink2);display:grid;place-items:center;font-size:20px;font-weight:600}
+.mTileTop{position:absolute;top:10px;left:10px;display:flex;gap:6px;flex-wrap:wrap}
+.mTileBot{position:absolute;left:10px;right:10px;bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.mName{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:500;background:rgba(11,15,20,.66);backdrop-filter:blur(6px);padding:5px 10px;border-radius:8px;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mBadge{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;background:rgba(11,15,20,.66);backdrop-filter:blur(6px);padding:4px 9px;border-radius:999px;color:var(--ink)}
+.mBadge.amber{color:#FEC84B}
+.mQ{display:inline-flex;align-items:flex-end;gap:2px;height:12px;background:rgba(11,15,20,.66);padding:4px 6px;border-radius:6px}
+.mQ i{width:3px;background:var(--ink3);border-radius:1px}
+.mQ i:nth-child(1){height:4px}.mQ i:nth-child(2){height:7px}.mQ i:nth-child(3){height:10px}
+.mQ.good i{background:var(--g)}
+.mQ.fair i:nth-child(1),.mQ.fair i:nth-child(2){background:var(--amber)}
+.mQ.poor i:nth-child(1){background:var(--danger)}
+
+/* waiting */
+.mWait{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--ink3);pointer-events:none}
+.mWait p{font-size:15px;color:var(--ink2);margin:4px 0 0}
+.mWait span{font-size:13px}
+
+/* panel */
+.mPanel{width:330px;flex:0 0 330px;background:var(--surface);border:1px solid var(--line);border-radius:18px;display:flex;flex-direction:column;overflow:hidden}
+.mPanelTabs{display:flex;align-items:center;gap:4px;padding:8px;border-bottom:1px solid var(--line)}
+.mPanelTabs button{flex:1;padding:8px;border:none;background:none;color:var(--ink2);font:inherit;font-size:13px;font-weight:600;border-radius:9px;cursor:pointer;transition:background .15s,color .15s}
+.mPanelTabs button.on{background:var(--surface2);color:var(--ink)}
+.mPanelX{flex:0 0 34px!important;color:var(--ink3)!important}
+.mMsgs{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.mEmpty{color:var(--ink3);font-size:13px;text-align:center;margin-top:20px}
+.mSys{font-size:12px;color:var(--ink3);text-align:center;margin:0}
+.mMsg{display:flex;flex-direction:column;gap:2px}
+.mMsgWho{font-size:11.5px;font-weight:600;color:var(--ink2)}
+.mMsgTxt{font-size:13.5px;line-height:1.5;background:var(--surface2);padding:8px 11px;border-radius:12px;word-break:break-word}
+.mCompose{display:flex;gap:8px;padding:10px;border-top:1px solid var(--line)}
+.mCompose input{flex:1;background:var(--surface2);border:1px solid var(--line);border-radius:11px;padding:10px 12px;color:var(--ink);font:inherit;font-size:13.5px;outline:none;min-width:0}
+.mCompose input:focus{border-color:var(--brand)}
+.mCompose button{background:var(--brand);color:#fff;border:none;border-radius:11px;padding:0 15px;font:inherit;font-size:13px;font-weight:600;cursor:pointer}
+.mCompose button:disabled{opacity:.4;cursor:not-allowed}
+.mPeople{flex:1;overflow-y:auto;padding:10px;display:flex;flex-direction:column;gap:4px}
+.mPerson{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:11px;font-size:13.5px}
+.mPerson:hover{background:var(--surface2)}
+.mPersonName{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mAvatarSm{width:30px;height:30px;border-radius:50%;background:var(--surface2);display:grid;place-items:center;font-size:11.5px;font-weight:600;color:var(--ink2);flex-shrink:0}
+
+/* dock */
+.mDock{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;margin:0 14px 14px;background:rgba(27,34,43,.82);backdrop-filter:blur(18px) saturate(160%);border:1px solid var(--line);border-radius:999px;align-self:center;box-shadow:0 10px 40px rgba(0,0,0,.4)}
+.mCtl{position:relative;width:46px;height:46px;border-radius:50%;border:1px solid var(--line);background:var(--surface2);color:var(--ink);display:grid;place-items:center;cursor:pointer;transition:background .15s var(--e),transform .12s var(--e),color .15s}
+.mCtl:hover{background:#232C36;transform:translateY(-2px)}
+.mCtl:active{transform:scale(.94)}
+.mCtl.on{background:var(--brand);border-color:transparent;color:#fff}
+.mCtl.danger{background:var(--danger);border-color:transparent;color:#fff}
+.mCtl::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 10px);left:50%;transform:translateX(-50%);white-space:nowrap;font-size:11.5px;background:#000;color:#fff;padding:5px 9px;border-radius:7px;opacity:0;pointer-events:none;transition:opacity .15s}
+.mCtl:hover::after{opacity:.92}
+.mUnread{position:absolute;top:-2px;right:-2px;min-width:18px;height:18px;padding:0 5px;border-radius:999px;background:var(--danger);color:#fff;font-size:10.5px;font-weight:700;display:grid;place-items:center}
+.mDockSep{width:1px;height:26px;background:var(--line);margin:0 4px}
+.mLeave{display:inline-flex;align-items:center;gap:8px;height:46px;padding:0 20px;border-radius:999px;border:none;background:var(--danger);color:#fff;font:inherit;font-size:14px;font-weight:600;cursor:pointer;transition:background .15s,transform .12s var(--e)}
+.mLeave:hover{background:#D92D20}
+.mLeave:active{transform:scale(.96)}
+
+/* lobby */
+.mLobby{display:grid;place-items:center;padding:20px;overflow-y:auto}
+.mLobbyCard{width:100%;max-width:430px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:30px;text-align:center}
+.mLobbyIcon{width:52px;height:52px;border-radius:15px;background:rgba(13,122,95,.16);color:#34D399;display:grid;place-items:center;margin:0 auto 16px}
+.mLobbyTitle{font-size:22px;font-weight:600;margin:0;letter-spacing:-.02em}
+.mLobbySub{font-size:13.5px;color:var(--ink2);margin:6px 0 20px;text-transform:capitalize}
+.mLobbyInfo{display:flex;flex-direction:column;gap:2px;margin:0 0 16px;text-align:left}
+.mLobbyInfo>div{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.mLobbyInfo dt{color:var(--ink3);margin:0}
+.mLobbyInfo dd{margin:0;font-weight:500}
+.mLobbyNotes{font-size:13px;color:var(--ink2);background:var(--surface2);padding:11px 13px;border-radius:12px;text-align:left;line-height:1.55}
+.mJoin{width:100%;margin-top:6px;padding:14px;border:none;border-radius:14px;background:var(--brand);color:#fff;font:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:background .15s,transform .12s var(--e)}
+.mJoin:hover{background:#0B6C54}
+.mJoin:active{transform:scale(.98)}
+.mBack{width:100%;margin-top:8px;padding:12px;border:1px solid var(--line);border-radius:14px;background:none;color:var(--ink2);font:inherit;font-size:14px;cursor:pointer}
+.mLobbyFine{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink3);margin:16px 0 0;line-height:1.5}
+
+@keyframes mPulse{0%,100%{opacity:1}50%{opacity:.45}}
+
+/* responsive */
+@media (max-width:900px){
+  .mStage{flex-direction:column;padding:10px;gap:10px}
+  .mPanel{width:auto;flex:1 1 auto;max-height:46vh}
+  .mStage.withPanel .mGrid{flex:0 0 42vh}
+  .mBarL b{max-width:34vw}
+  .mChip:not(.mMono){display:none}
 }
+@media (max-width:640px){
+  .mDock{gap:6px;padding:9px;margin:0 8px 8px}
+  .mCtl{width:42px;height:42px}
+  .mLeave{padding:0 14px;height:42px}
+  .mLeave span{display:none}
+  .mGrid{grid-template-columns:1fr!important}
+  .mStrip .mTile{width:132px;flex:0 0 132px}
+}
+@media (prefers-reduced-motion:reduce){.mRoot *{animation:none!important;transition:none!important}}
+`
