@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next"
 import { Inter } from "next/font/google"
 import "@/styles/globals.css"
 import "@/styles/vrittih.css"
+// Loaded last so its !important mobile rules win over inline styles.
+import "@/styles/mobile.css"
 
 // The design system specifies Inter 400/500/600/700. next/font downloads it at
 // build time and self-hosts it, so there is no runtime request to Google and the

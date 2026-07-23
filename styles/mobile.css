@@ -1,0 +1,96 @@
+/* =============================================================================
+   Vrittih — global mobile layer
+   =============================================================================
+   Most screens are built with inline style objects (style={S.x}). External CSS
+   cannot normally override an inline style, so these rules use !important and
+   match on the rendered style attribute (React writes inline styles as
+   style="grid-template-columns: 1fr 1fr", which [style*="…"] matches).
+
+   That makes this one file responsible for making *every* screen usable on a
+   phone — including screens added later — instead of patching thirty files and
+   missing the thirty-first.
+
+   Opt out of the single-column collapse on a specific element with
+   data-keep-cols (e.g. a 2-up stat row or an icon grid that genuinely fits).
+   ========================================================================== */
+
+/* --- never let the page scroll sideways ---------------------------------- */
+html, body { max-width: 100%; overflow-x: hidden; }
+* { -webkit-tap-highlight-color: rgba(13,122,95,.12); }
+
+/* =========================== tablet and below ============================= */
+@media (max-width: 900px) {
+  /* Panel + sidebar layouts ("220px 1fr", "1fr 300px", "1.4fr 1fr") stack.
+     Tabular grids are excluded — collapsing a table to one column separates
+     every value from its heading, which is worse than scrolling. Those are
+     marked data-table and scroll sideways inside their own container instead. */
+  [style*="grid-template-columns"]:not([data-keep-cols]):not([data-table]) {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* A grid used as a table: keep the columns, scroll the table, not the page. */
+  [data-table-wrap] {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-inline: -4px;
+    padding-inline: 4px;
+  }
+  [data-table-wrap] > [data-table] { min-width: 620px; }
+
+  /* Fixed-width columns and panels must be free to shrink. */
+  [style*="min-width"]:not([data-keep-width]) { min-width: 0 !important; }
+
+  /* Long flex rows (toolbars, filter strips, action bars) wrap instead of
+     pushing the layout wider than the screen. */
+  [style*="display: flex"]:not([data-no-wrap]) { flex-wrap: wrap; }
+
+  /* Anything explicitly sized wider than the viewport comes back in. */
+  [style*="width: 4"], [style*="width: 5"], [style*="width: 6"],
+  [style*="width: 7"], [style*="width: 8"], [style*="width: 9"] { max-width: 100% !important; }
+}
+
+/* ============================== phones ==================================== */
+@media (max-width: 640px) {
+  /* Comfortable reading + tap targets. */
+  body { font-size: 15px; }
+  button, a[role="button"], input, select, textarea { font-size: 16px; } /* iOS: <16px zooms on focus */
+  button, a[role="button"] { min-height: 42px; }
+
+  /* Tighten the generous desktop padding so content is not a narrow strip. */
+  [style*="padding: 2"], [style*="padding: 3"], [style*="padding: 4"] { padding: 16px !important; }
+
+  /* Headings that were sized for a wide canvas. */
+  h1 { font-size: clamp(24px, 7vw, 32px) !important; line-height: 1.15 !important; }
+  h2 { font-size: clamp(19px, 5.5vw, 24px) !important; }
+
+  /* Modals / overlays: full-width sheets rather than centred cards. */
+  [style*="position: fixed"][style*="inset: 0"] > div { max-width: 100% !important; }
+
+  /* Wide data tables scroll inside themselves instead of stretching the page.
+     (Applies to real <table>s; grid "tables" are collapsed by the rule above.) */
+  table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; max-width: 100%; }
+
+  /* Images and media never exceed their container. */
+  img, video, canvas, svg { max-width: 100%; height: auto; }
+}
+
+/* =================== app shell: sidebar-driven screens ==================== */
+@media (max-width: 900px) {
+  /* The shell already swaps to a drawer; make sure the content pane can shrink
+     and does not inherit a desktop min-width from a child. */
+  .v-app { min-width: 0; }
+  .v-app > div { min-width: 0; }
+}
+
+/* =========================== marketing pages ============================== */
+/* The homepage/pay pages define their own responsive CSS; they only need the
+   overflow guard above. Exclude them from the blunt padding override so their
+   deliberate spacing survives. */
+@media (max-width: 640px) {
+  .pw [style*="padding: 2"], .pw [style*="padding: 3"] { padding: revert !important; }
+}
+
+/* ============================ print / a11y =============================== */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
+}

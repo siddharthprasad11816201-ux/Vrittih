@@ -132,10 +132,10 @@ export default function PayrollPage() {
         <section style={S.card}>
           <h2 style={S.cardHead}><IconFileText size={16} /> Cycles</h2>
           {loading ? <p style={S.dim}>Loading…</p> : data.runs.length === 0 ? <p style={S.dim}>No payroll has been run yet.</p> : (
-            <div style={S.table}>
-              <div style={{ ...S.tr, ...S.th }}><span>Period</span><span>Staff</span><span>Gross</span><span>Deductions</span><span>Net</span><span>Status</span><span /></div>
+            <div style={S.table} data-table-wrap>
+              <div data-table style={{ ...S.tr, ...S.th }}><span>Period</span><span>Staff</span><span>Gross</span><span>Deductions</span><span>Net</span><span>Status</span><span /></div>
               {data.runs.map((r) => (
-                <div key={r.id} style={S.tr}>
+                <div key={r.id} data-table style={S.tr}>
                   <span style={S.strong}>{r.label}</span>
                   <span>{r.headcount}</span>
                   <span>{money(r.totalGross, r.currency)}</span>
@@ -157,10 +157,10 @@ export default function PayrollPage() {
         <section style={S.card}>
           <h2 style={S.cardHead}><IconUsers size={16} /> Salary structures</h2>
           {loading ? <p style={S.dim}>Loading…</p> : (
-            <div style={S.table}>
-              <div style={{ ...S.tr2, ...S.th }}><span>Employee</span><span>Department</span><span>Annual CTC</span><span /></div>
+            <div style={S.table} data-table-wrap>
+              <div data-table style={{ ...S.tr2, ...S.th }}><span>Employee</span><span>Department</span><span>Annual CTC</span><span /></div>
               {data.employees.map((e) => (
-                <div key={e.id} style={S.tr2}>
+                <div key={e.id} data-table style={S.tr2}>
                   <span><span style={S.strong}>{e.name}</span> <span style={S.dim}>{e.code}</span></span>
                   <span style={S.dim}>{e.department || "—"}</span>
                   <span>{e.compensation ? money(e.compensation.annualCTC, e.compensation.currency) : <em style={S.none}>not set</em>}</span>
