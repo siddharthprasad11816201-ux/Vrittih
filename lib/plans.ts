@@ -6,9 +6,10 @@ export type Plan = {
   id: string
   audience: "individual" | "employer"
   name: string
-  priceCHF: number          // per month — what is actually charged today
-  listPriceCHF?: number     // intended price, when a tier is temporarily open
-  openNow?: boolean         // free for now; say so plainly rather than implying it is always free
+  // Per month, in CHF. These are DEFAULTS shipped with the code — the live price
+  // can be changed from the admin panel and is stored in the Setting table.
+  // Read effective prices with lib/pricing.ts, never straight from here.
+  priceCHF: number
   tagline: string
   popular?: boolean
   features: string[]
@@ -17,12 +18,9 @@ export type Plan = {
 
 export const PLANS: Plan[] = [
   // ---- Individuals / applicants ----
-  { id: "free", audience: "individual", name: "Free", priceCHF: 0, tagline: "Get started and explore.",
-    features: ["Browse every job", "Basic profile", "5 applications / month", "Community & feed"], cta: "Start free" },
-  // Basic is deliberately open (0 CHF) while the platform is being built out —
-  // the owner's decision. `listPriceCHF` keeps the intended price visible so the
-  // page can say "free for now" honestly instead of pretending it was always free.
-  { id: "basic", audience: "individual", name: "Basic", priceCHF: 0, listPriceCHF: 1, openNow: true, tagline: "Everything to land the job.",
+  // No free tier by the owner's decision — Basic (1 CHF/mo) is the entry point.
+  // Prices here are DEFAULTS; the live amount is admin-editable via lib/pricing.ts.
+  { id: "basic", audience: "individual", name: "Basic", priceCHF: 1, tagline: "Everything to land the job.",
     features: ["Apply to all jobs — unlimited", "Full profile, résumé & verification", "Live 7-stage application tracking", "Saved jobs & job alerts", "Network, messaging & interviews"], cta: "Choose Basic" },
   { id: "pro", audience: "individual", name: "Pro", priceCHF: 12, tagline: "Stand out and get hired faster.", popular: true,
     features: ["Everything in Basic", "Priority visibility to employers", "AI match insights & recommendations", "All career, research & file tools", "Astrological & career analysis", "Priority verified badge"], cta: "Go Pro" },

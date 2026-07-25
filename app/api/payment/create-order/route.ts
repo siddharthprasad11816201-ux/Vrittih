@@ -3,7 +3,9 @@ import { verifyToken } from "@/lib/jwt"
 import { getRazorpay, razorpayConfigured } from "@/lib/razorpay"
 import { getRates, convertFromCHF, meta } from "@/lib/fx"
 import { JOINING_FEE_CHF } from "@/lib/payment"
-import { getPlan } from "@/lib/plans"
+// Charge the LIVE price, not the shipped default — an admin price change must
+// reach checkout, otherwise the customer is billed an amount nobody set.
+import { getEffectivePlan } from "@/lib/pricing"
 
 export const dynamic = "force-dynamic"
 
@@ -16,7 +18,7 @@ export async function POST(req: NextRequest) {
     const { currency = "CHF", type = "jobseeker", planId } = await req.json()
     if (!meta(currency)) return NextResponse.json({ error: "Unsupported currency." }, { status: 400 })
 
-    const plan = planId ? getPlan(planId) : null
+    const plan = planId ? await getEffectivePlan(planId) : null
     if (planId && !plan) return NextResponse.json({ error: "Unknown plan." }, { status: 400 })
     const amountCHF = plan ? plan.priceCHF : JOINING_FEE_CHF
     if (amountCHF <= 0) return NextResponse.json({ error: "This plan is free — no payment needed." }, { status: 400 })

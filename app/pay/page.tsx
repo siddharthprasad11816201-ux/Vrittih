@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { IconCheckCircle, IconLock, IconArrowRight } from "@/components/ui/Icons"
-import { PLANS } from "@/lib/plans"
+import { PLANS as DEFAULT_PLANS, type Plan } from "@/lib/plans"
 
 declare global { interface Window { Razorpay: any } }
 
@@ -47,6 +47,9 @@ export default function PayPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const [showFx, setShowFx] = useState(false)
+  // Live catalogue (admin prices applied). Falls back to the shipped defaults so
+  // the page still renders if the endpoint is briefly unavailable.
+  const [catalogue, setCatalogue] = useState<Plan[]>(DEFAULT_PLANS)
 
   useEffect(() => {
     fetch("/api/auth/me").then(r => r.json()).then(d => {
@@ -57,13 +60,14 @@ export default function PayPage() {
       setRates(list); setLive(d.live !== false)
       setCurrency(c => c || detectCurrency(list.map((p: any) => p.code)))
     }).catch(() => {})
+    fetch("/api/plans").then(r => r.json()).then(d => { if (d?.plans?.length) setCatalogue(d.plans) }).catch(() => {})
     if (!document.getElementById("rzp-sdk")) {
       const s = document.createElement("script")
       s.id = "rzp-sdk"; s.src = "https://checkout.razorpay.com/v1/checkout.js"; document.body.appendChild(s)
     }
   }, [])
 
-  const plans = useMemo(() => PLANS.filter(p => p.audience === audience && p.priceCHF > 0), [audience])
+  const plans = useMemo(() => catalogue.filter(p => p.audience === audience && p.priceCHF > 0), [audience, catalogue])
   const plan = plans.find(p => p.id === planId) || plans[0]
   const rate = rates.find(r => r.code === currency)
 

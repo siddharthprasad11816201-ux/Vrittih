@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
-import { PLANS, ADDONS } from "@/lib/plans"
+import { PLANS as DEFAULT_PLANS, ADDONS as DEFAULT_ADDONS, type Plan } from "@/lib/plans"
 import { IconCheckCircle, IconBriefcase, IconArrowRight } from "@/components/ui/Icons"
 
 declare global { interface Window { Razorpay: any } }
@@ -16,8 +16,13 @@ export default function PricingPage() {
   const [audience, setAudience] = useState<"individual" | "employer">("individual")
   const [busy, setBusy] = useState("")
   const [error, setError] = useState("")
+  // Live catalogue with admin price overrides; defaults keep the page rendering
+  // if the endpoint is briefly unavailable.
+  const [plans, setPlans] = useState<Plan[]>(DEFAULT_PLANS)
+  const [addons, setAddons] = useState<any[]>(DEFAULT_ADDONS)
 
   useEffect(() => {
+    fetch("/api/plans").then(r => r.json()).then(d => { if (d?.plans?.length) { setPlans(d.plans); setAddons(d.addons || DEFAULT_ADDONS) } }).catch(() => {})
     fetch("/api/auth/me").then(r => r.json()).then(d => { if (d.user) { setMe(d.user); if (d.user.role === "EMPLOYER") setAudience("employer") } })
     fetch("/api/payment/rates").then(r => r.json()).then(d => {
       const rt: any = {}, sy: any = {}; (d.prices || []).forEach((p: any) => { rt[p.code] = p.rate; sy[p.code] = p.symbol })
@@ -39,7 +44,7 @@ export default function PricingPage() {
       if (!window.Razorpay) { setError("Payment window failed to load."); setBusy(""); return }
       const rzp = new window.Razorpay({
         key: d.keyId, amount: d.amount, currency: d.currency, order_id: d.orderId,
-        name: "Vrittih", description: `${PLANS.find(p => p.id === planId)?.name} · monthly`,
+        name: "Vrittih", description: `${plans.find(p => p.id === planId)?.name} · monthly`,
         prefill: { email: me?.email, name: me?.name }, theme: { color: "#0F6E56" },
         handler: async (resp: any) => {
           const v = await fetch("/api/payment/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(resp) }).then(r => r.json())
@@ -52,7 +57,7 @@ export default function PricingPage() {
     } catch { setError("Network error."); setBusy("") }
   }
 
-  const tiers = PLANS.filter(p => p.audience === audience)
+  const tiers = plans.filter(p => p.audience === audience)
 
   return (
     <div className="pr">
@@ -98,7 +103,7 @@ export default function PricingPage() {
       {audience === "employer" && (
         <div className="prAddons">
           <span className="prAddTitle">Predictable add-ons</span>
-          {ADDONS.map(a => <span key={a.id} className="prAdd"><b>{price(a.priceCHF)}</b> {a.unit} — {a.name}</span>)}
+          {addons.map(a => <span key={a.id} className="prAdd"><b>{price(a.priceCHF)}</b> {a.unit} — {a.name}</span>)}
         </div>
       )}
 
