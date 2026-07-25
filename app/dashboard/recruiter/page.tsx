@@ -72,6 +72,7 @@ export default function RecruiterDashboard() {
                 ))}
               </div>
               {selJob && <span style={{fontSize:"13px",color:"#9ca3af"}}>{candidates.length} candidate{candidates.length!==1?"s":""}</span>}
+              {jobId && <Link href={`/jobs/${jobId}/apply/setup`} style={{marginLeft:"auto",fontSize:"13px",fontWeight:600,color:"#0F6E56",textDecoration:"none",border:"1px solid #0F6E56",borderRadius:"9px",padding:"7px 13px"}}>Set up application form →</Link>}
             </div>
 
             {err && <div style={{background:"#FEF2F2",border:"1px solid #FECACA",color:"#B91C1C",borderRadius:"10px",padding:"12px 14px",fontSize:"13px",marginBottom:"1rem"}}>{err}</div>}
