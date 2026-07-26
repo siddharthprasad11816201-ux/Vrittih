@@ -25,6 +25,7 @@ export async function GET() {
         email: true,
         role: true,
         paid: true,
+        plan: true,        // drives feature entitlements (see lib/entitlements.ts)
         avatar: true,
         headline: true,
         location: true,

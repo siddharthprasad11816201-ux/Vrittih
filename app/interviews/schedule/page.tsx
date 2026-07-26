@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import AppShell from "@/components/vrittih/AppShell"
+import FeatureGate from "@/components/vrittih/FeatureGate"
 const TYPES = [
   { value:"ONE_ON_ONE", label:"1-on-1 Interview", desc:"Single candidate with one interviewer" },
   { value:"PANEL", label:"Panel Interview", desc:"Multiple interviewers, one candidate" },
@@ -9,7 +10,11 @@ const TYPES = [
   { value:"TECHNICAL", label:"Technical Interview", desc:"Coding and technical assessment" },
 ]
 
-export default function ScheduleInterview() {
+export default function ScheduleInterviewPage() {
+  return <FeatureGate feature="interviews" title="Schedule interview"><ScheduleInterview /></FeatureGate>
+}
+
+function ScheduleInterview() {
   const router = useRouter()
   const [form, setForm] = useState({ title:"", type:"ONE_ON_ONE", scheduledAt:"", duration:"60", notes:"" })
   const [participantEmail, setParticipantEmail] = useState("")

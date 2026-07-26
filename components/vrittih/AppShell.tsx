@@ -9,11 +9,12 @@ import {
   IconSearch, IconBell, IconShield, IconScan, IconMenu, IconX, IconHome, IconBookmark, IconGlobe,
   IconBanknote,
 } from "@/components/ui/Icons"
+import { hasFeature } from "@/lib/entitlements"
 
 type Item = { href: string; label: string; icon: ReactNode }
 type Group = { title: string; items: Item[] }
 
-function nav(isEmployer: boolean, isAdmin: boolean): Group[] {
+function nav(isEmployer: boolean, isAdmin: boolean, canInterviews: boolean): Group[] {
   const work: Group = isEmployer
     ? { title: "Hiring", items: [
         { href: "/dashboard/post-job", label: "Post a job", icon: <IconFileText size={17} /> },
@@ -46,7 +47,9 @@ function nav(isEmployer: boolean, isAdmin: boolean): Group[] {
     { title: "Connect", items: [
       { href: "/messages", label: "Messages", icon: <IconMessage size={17} /> },
       { href: "/mail", label: "Mail", icon: <IconMail size={17} /> },
-      { href: "/interviews", label: "Interviews", icon: <IconVideo size={17} /> },
+      // Video interviews are enterprise-only (max employer tier). Hidden for
+      // everyone else — see lib/entitlements.ts.
+      ...(canInterviews ? [{ href: "/interviews", label: "Interviews", icon: <IconVideo size={17} /> }] : []),
       { href: "/network", label: "Network", icon: <IconNetwork size={17} /> },
       { href: "/community", label: "Community", icon: <IconMessage size={17} /> },
     ] },
@@ -86,7 +89,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
   const isEmployer = ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user?.role)
   const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(user?.role)
-  const groups = nav(isEmployer, isAdmin)
+  const groups = nav(isEmployer, isAdmin, hasFeature(user, "interviews"))
   const active = (href: string) => href === "/dashboard" ? pathname === "/dashboard" : (pathname === href || pathname.startsWith(href + "/"))
   const initials = (user?.name || "?").split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
 
@@ -165,7 +168,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
         <div style={S.content}>{children}</div>
       </div>
 
-      <CommandPalette isEmployer={isEmployer} />
+      <CommandPalette isEmployer={isEmployer} canInterviews={hasFeature(user, "interviews")} />
     </div>
   )
 }

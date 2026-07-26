@@ -11,7 +11,7 @@ import { slugify } from "@/lib/company"
 type Item = { id: string; group: string; label: string; sub?: string; icon: ReactNode; run: () => void; keywords?: string }
 type SearchResults = { jobs: any[]; people: any[]; companies: any[] }
 
-export default function CommandPalette({ isEmployer }: { isEmployer: boolean }) {
+export default function CommandPalette({ isEmployer, canInterviews }: { isEmployer: boolean; canInterviews?: boolean }) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState("")
@@ -34,7 +34,7 @@ export default function CommandPalette({ isEmployer }: { isEmployer: boolean }) 
       { id: "forms", group: "Go to", label: "Forms", icon: <IconClipboard size={16} />, run: go("/forms") },
       { id: "messages", group: "Go to", label: "Messages", icon: <IconMessage size={16} />, run: go("/messages") },
       { id: "mail", group: "Go to", label: "Mail", icon: <IconMail size={16} />, run: go("/mail") },
-      { id: "interviews", group: "Go to", label: "Interviews", icon: <IconVideo size={16} />, run: go("/interviews") },
+      ...(canInterviews ? [{ id: "interviews", group: "Go to", label: "Interviews", icon: <IconVideo size={16} />, run: go("/interviews") }] : []),
       { id: "network", group: "Go to", label: "Network", icon: <IconNetwork size={16} />, run: go("/network") },
       { id: "community", group: "Go to", label: "Community", icon: <IconMessage size={16} />, run: go("/community") },
       { id: "tests", group: "Go to", label: "Assessments", icon: <IconClipboard size={16} />, run: go("/tests") },
@@ -53,7 +53,7 @@ export default function CommandPalette({ isEmployer }: { isEmployer: boolean }) 
     )
     return [...nav, ...actions]
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEmployer])
+  }, [isEmployer, canInterviews])
 
   // debounced live search against the platform (jobs + people + companies)
   useEffect(() => {

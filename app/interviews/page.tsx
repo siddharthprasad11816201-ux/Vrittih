@@ -3,8 +3,13 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
 import { IconCalendar, IconClock, IconUsers, IconKey, IconVideo } from "@/components/ui/Icons"
+import FeatureGate from "@/components/vrittih/FeatureGate"
 
 export default function InterviewsPage() {
+  return <FeatureGate feature="interviews" title="Interviews"><InterviewsInner /></FeatureGate>
+}
+
+function InterviewsInner() {
   const [interviews, setInterviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [me, setMe] = useState<any>(null)

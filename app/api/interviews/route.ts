@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { hasFeature } from "@/lib/entitlements"
 import crypto from "crypto"
 
 export async function GET(req: NextRequest) {
@@ -34,6 +35,15 @@ export async function POST(req: NextRequest) {
     if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     const payload = verifyToken(token)
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
+
+    // Video interviews are enterprise-only (max employer tier). Enforce server-side —
+    // hiding the nav is not a control. Hosts must be entitled; invited candidates
+    // still join a specific room via its link (that path is not gated here).
+    const host = await prisma.user.findUnique({ where: { id: payload.userId }, select: { role: true, plan: true } })
+    if (!hasFeature(host, "interviews")) {
+      return NextResponse.json({ error: "Video interviews are available on the Scale plan.", upgrade: "emp_scale" }, { status: 403 })
+    }
+
     const { title, type, scheduledAt, duration, participantIds, applicationId, notes } = await req.json()
     if (!title || !scheduledAt) return NextResponse.json({ error: "Title and scheduled time required" }, { status: 400 })
     const roomCode = crypto.randomBytes(4).toString("hex").toUpperCase()
