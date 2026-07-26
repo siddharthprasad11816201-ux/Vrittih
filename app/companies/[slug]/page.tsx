@@ -180,7 +180,7 @@ const S: Record<string, any> = {
   about: { fontSize: 14.5, lineHeight: 1.7, color: "var(--v-ink-2)", margin: 0 },
   roleList: { display: "flex", flexDirection: "column", gap: 8 },
   role: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, padding: "13px 15px", border: "1px solid var(--v-line)", borderRadius: 11, textDecoration: "none" },
-  roleTitle: { fontSize: 14.5, fontWeight: 600, color: "var(--v-ink)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" },
+  roleTitle: { fontSize: 14.5, fontWeight: 600, color: "var(--v-ink)", display:"-webkit-box", WebkitLineClamp:2, WebkitBoxOrient:"vertical", overflow:"hidden" },
   roleMeta: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 5 },
   roleMetaItem: { display: "inline-flex", alignItems: "center", gap: 4, fontSize: 12.5, color: "var(--v-ink-3)" },
   roleTag: { fontSize: 11.5, fontWeight: 600, color: "var(--v-accent)", background: "var(--v-accent-soft)", padding: "2px 8px", borderRadius: 6 },

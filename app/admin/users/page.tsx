@@ -98,7 +98,7 @@ const S: Record<string,any> = {
   main:{ overflow:"auto" },
   topBar:{ padding:"1.5rem 2rem",background:"#fff",borderBottom:"0.5px solid rgba(0,0,0,.07)" },
   pageTitle:{ fontSize:20,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px" },
-  toolbar:{ display:"flex",gap:10,padding:"1rem 2rem",background:"#fff",borderBottom:"0.5px solid rgba(0,0,0,.06)" },
+  toolbar:{ display:"flex", flexWrap:"wrap" as const,gap:10,padding:"1rem 2rem",background:"#fff",borderBottom:"0.5px solid rgba(0,0,0,.06)" },
   searchInput:{ flex:1,maxWidth:320,border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"7px 12px",fontSize:13,outline:"none" },
   sel:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"7px 10px",fontSize:13,background:"#fff",cursor:"pointer" },
   tableWrap:{ overflowX:"auto" as const },

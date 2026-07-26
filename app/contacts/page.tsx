@@ -101,7 +101,7 @@ export default function ContactsPage() {
 
 const S: Record<string, any> = {
   wrap: { maxWidth: 1080, margin: "0 auto", padding: "2rem" },
-  head: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 22 },
+  head: { display: "flex", flexWrap:"wrap" as const, gap:12, justifyContent: "space-between", alignItems: "flex-end", marginBottom: 22 },
   title: { fontSize: 24, fontWeight: 700, color: "#1A1A2E", letterSpacing: "-.02em" },
   sub: { fontSize: 13.5, color: "#8A8595", marginTop: 3 },
   addBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: "#0F6E56", color: "#fff", padding: "10px 16px", borderRadius: 9, fontSize: 14, fontWeight: 600, textDecoration: "none" },
@@ -113,7 +113,7 @@ const S: Record<string, any> = {
   chipOn: { background: "#E1F5EE", color: "#0F6E56", borderColor: "#E1F5EE" },
   sort: { border: "1px solid #E7E6EC", background: "#fff", borderRadius: 10, padding: "10px 12px", fontSize: 13, color: "#4B4761", cursor: "pointer" },
   list: { display: "flex", flexDirection: "column", gap: 8 },
-  row: { display: "flex", alignItems: "center", gap: 14, background: "#fff", border: "1px solid #ECEBF0", borderRadius: 12, padding: "13px 18px", cursor: "pointer", transition: "border-color .12s, box-shadow .12s" },
+  row: { display: "flex", flexWrap:"wrap" as const, alignItems: "center", gap: 14, background: "#fff", border: "1px solid #ECEBF0", borderRadius: 12, padding: "13px 18px", cursor: "pointer", transition: "border-color .12s, box-shadow .12s" },
   avatar: { width: 42, height: 42, borderRadius: 11, color: "#fff", display: "grid", placeItems: "center", fontSize: 14, fontWeight: 700, flexShrink: 0 },
   name: { fontSize: 15, fontWeight: 600, color: "#1A1A2E" },
   meta: { fontSize: 13, color: "#8A8595", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },

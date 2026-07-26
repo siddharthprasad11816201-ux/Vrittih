@@ -230,7 +230,7 @@ const S: Record<string,any> = {
   postContent:{ fontSize:14,color:"#3D3D4E",lineHeight:1.65,wordBreak:"break-word" as const },
   reply:{ display:"flex",gap:8,marginTop:8,paddingLeft:10,borderLeft:"2px solid rgba(0,0,0,.06)" },
   replyForm:{ display:"flex",gap:6,marginTop:8,alignItems:"center" },
-  replyInput:{ flex:1,border:"0.5px solid rgba(0,0,0,.12)",borderRadius:8,padding:"6px 10px",fontSize:13,outline:"none" },
+  replyInput:{ minWidth:0, flex:1,border:"0.5px solid rgba(0,0,0,.12)",borderRadius:8,padding:"6px 10px",fontSize:13,outline:"none" },
   replyBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"6px 12px",fontSize:12,fontWeight:500,cursor:"pointer" },
   cancelReplyBtn:{ background:"none",border:"none",fontSize:12,color:"#9ca3af",cursor:"pointer" },
   replyToggle:{ background:"none",border:"none",fontSize:12,color:"#9ca3af",cursor:"pointer",marginTop:6,padding:0 },

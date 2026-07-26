@@ -329,7 +329,7 @@ const CSS = `
 .hrLeaveActions{ display:flex; gap:6px; }
 
 .hrScrim{ position:fixed; inset:0; background:rgba(4,52,44,.28); z-index:70; }
-.hrDrawer{ position:fixed; top:0; right:0; height:100vh; width:min(440px,94vw); background:var(--v-surface); z-index:71; box-shadow:-20px 0 60px rgba(4,52,44,.18); padding:1.4rem; overflow-y:auto; }
+.hrDrawer{ position:fixed; top:0; right:0; height:100vh; height:100dvh; width:min(440px,94vw); background:var(--v-surface); z-index:71; box-shadow:-20px 0 60px rgba(4,52,44,.18); padding:1.4rem; overflow-y:auto; }
 .hrDrawerHead{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:16px; }
 .hrIconBtn{ background:var(--v-surface-2); border:none; border-radius:8px; padding:7px; cursor:pointer; color:var(--v-ink-2); display:flex; }
 .hrDGrid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px 0; border-top:1px solid var(--v-line); border-bottom:1px solid var(--v-line); font-size:13.5px; color:var(--v-ink); }

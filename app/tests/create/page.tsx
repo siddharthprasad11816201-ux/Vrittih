@@ -227,7 +227,7 @@ const S: Record<string,any> = {
   section:{ background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:14,padding:"1.5rem",marginBottom:12 },
   sectionHead:{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1.25rem" },
   sectionTitle:{ fontSize:16,fontWeight:600,color:"#0A0A0F",marginBottom:"1.25rem" },
-  row:{ display:"flex",gap:12 },
+  row:{ display:"flex", flexWrap:"wrap" as const,gap:12 },
   fg:{ display:"flex",flexDirection:"column" as const,gap:5,marginBottom:12,flex:1 },
   label:{ fontSize:12,fontWeight:500,color:"#7B7B8F" },
   input:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"8px 11px",fontSize:13,color:"#0A0A0F",outline:"none",fontFamily:"inherit",width:"100%" },

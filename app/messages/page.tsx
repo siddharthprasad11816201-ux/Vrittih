@@ -203,7 +203,7 @@ export default function MessagesPage() {
 
 const MSG_CSS = `
 .msgBack{ display:none; }
-@media (max-width:820px){
+@media (max-width:900px){
   .msgShell{ grid-template-columns:1fr !important; }
   .msgShell[data-active="true"] .msgSide{ display:none !important; }
   .msgShell[data-active="false"] .msgChat{ display:none !important; }
@@ -211,7 +211,7 @@ const MSG_CSS = `
 }
 `
 const S: Record<string,any> = {
-  shell: { display:"grid", gridTemplateColumns:"300px 1fr", height:"calc(100vh - 60px)", overflow:"hidden", background:"#FAF8F2" },
+  shell: { display:"grid", gridTemplateColumns:"300px 1fr", height:"calc(100dvh - 60px)", overflow:"hidden", background:"#FAF8F2" },
   sidebar: { background:"#fff", borderRight:"0.5px solid rgba(0,0,0,.08)", display:"flex", flexDirection:"column", overflow:"hidden" },
   sideHead: { display:"flex", justifyContent:"space-between", alignItems:"center", padding:"1rem 1.25rem", borderBottom:"0.5px solid rgba(0,0,0,.07)" },
   sideTitle: { fontSize:16, fontWeight:600, color:"#0A0A0F" },

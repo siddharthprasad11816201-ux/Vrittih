@@ -63,7 +63,7 @@ export default function FormsPage() {
 
 const S: Record<string, any> = {
   wrap: { maxWidth: 900, margin: "0 auto", padding: "2rem" },
-  head: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 22 },
+  head: { display: "flex", flexWrap:"wrap" as const, gap:12, justifyContent: "space-between", alignItems: "flex-end", marginBottom: 22 },
   title: { fontSize: 24, fontWeight: 700, color: "#1A1A2E", letterSpacing: "-.02em" },
   sub: { fontSize: 13.5, color: "#8A8595", marginTop: 3 },
   addBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: "#0F6E56", color: "#fff", padding: "10px 16px", borderRadius: 9, fontSize: 14, fontWeight: 600, border: "none", cursor: "pointer" },

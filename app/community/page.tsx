@@ -165,7 +165,7 @@ const S: Record<string,any> = {
   header:{ display:"flex",justifyContent:"space-between",alignItems:"flex-start",marginBottom:"1.5rem" },
   title:{ fontSize:22,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px" },
   sub:{ fontSize:13,color:"#7B7B8F",marginTop:4,maxWidth:520 },
-  tabs:{ display:"flex",gap:4,marginBottom:"1.5rem",background:"#fff",padding:4,borderRadius:12,border:"0.5px solid rgba(0,0,0,.07)",width:"fit-content" },
+  tabs:{ display:"flex",gap:4,marginBottom:"1.5rem",background:"#fff",padding:4,borderRadius:12,border:"0.5px solid rgba(0,0,0,.07)",maxWidth:"100%", flexWrap:"wrap" as const },
   tab:{ padding:"7px 18px",borderRadius:9,border:"none",background:"none",fontSize:13,color:"#7B7B8F",cursor:"pointer" },
   tabOn:{ background:"#0F6E56",color:"#fff",fontWeight:500 },
   grid:{ display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(300px,1fr))",gap:12 },

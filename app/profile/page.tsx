@@ -274,7 +274,7 @@ const S: Record<string, any> = {
   ghost: { background: "none", border: "1px solid var(--v-line-2)", color: "var(--v-ink-2)", borderRadius: 9, padding: "9px 16px", fontSize: 13.5, fontWeight: 500, cursor: "pointer" },
   chip: { display: "inline-flex", alignItems: "center", gap: 6, background: "#E1F5EE", color: "#3F369E", padding: "6px 12px", borderRadius: 999, fontSize: 13, fontWeight: 500 },
   chipX: { background: "none", border: "none", color: "#8079C4", fontSize: 16, cursor: "pointer", lineHeight: 1, padding: 0 },
-  contactRow: { display: "flex", alignItems: "center", gap: 9, fontSize: 14, color: "var(--v-ink-2)", padding: "0 1.5rem" },
+  contactRow: { minWidth: 0, display: "flex", alignItems: "flex-start", gap: 9, fontSize: 14, color: "var(--v-ink-2)", padding: "0 1.5rem" },
   overlay: { position: "fixed", inset: 0, background: "rgba(20,15,40,.4)", zIndex: 100, display: "flex", alignItems: "flex-start", justifyContent: "center", paddingTop: "6vh", overflowY: "auto" },
   modal: { width: "100%", maxWidth: 480, background: "var(--v-surface)", borderRadius: 16, padding: "1.75rem", margin: "0 1rem 3rem", boxShadow: "0 24px 70px rgba(20,15,40,.3)" },
   mLbl: { display: "block", fontSize: 12.5, fontWeight: 600, color: "var(--v-ink-2)", marginBottom: 5 },

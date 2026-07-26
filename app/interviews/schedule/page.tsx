@@ -115,7 +115,7 @@ function ScheduleInterview() {
 }
 
 const S: Record<string,any> = {
-  page:{minHeight:"calc(100vh-60px)",background:"#FAF8F2",padding:"2rem",display:"flex",justifyContent:"center"},
+  page:{minHeight:"calc(100dvh - 60px)",background:"#FAF8F2",padding:"2rem",display:"flex",justifyContent:"center"},
   card:{background:"#fff",border:"0.5px solid rgba(0,0,0,.08)",borderRadius:16,padding:"2rem",width:"100%",maxWidth:620,height:"fit-content"},
   title:{fontSize:20,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px",marginBottom:6},
   sub:{fontSize:13,color:"#7B7B8F",marginBottom:"1.5rem",lineHeight:1.6},

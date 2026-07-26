@@ -106,7 +106,7 @@ export default function CompaniesPage() {
 }
 
 const S: Record<string, any> = {
-  wrap: { maxWidth: 1080, margin: "0 auto", padding: "6px 4px 40px" },
+  wrap: { maxWidth: 1080, margin: "0 auto", padding:"6px 20px 40px" },
   head: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: 18 },
   h1: { fontFamily: "var(--font-display)", fontSize: 26, fontWeight: 600, color: "var(--v-ink)", margin: 0, letterSpacing: "-.02em" },
   sub: { fontSize: 13.5, color: "var(--v-ink-3)", marginTop: 4 },

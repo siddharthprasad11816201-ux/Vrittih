@@ -148,7 +148,7 @@ const S: Record<string, any> = {
   name: { fontSize: 23, fontWeight: 700, color: "#1A1A2E", letterSpacing: "-.02em" },
   role: { fontSize: 14, color: "#6B6777", marginTop: 2 },
   contactRow: { display: "flex", gap: 16, flexWrap: "wrap", marginTop: 10 },
-  ci: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#6B6777" },
+  ci: { minWidth:0, display: "inline-flex", alignItems: "center", gap: 6, fontSize: 13, color: "#6B6777" },
   delBtn: { background: "#fff", border: "1px solid #ECEBF0", borderRadius: 9, padding: 9, color: "#B91C1C", cursor: "pointer", display: "flex" },
   crmStrip: { display: "flex", gap: 28, background: "#fff", border: "1px solid #ECEBF0", borderRadius: 12, padding: "14px 20px", marginBottom: 18, flexWrap: "wrap" },
   stripItem: { display: "flex", flexDirection: "column", gap: 6 },

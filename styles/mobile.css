@@ -18,6 +18,19 @@
 html, body { max-width: 100%; overflow-x: hidden; }
 * { -webkit-tap-highlight-color: rgba(13,122,95,.12); }
 
+/* --- long unbroken tokens (URLs, emails, IDs, hashes) never blow out a card
+   ------------------------------------------------------------------------- */
+/* `anywhere` only introduces a break when the word would otherwise overflow, so
+   normal text is unaffected. This resolves the whole class of "a long email/URL
+   in a description/message/profile pushes the layout past the viewport" defects
+   in one place. Scoped to content text — not inputs, code blocks or the meet
+   room, which manage their own wrapping. */
+.v-app p, .v-app h1, .v-app h2, .v-app h3, .v-app h4,
+.v-app li, .v-app dd, .v-app td, .v-app th,
+.v-app a:not([role="button"]), .v-app span:not(.mMono) {
+  overflow-wrap: anywhere;
+}
+
 /* =========================== tablet and below ============================= */
 @media (max-width: 900px) {
   /* Panel + sidebar layouts ("220px 1fr", "1fr 300px", "1.4fr 1fr") stack.

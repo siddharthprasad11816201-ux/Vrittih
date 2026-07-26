@@ -32,7 +32,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Top stats */}
-          <div style={S.statsGrid}>
+          <div style={S.statsGrid} data-keep-cols>
             {data.isEmployer ? (
               <>
                 <div style={S.statCard}><div style={S.statNum}>{data.jobs?.length||0}</div><div style={S.statLabel}>Total jobs</div></div>
@@ -110,7 +110,7 @@ export default function AnalyticsPage() {
           {!data.isEmployer && data.byIndustry && Object.keys(data.byIndustry).length > 0 && (
             <div style={S.panel}>
               <h2 style={S.panelTitle}>Applications by industry</h2>
-              <div style={S.industryGrid}>
+              <div style={S.industryGrid} data-keep-cols>
                 {Object.entries(data.byIndustry).sort(([,a]:any,[,b]:any)=>b-a).map(([ind,count]:any) => (
                   <div key={ind} style={S.industryCard}>
                     <div style={S.industryCount}>{count}</div>

@@ -305,7 +305,7 @@ const S: Record<string, any> = {
   center: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", fontSize: 14, color: "#9ca3af" },
   lock: { textAlign: "center" as const, background: "#fff", border: "0.5px solid rgba(0,0,0,.08)", borderRadius: 16, padding: "2.5rem 3rem" },
   badge: { background: "#0F6E56", color: "#fff", fontSize: 11, fontWeight: 700, letterSpacing: ".06em", padding: "5px 12px", borderRadius: 999 },
-  tabBar: { display: "flex", gap: 4, padding: "0 2rem", background: "#fff", borderBottom: "0.5px solid rgba(0,0,0,.07)" },
+  tabBar: { display: "flex", gap: 4, padding: "0 2rem", background: "#fff", borderBottom: "0.5px solid rgba(0,0,0,.07)", overflowX: "auto", WebkitOverflowScrolling: "touch" },
   tab: { background: "none", border: "none", padding: "12px 16px", fontSize: 13, color: "#7B7B8F", cursor: "pointer", borderBottom: "2px solid transparent", marginBottom: -1 },
   tabOn: { color: "#0F6E56", fontWeight: 600, borderBottom: "2px solid #0F6E56" },
   body: { padding: "1.5rem 2rem" },

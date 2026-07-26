@@ -145,6 +145,12 @@ const CSS = `
 .ppCardFoot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 10px; }
 .ppTime { font-family: var(--font-mono); font-size: 10.5px; color: var(--v-ink-3); }
 .ppMove { font-size: 11px; border: 1px solid var(--v-line-2); border-radius: 7px; padding: 3px 6px; background: var(--v-surface); color: var(--v-ink-2); outline: none; max-width: 110px; }
+/* On touch the stage <select> is the primary way to move a candidate (drag needs
+   a mouse), so give it a real tap target and 16px text to stop iOS zoom. */
+@media (max-width: 640px) {
+  .ppCardFoot { flex-wrap: wrap; }
+  .ppMove { min-height: 40px; padding: 8px 10px; font-size: 16px; max-width: 100%; }
+}
 .ppDrop { border: 1.5px dashed var(--v-line-2); border-radius: 10px; padding: 16px 0; text-align: center; font-size: 12px; color: var(--v-ink-3); }
 .ppEmpty { text-align: center; padding: 3rem 1rem; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 18px; }
 .ppEmptyTitle { font-family: var(--font-display); font-size: 20px; font-weight: 600; color: var(--v-ink); }

@@ -137,5 +137,5 @@ const S: Record<string,any> = {
   ntime: { fontSize:12, color:"#9ca3af", marginTop:5 },
   itemRight: { display:"flex", flexDirection:"column" as const, alignItems:"center", gap:8, flexShrink:0 },
   dot: { width:8, height:8, borderRadius:"50%", background:"#0F6E56" },
-  del: { background:"none", border:"none", fontSize:18, color:"#9ca3af", cursor:"pointer", lineHeight:1, padding:0 },
+  del: { background:"none", border:"none", fontSize:18, color:"#9ca3af", cursor:"pointer", width:40, height:40, display:"grid", placeItems:"center", lineHeight:1, padding:0 },
 }
