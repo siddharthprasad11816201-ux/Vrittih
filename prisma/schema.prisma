@@ -594,6 +594,10 @@ model JobSource {
   homepage    String
   kind        String    @default("government")   // government | private | partner
   region      String?                            // "India", "Assam", …
+  // A site publishes its open roles at this URL (JSON) and Vrittih ingests it on
+  // a schedule — no database access to the site, ever. This is how any new site
+  // is connected: register a row with its feedUrl. null = code-defined adapter.
+  feedUrl     String?
   active      Boolean   @default(true)
   lastRunAt   DateTime?
   lastOk      Boolean?

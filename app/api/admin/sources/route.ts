@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/admin"
-import { allSources, getSource } from "@/lib/sources"
+import { allSources, getSource, getSourceAsync } from "@/lib/sources"
 import { ingestSource, expireClosed } from "@/lib/ingest"
+import { safeExternalUrl } from "@/lib/url"
+
+const keyOf = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 40)
 
 export const dynamic = "force-dynamic"
 
@@ -32,8 +35,23 @@ export async function POST(req: NextRequest) {
 
   if (body.expire) return NextResponse.json({ ok: true, closed: await expireClosed() })
 
-  const adapter = getSource(body.key)
-  if (!adapter) return NextResponse.json({ error: `Unknown source "${body.key}". Registered: ${allSources().map((a) => a.key).join(", ") || "none"}` }, { status: 400 })
+  // Register (or update) a feed source: any site that publishes a jobs feed.
+  if (body.register) {
+    const r = body.register
+    const feedUrl = safeExternalUrl(r.feedUrl)
+    if (!r.name || !feedUrl) return NextResponse.json({ error: "name and a valid feedUrl are required" }, { status: 400 })
+    const key = keyOf(r.key || r.name)
+    await prisma.jobSource.upsert({
+      where: { key },
+      update: { name: r.name, homepage: safeExternalUrl(r.homepage) || feedUrl, kind: r.kind || "partner", region: r.region || null, feedUrl, active: r.active !== false },
+      create: { key, name: r.name, homepage: safeExternalUrl(r.homepage) || feedUrl, kind: r.kind || "partner", region: r.region || null, feedUrl, active: r.active !== false },
+    })
+    return NextResponse.json({ ok: true, key, registered: true })
+  }
+
+  // Run one source (code-defined or a registered feed).
+  const adapter = getSource(body.key) || (await getSourceAsync(body.key))
+  if (!adapter) return NextResponse.json({ error: `Unknown source "${body.key}".` }, { status: 400 })
 
   const report = await ingestSource(adapter)
   return NextResponse.json({ ok: !report.error, report })
