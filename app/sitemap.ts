@@ -2,8 +2,11 @@ import type { MetadataRoute } from "next"
 import { prisma } from "@/lib/prisma"
 import { SITE } from "@/lib/site"
 
-export const dynamic = "force-dynamic"
-export const revalidate = 3600 // regenerate hourly
+// Cached (ISR), not force-dynamic: the sitemap is generated then served as a
+// static file, regenerated hourly. Google gets an instant response instead of
+// waiting on a live DB query every fetch — a slow dynamic sitemap on a cold
+// start is exactly what triggers "Couldn't fetch" in Search Console.
+export const revalidate = 3600
 
 // Every active job + every company + the key public pages. This is how Google
 // discovers all ~3,000 listings rather than only whatever it stumbles onto via
