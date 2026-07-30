@@ -7,7 +7,7 @@ import {
   IconActivity, IconBriefcase, IconTarget, IconFileText, IconUsers, IconTrendingUp,
   IconClipboard, IconMessage, IconMail, IconVideo, IconNetwork, IconUser, IconSettings,
   IconSearch, IconBell, IconShield, IconScan, IconMenu, IconX, IconHome, IconBookmark, IconGlobe,
-  IconBanknote,
+  IconBanknote, IconKey,
 } from "@/components/ui/Icons"
 import { hasFeature } from "@/lib/entitlements"
 
@@ -56,6 +56,8 @@ function nav(isEmployer: boolean, isAdmin: boolean, canInterviews: boolean): Gro
     { title: "Grow", items: [
       { href: "/tests", label: "Assessments", icon: <IconClipboard size={17} /> },
       { href: "/tools", label: "Tools", icon: <IconTarget size={17} /> },
+      // API + integrations are a company concern — surface it for employers/staff.
+      ...(isEmployer ? [{ href: "/developers", label: "Developers", icon: <IconKey size={17} /> }] : []),
       { href: "/verify/face-setup", label: "Security", icon: <IconScan size={17} /> },
     ] },
   ]

@@ -1,4 +1,5 @@
 import Link from "next/link"
+import KeysPanel from "@/components/developers/KeysPanel"
 
 export const metadata = { title: "Vrittih — Developer API" }
 
@@ -8,10 +9,12 @@ export default function DevelopersPage() {
       <div style={S.wrap}>
         <Link href="/" style={S.brand}>Vrittih<span style={{ color: "#0F6E56" }}>.online</span> / Developers</Link>
         <h1 style={S.h1}>Jobs API</h1>
-        <p style={S.lead}>Connect your company's systems to Vrittih and post jobs programmatically. Your company account is created automatically when we issue your key — nothing to set up.</p>
+        <p style={S.lead}>Connect your company's systems to Vrittih and post jobs programmatically — then read applicants back and run HRMS from your own tools. Generate a key below and you're live in a minute.</p>
+
+        <KeysPanel />
 
         <h2 style={S.h2}>Authentication</h2>
-        <p style={S.p}>Every request sends your key as a bearer token. Ask a Vrittih admin to issue one (it's shown only once).</p>
+        <p style={S.p}>Every request sends your key as a bearer token. Generate one in <b>Your API keys</b> above — it's shown only once.</p>
         <pre style={S.code}>Authorization: Bearer vk_live_xxxxxxxxxxxxxxxxxxxxxxxx</pre>
 
         <h2 style={S.h2}>Post jobs</h2>
@@ -43,7 +46,7 @@ export default function DevelopersPage() {
           ))}
         </tbody></table>
 
-        <p style={S.foot}>Posted jobs go live immediately on the Vrittih job board, ranked to candidates by fit, with the full applicant pipeline and HRMS available in your dashboard. Need a key? Contact your Vrittih admin.</p>
+        <p style={S.foot}>Posted jobs go live on the Vrittih job board, ranked to candidates by fit, with the full applicant pipeline and HRMS available in your dashboard. Generate your key in <b>Your API keys</b> at the top of this page.</p>
       </div>
     </div>
   )
