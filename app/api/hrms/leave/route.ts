@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 
 export const dynamic = "force-dynamic"
 
@@ -16,6 +17,7 @@ const daysBetween = (a: Date, b: Date) => Math.max(1, Math.round((b.getTime() - 
 export async function GET(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "hrms"); if (gate instanceof NextResponse) return gate
   const leaves = await prisma.leaveRequest.findMany({
     where: { employee: { employerId: p.userId } },
     include: { employee: true },
@@ -38,6 +40,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "hrms"); if (gate instanceof NextResponse) return gate
   const { employeeId, type, startDate, endDate, reason } = await req.json()
   if (!employeeId || !startDate || !endDate) return NextResponse.json({ error: "employeeId, startDate, endDate required" }, { status: 400 })
   const emp = await prisma.employee.findUnique({ where: { id: employeeId } })
@@ -53,6 +56,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "hrms"); if (gate instanceof NextResponse) return gate
   const { id, status, note } = await req.json()
   if (!id || !["APPROVED", "REJECTED"].includes(status)) return NextResponse.json({ error: "id and valid status required" }, { status: 400 })
   const leave = await prisma.leaveRequest.findUnique({ where: { id }, include: { employee: true } })

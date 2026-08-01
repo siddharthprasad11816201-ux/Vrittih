@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { generateApiKey, hashApiKey, keyPrefix } from "@/lib/apikey"
+import { featureGate } from "@/lib/guard"
 
 export const dynamic = "force-dynamic"
 
@@ -35,6 +36,8 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const a = auth(req)
   if ("error" in a) return NextResponse.json({ error: a.error }, { status: a.status })
+  // Minting keys is a Scale-tier capability (the Developer API).
+  const gate = await featureGate(req, "api"); if (gate instanceof NextResponse) return gate
   const body = await req.json().catch(() => ({}))
   const label = typeof body.label === "string" ? body.label.slice(0, 80) : null
 

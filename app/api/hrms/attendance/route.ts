@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 
 export const dynamic = "force-dynamic"
 
@@ -17,6 +18,7 @@ const initials = (n?: string) => (n || "?").split(" ").map(s => s[0]).slice(0, 2
 export async function GET(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "hrms"); if (gate instanceof NextResponse) return gate
   const { searchParams } = new URL(req.url)
   const employeeId = searchParams.get("employeeId")
 
@@ -55,6 +57,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "hrms"); if (gate instanceof NextResponse) return gate
   const { employeeId, action, status, date, method } = await req.json()
   if (!employeeId || !action) return NextResponse.json({ error: "employeeId and action required" }, { status: 400 })
   const emp = await prisma.employee.findUnique({ where: { id: employeeId } })

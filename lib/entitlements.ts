@@ -13,14 +13,14 @@ export type Feature = "interviews" | "hrms" | "payroll" | "crm" | "mail" | "api"
 
 type UserLike = { role?: string | null; plan?: string | null } | null | undefined
 
-// Feature -> employer plan ids that unlock it.
+// Feature -> employer plan ids that unlock it. (Tier map set by the owner.)
 export const FEATURE_PLANS: Record<Feature, string[]> = {
-  // Growth and up: day-to-day company operations.
-  crm: ["emp_growth", "emp_scale"],
-  mail: ["emp_growth", "emp_scale"],
+  // Growth and up: run-the-company operations.
   hrms: ["emp_growth", "emp_scale"],
-  // Scale only (large org): the heaviest / most sensitive capabilities.
-  payroll: ["emp_scale"],
+  payroll: ["emp_growth", "emp_scale"],
+  // Scale only (large org): CRM, custom mail, integrations, video.
+  crm: ["emp_scale"],
+  mail: ["emp_scale"],
   interviews: ["emp_scale"],
   api: ["emp_scale"],
 }
@@ -36,10 +36,10 @@ export const FEATURE_LABEL: Record<Feature, string> = {
 
 // The plan a feature upgrades toward, for the upgrade prompt (lowest tier that unlocks it).
 export const FEATURE_UPGRADE: Record<Feature, { plan: string; name: string }> = {
-  crm: { plan: "emp_growth", name: "Growth" },
-  mail: { plan: "emp_growth", name: "Growth" },
   hrms: { plan: "emp_growth", name: "Growth" },
-  payroll: { plan: "emp_scale", name: "Scale" },
+  payroll: { plan: "emp_growth", name: "Growth" },
+  crm: { plan: "emp_scale", name: "Scale" },
+  mail: { plan: "emp_scale", name: "Scale" },
   interviews: { plan: "emp_scale", name: "Scale" },
   api: { plan: "emp_scale", name: "Scale" },
 }

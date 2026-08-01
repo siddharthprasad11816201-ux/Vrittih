@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 import { computePayslip, parseComponents, validateStructure, TEMPLATE_IN, TEMPLATE_FLAT } from "@/lib/payroll"
 
 export const dynamic = "force-dynamic"
@@ -17,6 +18,7 @@ function auth(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "payroll"); if (gate instanceof NextResponse) return gate
   const employeeId = req.nextUrl.searchParams.get("employeeId") || ""
 
   const emp = await prisma.employee.findUnique({ where: { id: employeeId }, select: { id: true, employerId: true } })
@@ -38,6 +40,7 @@ export async function GET(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "payroll"); if (gate instanceof NextResponse) return gate
   const b = await req.json().catch(() => ({}))
 
   const emp = await prisma.employee.findUnique({ where: { id: b.employeeId || "" }, select: { id: true, employerId: true } })

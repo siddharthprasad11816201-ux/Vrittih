@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 
 export const dynamic = "force-dynamic"
 
@@ -19,6 +20,7 @@ const DEFAULT_ONBOARDING = [
 export async function GET(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "hrms"); if (gate instanceof NextResponse) return gate
 
   const employees = await prisma.employee.findMany({ where: { employerId: p.userId }, orderBy: { createdAt: "desc" } })
   const userIds = [...new Set(employees.flatMap(e => [e.userId, e.managerId].filter(Boolean) as string[]))]
@@ -57,6 +59,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "hrms"); if (gate instanceof NextResponse) return gate
   const body = await req.json()
 
   let userId: string | undefined = body.userId
@@ -90,6 +93,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "hrms"); if (gate instanceof NextResponse) return gate
   const { id, toggleStep, ...fields } = await req.json()
   if (!id) return NextResponse.json({ error: "id required" }, { status: 400 })
   const emp = await prisma.employee.findUnique({ where: { id } })

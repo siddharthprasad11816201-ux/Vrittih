@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 import { computePayslip, parseComponents, periodLabel } from "@/lib/payroll"
 
 export const dynamic = "force-dynamic"
@@ -18,6 +19,7 @@ function auth(req: NextRequest) {
 export async function GET(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "payroll"); if (gate instanceof NextResponse) return gate
 
   const runs = await prisma.payrollRun.findMany({
     where: { employerId: p.userId },
@@ -66,6 +68,7 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "payroll"); if (gate instanceof NextResponse) return gate
 
   const body = await req.json().catch(() => ({}))
   const now = new Date()
@@ -143,6 +146,7 @@ export async function POST(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Employer access required" }, { status: 403 })
+  const gate = await featureGate(req, "payroll"); if (gate instanceof NextResponse) return gate
   const { runId, action } = await req.json().catch(() => ({}))
   const run = await prisma.payrollRun.findUnique({ where: { id: runId } })
   if (!run || run.employerId !== p.userId) return NextResponse.json({ error: "Run not found" }, { status: 404 })
