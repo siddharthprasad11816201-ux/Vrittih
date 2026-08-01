@@ -451,6 +451,25 @@ model PartnerDomain {
   @@index([domain])
 }
 
+// White-label brand for a partner: their own careers microsite at /c/<slug>
+// (and, once a custom domain is pointed + added in Vercel, at their own domain),
+// showing their jobs under their name/logo/colour while Vrittih runs the backend.
+model PartnerBrand {
+  id           String   @id @default(cuid())
+  employerId   String   @unique
+  slug         String   @unique                 // the unique public link: /c/<slug>
+  name         String
+  tagline      String?
+  about        String?
+  logoUrl      String?
+  color        String   @default("#0F6E56")     // accent colour of the microsite
+  customDomain String?                           // e.g. careers.acme.com (host->tenant)
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@index([customDomain])
+}
+
 // Task / assignment management — the company assigns work to team members and
 // tracks it to done. Scoped per employer; assignee is an Employee on the team.
 model Task {

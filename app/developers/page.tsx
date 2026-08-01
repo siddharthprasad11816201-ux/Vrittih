@@ -1,6 +1,7 @@
 import Link from "next/link"
 import KeysPanel from "@/components/developers/KeysPanel"
 import DomainsPanel from "@/components/developers/DomainsPanel"
+import BrandPanel from "@/components/developers/BrandPanel"
 
 export const metadata = { title: "Vrittih — Developer API" }
 
@@ -14,6 +15,7 @@ export default function DevelopersPage() {
 
         <KeysPanel />
         <DomainsPanel />
+        <BrandPanel />
 
         <h2 style={S.h2}>Authentication</h2>
         <p style={S.p}>Every request sends your key as a bearer token. Generate one in <b>Your API keys</b> above — it's shown only once.</p>
