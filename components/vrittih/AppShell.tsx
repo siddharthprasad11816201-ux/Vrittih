@@ -7,7 +7,7 @@ import {
   IconActivity, IconBriefcase, IconTarget, IconFileText, IconUsers, IconTrendingUp,
   IconClipboard, IconMessage, IconMail, IconVideo, IconNetwork, IconUser, IconSettings,
   IconSearch, IconBell, IconShield, IconScan, IconMenu, IconX, IconHome, IconBookmark, IconGlobe,
-  IconBanknote, IconKey,
+  IconBanknote, IconKey, IconCheckCircle,
 } from "@/components/ui/Icons"
 import { hasFeature, type Feature } from "@/lib/entitlements"
 
@@ -30,6 +30,7 @@ function nav(user: any): Group[] {
         { href: "/dashboard/pipeline", label: "Pipeline", icon: <IconTrendingUp size={17} /> },
         ...(can("hrms") ? [{ href: "/hrms", label: "HRMS", icon: <IconClipboard size={17} /> }] : []),
         ...(can("payroll") ? [{ href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={17} /> }] : []),
+        ...(can("tasks") ? [{ href: "/tasks", label: "Tasks", icon: <IconCheckCircle size={17} /> }] : []),
         { href: "/jobs", label: "All jobs", icon: <IconBriefcase size={17} /> },
         { href: "/companies", label: "Companies", icon: <IconGlobe size={17} /> },
       ] }

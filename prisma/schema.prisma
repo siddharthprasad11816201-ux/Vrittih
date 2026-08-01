@@ -432,6 +432,25 @@ model WebhookDelivery {
   @@index([nextRetryAt])
 }
 
+// Task / assignment management — the company assigns work to team members and
+// tracks it to done. Scoped per employer; assignee is an Employee on the team.
+model Task {
+  id          String    @id @default(cuid())
+  employerId  String                          // owning company (employer User.id)
+  title       String
+  description String?
+  status      String    @default("TODO")      // TODO | DOING | DONE
+  priority    String    @default("MEDIUM")     // LOW | MEDIUM | HIGH
+  assigneeId  String?                          // Employee.id on this company's team
+  dueAt       DateTime?
+  createdById String                          // User.id who created it
+  completedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@index([employerId, status])
+  @@index([assigneeId])
+}
+
 // ---- HRMS ----
 model Employee {
   id             String    @id @default(cuid())

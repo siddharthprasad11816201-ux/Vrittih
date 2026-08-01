@@ -66,6 +66,9 @@ if (expected !== req.headers["x-vrittih-signature"]) throw new Error("bad signat
         <h2 style={S.h2}>HRMS data</h2>
         <p style={S.p}><b>GET</b> <code style={S.inline}>/api/v1/employees</code> — your HR roster (code, name, department, designation, status, join date). Filter with <code style={S.inline}>status</code>. <b>GET</b> <code style={S.inline}>/api/v1/payroll</code> — payroll runs with gross/deductions/net totals and headcount, for reconciliation in your finance tools (filter <code style={S.inline}>year</code>, <code style={S.inline}>status</code>). Both are scoped to your company and read-only via the API; runs are computed and approved in your Vrittih HRMS.</p>
 
+        <h2 style={S.h2}>Tasks</h2>
+        <p style={S.p}><b>GET/POST</b> <code style={S.inline}>/api/v1/tasks</code> — create and read team assignments from your own tools. A task takes <code style={S.inline}>title</code>, and optionally <code style={S.inline}>description</code>, <code style={S.inline}>priority</code> (LOW/MEDIUM/HIGH), <code style={S.inline}>status</code> (TODO/DOING/DONE), <code style={S.inline}>assigneeId</code> (one of your employees) and <code style={S.inline}>dueAt</code>. Filter with <code style={S.inline}>status</code> / <code style={S.inline}>assigneeId</code>. Also available as a board inside Vrittih at <code style={S.inline}>/tasks</code>.</p>
+
         <h2 style={S.h2}>Fields</h2>
         <table style={S.table}><tbody>
           {[["title", "required — the role title"], ["description", "full job description"], ["company", "defaults to your company name"], ["industry", "e.g. Technology, Finance, Healthcare"], ["location", "city, country, or \"Remote\""], ["type", "FULLTIME · PARTTIME · INTERNSHIP · CONTRACT · FREELANCE"], ["salary", "free text, e.g. \"120,000 CHF\""], ["remote", "true / false"], ["active", "true (default) / false to unpublish"]].map(([k, v]) => (
