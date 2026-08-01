@@ -10,7 +10,7 @@ export default function DevelopersPage() {
   return (
     <div style={S.page}>
       <div style={S.wrap}>
-        <Link href="/" style={S.brand}>Vrittih<span style={{ color: "#0F6E56" }}>.online</span> / Developers</Link>
+        <Link href="/" style={S.brand}>Vrittih<span style={{ color: "#6495ED" }}>.online</span> / Developers</Link>
         <h1 style={S.h1}>Jobs API</h1>
         <p style={S.lead}>Connect your company's systems to Vrittih and post jobs programmatically — then read applicants back and run HRMS from your own tools. Generate a key below and you're live in a minute.</p>
 
@@ -99,17 +99,17 @@ curl -X POST .../api/v1/payroll -H "Authorization: Bearer vk_live_…" -d '{"per
 }
 
 const S: Record<string, any> = {
-  page: { minHeight: "100vh", background: "#FAF8F2", fontFamily: "var(--font-sans)", color: "#14201B", padding: "2.5rem 1.5rem 5rem" },
+  page: { minHeight: "100vh", background: "#F7F9FC", fontFamily: "var(--font-sans)", color: "#1F2937", padding: "2.5rem 1.5rem 5rem" },
   wrap: { maxWidth: 760, margin: "0 auto" },
-  brand: { fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, color: "#04342C", textDecoration: "none" },
-  h1: { fontFamily: "var(--font-display)", fontSize: 40, fontWeight: 600, letterSpacing: "-.03em", color: "#04342C", margin: "18px 0 10px" },
-  lead: { fontSize: 16, color: "#4A5750", lineHeight: 1.6, marginBottom: 30 },
-  h2: { fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, color: "#04342C", margin: "30px 0 10px" },
-  p: { fontSize: 14.5, color: "#2c3a33", lineHeight: 1.65, marginBottom: 10 },
-  inline: { fontFamily: "var(--font-mono)", fontSize: 13, background: "#E1F5EE", color: "#0B6B45", padding: "2px 6px", borderRadius: 5 },
-  code: { background: "#04342C", color: "#EAF3EE", borderRadius: 12, padding: "16px 18px", fontSize: 12.5, fontFamily: "var(--font-mono)", overflowX: "auto", lineHeight: 1.6, margin: "6px 0 8px" },
+  brand: { fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, color: "#0B1126", textDecoration: "none" },
+  h1: { fontFamily: "var(--font-display)", fontSize: 40, fontWeight: 600, letterSpacing: "-.03em", color: "#0B1126", margin: "18px 0 10px" },
+  lead: { fontSize: 16, color: "#475569", lineHeight: 1.6, marginBottom: 30 },
+  h2: { fontFamily: "var(--font-display)", fontSize: 22, fontWeight: 600, color: "#0B1126", margin: "30px 0 10px" },
+  p: { fontSize: 14.5, color: "#334155", lineHeight: 1.65, marginBottom: 10 },
+  inline: { fontFamily: "var(--font-mono)", fontSize: 13, background: "#EAF1FE", color: "#2F6BE0", padding: "2px 6px", borderRadius: 5 },
+  code: { background: "#0B1126", color: "#EAF1FE", borderRadius: 12, padding: "16px 18px", fontSize: 12.5, fontFamily: "var(--font-mono)", overflowX: "auto", lineHeight: 1.6, margin: "6px 0 8px" },
   table: { width: "100%", borderCollapse: "collapse", fontSize: 13.5, marginTop: 8 },
-  tdK: { padding: "8px 12px 8px 0", verticalAlign: "top", whiteSpace: "nowrap", borderBottom: "1px solid #E8E3D7" },
-  tdV: { padding: "8px 0", color: "#4A5750", borderBottom: "1px solid #E8E3D7" },
-  foot: { fontSize: 13.5, color: "#7C877F", lineHeight: 1.6, marginTop: 30, paddingTop: 18, borderTop: "1px solid #E8E3D7" },
+  tdK: { padding: "8px 12px 8px 0", verticalAlign: "top", whiteSpace: "nowrap", borderBottom: "1px solid #E5E7EB" },
+  tdV: { padding: "8px 0", color: "#475569", borderBottom: "1px solid #E5E7EB" },
+  foot: { fontSize: 13.5, color: "#94A3B8", lineHeight: 1.6, marginTop: 30, paddingTop: 18, borderTop: "1px solid #E5E7EB" },
 }

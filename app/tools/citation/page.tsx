@@ -142,7 +142,7 @@ const CSS = `
 .ctFg span{ font-size:12px; font-weight:600; color:var(--v-ink-2); }
 .ctFg em{ font-weight:400; color:var(--v-ink-3); font-style:normal; }
 .ctInput{ border:1px solid var(--v-line-2); border-radius:10px; padding:10px 12px; font-size:13.5px; outline:none; background:var(--v-surface); color:var(--v-ink); font-family:inherit; width:100%; }
-.ctInput:focus{ border-color:var(--brand-400,#1D9E75); }
+.ctInput:focus{ border-color:var(--brand-400,#4F86E8); }
 .ctOut{ background:var(--v-surface); border:1px solid var(--v-line); border-radius:14px; padding:14px; }
 .ctTabs{ display:flex; gap:6px; margin-bottom:12px; }
 .ctTab{ background:var(--v-surface-2); border:none; border-radius:8px; padding:7px 14px; font-size:13px; font-weight:600; color:var(--v-ink-2); cursor:pointer; }

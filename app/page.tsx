@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { Keystone } from "@/components/vrittih/Logo"
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Vrittih — homepage, built to the supplied design (redesign2/Vrittih Home.dc.html)
@@ -61,7 +62,7 @@ export default function Home() {
       {/* NAV */}
       <header className="nav">
         <div className="wrap navIn">
-          <Link href="/" className="brand"><span className="mk">V</span>Vrittih</Link>
+          <Link href="/" className="brand"><Keystone size={26} style={{ marginRight: 9 }} />Vrittih</Link>
           <nav className="navLinks">
             <Link href="/jobs">Find jobs</Link>
             <Link href="/companies">Companies</Link>
@@ -229,7 +230,7 @@ export default function Home() {
       <footer className="foot">
         <div className="wrap footIn">
           <div className="footBrand">
-            <Link href="/" className="brand"><span className="mk">V</span>Vrittih</Link>
+            <Link href="/" className="brand"><Keystone size={26} style={{ marginRight: 9 }} />Vrittih</Link>
             <p>One platform for every job seeker and every employer — apply, interview, test and get hired in one place.</p>
           </div>
           <div className="footCol"><h4>Product</h4><Link href="/jobs">Find jobs</Link><Link href="/companies">Companies</Link><Link href="/pricing">Pricing</Link><Link href="/developers">Developers</Link></div>
@@ -245,11 +246,11 @@ export default function Home() {
 }
 
 /* Tokens are DESIGN_SYSTEM.md verbatim: #FAFAF8 bg, #101828/#667085/#98A2B3 text,
-   #EAECF0 borders, #0D7A5F brand, Inter 400–700, radius 20/16/14/999,
+   #EAECF0 borders, #6495ED brand, Inter 400–700, radius 20/16/14/999,
    soft shadows, 150ms hover / 250ms page, cubic ease-out. */
 const CSS = `
 .v{--bg:#FAFAF8;--card:#FFF;--ink:#101828;--ink2:#667085;--ink3:#98A2B3;--line:#EAECF0;--line2:#F2F4F1;
- --g:#0D7A5F;--gh:#0B6C54;--gt:rgba(13,122,95,.08);--gt2:rgba(13,122,95,.14);
+ --g:#6495ED;--gh:#0B6C54;--gt:rgba(13,122,95,.08);--gt2:rgba(13,122,95,.14);
  --sh:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.05);--shH:0 10px 26px rgba(16,24,40,.07);
  --e:cubic-bezier(.22,1,.36,1);
  background:var(--bg);color:var(--ink);

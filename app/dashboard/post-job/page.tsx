@@ -114,7 +114,7 @@ export default function PostJob() {
                 </div>
               </div>
               <div style={S.checkRow}>
-                <input type="checkbox" id="remote" checked={form.remote} onChange={e=>setForm(p=>({...p,remote:e.target.checked}))} style={{accentColor:"#0F6E56"}} />
+                <input type="checkbox" id="remote" checked={form.remote} onChange={e=>setForm(p=>({...p,remote:e.target.checked}))} style={{accentColor:"#6495ED"}} />
                 <label htmlFor="remote" style={{fontSize:13,color:"#3D3D4E",cursor:"pointer"}}>This is a remote-friendly role</label>
               </div>
             </div>
@@ -164,7 +164,7 @@ export default function PostJob() {
             {/* Where to apply */}
             <div style={S.section}>
               <h2 style={S.sectionTitle}>Where to apply</h2>
-              <p style={{fontSize:12.5,color:"#7C877F",margin:"-6px 0 14px",lineHeight:1.5}}>
+              <p style={{fontSize:12.5,color:"#94A3B8",margin:"-6px 0 14px",lineHeight:1.5}}>
                 Candidates can always apply on Vrittih with live status tracking. Add the official routes
                 below and they’ll be offered as extra options on the job page. Leave blank if not applicable.
               </p>
@@ -207,7 +207,7 @@ export default function PostJob() {
 }
 
 const S: Record<string,any> = {
-  page:{ background:"#FAF8F2",minHeight:"calc(100vh - 60px)",padding:"2rem" },
+  page:{ background:"#F7F9FC",minHeight:"calc(100vh - 60px)",padding:"2rem" },
   wrap:{ maxWidth:800,margin:"0 auto" },
   header:{ marginBottom:"1.5rem" },
   title:{ fontSize:22,fontWeight:600,color:"#0A0A0F",letterSpacing:"-.3px" },
@@ -222,11 +222,11 @@ const S: Record<string,any> = {
   textarea:{ border:"0.5px solid rgba(0,0,0,.13)",borderRadius:8,padding:"9px 11px",fontSize:13,color:"#0A0A0F",outline:"none",fontFamily:"inherit",resize:"vertical" as const,width:"100%" },
   checkRow:{ display:"flex",alignItems:"center",gap:8,marginTop:4 },
   skillInput:{ display:"flex",gap:8,marginBottom:10 },
-  addSkillBtn:{ background:"#0F6E56",color:"#fff",border:"none",borderRadius:8,padding:"9px 16px",fontSize:13,cursor:"pointer",flexShrink:0 },
+  addSkillBtn:{ background:"#6495ED",color:"#fff",border:"none",borderRadius:8,padding:"9px 16px",fontSize:13,cursor:"pointer",flexShrink:0 },
   skillTags:{ display:"flex",flexWrap:"wrap" as const,gap:8 },
-  skillTag:{ background:"#E1F5EE",color:"#0F6E56",border:"0.5px solid rgba(15,110,86,.2)",borderRadius:999,padding:"5px 12px",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:6 },
-  skillRemove:{ background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#0F6E56",lineHeight:1,padding:0 },
+  skillTag:{ background:"#EAF1FE",color:"#6495ED",border:"0.5px solid rgba(15,110,86,.2)",borderRadius:999,padding:"5px 12px",fontSize:13,fontWeight:500,display:"flex",alignItems:"center",gap:6 },
+  skillRemove:{ background:"none",border:"none",cursor:"pointer",fontSize:16,color:"#6495ED",lineHeight:1,padding:0 },
   actions:{ display:"flex",gap:10 },
-  submitBtn:{ flex:1,background:"#0F6E56",color:"#fff",border:"none",borderRadius:9,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer" },
+  submitBtn:{ flex:1,background:"#6495ED",color:"#fff",border:"none",borderRadius:9,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer" },
   cancelBtn:{ background:"none",border:"0.5px solid rgba(0,0,0,.1)",color:"#6b7280",borderRadius:9,padding:"12px 22px",fontSize:14,cursor:"pointer" },
 }

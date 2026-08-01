@@ -132,7 +132,7 @@ const CSS = `
 .cmTitle{ font-family:var(--font-display); font-size:clamp(1.5rem,3vw,2rem); font-weight:600; color:var(--v-ink); letter-spacing:-.02em; }
 .cmSub{ font-size:14px; color:var(--v-ink-2); margin-top:5px; max-width:60ch; line-height:1.55; }
 .cmDrop{ border:2px dashed var(--v-line-2); border-radius:16px; padding:2.5rem 1rem; text-align:center; cursor:pointer; transition:border-color .15s, background .15s; background:var(--v-surface); }
-.cmDrop:hover,.cmDrop.on{ border-color:var(--brand-500,#0F6E56); background:var(--brand-100); }
+.cmDrop:hover,.cmDrop.on{ border-color:var(--brand-500,#6495ED); background:var(--brand-100); }
 .cmDropIc{ display:grid; place-items:center; width:56px; height:56px; border-radius:15px; background:var(--brand-100); color:var(--brand-600); margin:0 auto 12px; }
 .cmDropTitle{ font-size:15.5px; font-weight:650; color:var(--v-ink); }
 .cmDropSub{ font-size:12.5px; color:var(--v-ink-3); margin-top:4px; }
@@ -149,9 +149,9 @@ const CSS = `
 .cmName{ font-size:13.5px; font-weight:600; color:var(--v-ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
 .cmMeta{ font-size:12px; color:var(--v-ink-3); margin:2px 0 6px; }
 .cmBar{ height:6px; background:var(--v-surface-2); border-radius:4px; overflow:hidden; }
-.cmBarF{ height:6px; background:var(--brand-500,#0F6E56); border-radius:4px; }
+.cmBarF{ height:6px; background:var(--brand-500,#6495ED); border-radius:4px; }
 .cmPct{ font-family:var(--font-mono); font-size:13px; font-weight:700; color:var(--brand-700); flex-shrink:0; }
 .cmDown{ display:inline-flex; align-items:center; gap:5px; background:var(--v-surface); border:1px solid var(--v-line-2); color:var(--v-ink); border-radius:9px; padding:8px 12px; font-size:12.5px; font-weight:600; text-decoration:none; flex-shrink:0; }
-.cmDown:hover{ border-color:var(--brand-500,#0F6E56); color:var(--brand-700); }
+.cmDown:hover{ border-color:var(--brand-500,#6495ED); color:var(--brand-700); }
 @media (max-width:560px){ .cmRow{ flex-wrap:wrap; } .cmDown{ width:100%; justify-content:center; } }
 `

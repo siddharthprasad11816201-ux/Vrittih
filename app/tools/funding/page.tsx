@@ -5,8 +5,8 @@ import { FUNDING, F_TYPES, F_REGIONS, F_STAGES } from "@/lib/funding"
 import { IconSearch, IconArrowRight, IconGlobe } from "@/components/ui/Icons"
 
 const TYPE_COLOR: Record<string, string> = {
-  VC: "#5A4FB0", Angel: "#B45309", Accelerator: "#0F6E56", Grant: "#185FA5",
-  Government: "#0B6B45", Foundation: "#8a5a12", Scholarship: "#A32D2D",
+  VC: "#5A4FB0", Angel: "#B45309", Accelerator: "#6495ED", Grant: "#2E9BE0",
+  Government: "#2F6BE0", Foundation: "#8a5a12", Scholarship: "#DC2626",
 }
 
 export default function FundingFinder() {

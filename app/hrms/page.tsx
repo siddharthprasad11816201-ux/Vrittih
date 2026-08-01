@@ -6,21 +6,21 @@ import { IconUsers, IconCheckCircle, IconArrowRight, IconX, IconCalendar, IconPl
 
 const STATUS: Record<string, { label: string; bg: string; color: string }> = {
   ONBOARDING: { label: "Onboarding", bg: "#FFF4E1", color: "#8a5a12" },
-  ACTIVE: { label: "Active", bg: "#E1F5EE", color: "#0B6B45" },
-  ON_LEAVE: { label: "On leave", bg: "#E6F1FB", color: "#185FA5" },
+  ACTIVE: { label: "Active", bg: "#EAF1FE", color: "#2F6BE0" },
+  ON_LEAVE: { label: "On leave", bg: "#E6F1FB", color: "#2E9BE0" },
   EXITED: { label: "Exited", bg: "#F3EDE3", color: "#7a6a55" },
 }
 const initials = (n?: string) => (n || "?").split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()
 const fmt = (iso?: string) => iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"
 const timeStr = (iso?: string) => iso ? new Date(iso).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "—"
 const ATT: Record<string, { label: string; bg: string; color: string }> = {
-  PRESENT: { label: "Present", bg: "#E1F5EE", color: "#0B6B45" },
+  PRESENT: { label: "Present", bg: "#EAF1FE", color: "#2F6BE0" },
   LATE: { label: "Late", bg: "#FFF4E1", color: "#8a5a12" },
-  REMOTE: { label: "Remote", bg: "#E6F1FB", color: "#185FA5" },
+  REMOTE: { label: "Remote", bg: "#E6F1FB", color: "#2E9BE0" },
   LEAVE: { label: "On leave", bg: "#EDEAF9", color: "#5A4FB0" },
   HALF_DAY: { label: "Half day", bg: "#FFF4E1", color: "#8a5a12" },
   HOLIDAY: { label: "Holiday", bg: "#F3EDE3", color: "#7a6a55" },
-  ABSENT: { label: "Absent", bg: "#F6ECEC", color: "#A32D2D" },
+  ABSENT: { label: "Absent", bg: "#F6ECEC", color: "#DC2626" },
 }
 
 export default function HRMS() {
@@ -154,7 +154,7 @@ export default function HRMS() {
         ) : tab === "attendance" ? (
           <section className="hrCard">
             <div className="hrAttCounts">
-              {[["Present", att.counts?.present, "#0B6B45"], ["Late", att.counts?.late, "#8a5a12"], ["Remote", att.counts?.remote, "#185FA5"], ["Leave", att.counts?.leave, "#5A4FB0"], ["Absent", att.counts?.absent, "#A32D2D"]].map(([l, v, c]) => (
+              {[["Present", att.counts?.present, "#2F6BE0"], ["Late", att.counts?.late, "#8a5a12"], ["Remote", att.counts?.remote, "#2E9BE0"], ["Leave", att.counts?.leave, "#5A4FB0"], ["Absent", att.counts?.absent, "#DC2626"]].map(([l, v, c]) => (
                 <div key={l as string} className="hrAttCount"><b style={{ color: c as string }}>{(v as number) || 0}</b> {l as string}</div>
               ))}
               <span className="hrAttDate">Today · {att.date || ""}</span>
@@ -206,7 +206,7 @@ export default function HRMS() {
                         <button onClick={() => decideLeave(l.id, "APPROVED")} className="hrBtn sm">Approve</button>
                         <button onClick={() => decideLeave(l.id, "REJECTED")} className="hrBtn ghost sm">Reject</button>
                       </div>
-                    ) : <span className="hrStatus" style={{ background: l.status === "APPROVED" ? "#E1F5EE" : "#F6ECEC", color: l.status === "APPROVED" ? "#0B6B45" : "#A32D2D" }}>{l.status === "APPROVED" ? "Approved" : "Rejected"}</span>}
+                    ) : <span className="hrStatus" style={{ background: l.status === "APPROVED" ? "#EAF1FE" : "#F6ECEC", color: l.status === "APPROVED" ? "#2F6BE0" : "#DC2626" }}>{l.status === "APPROVED" ? "Approved" : "Rejected"}</span>}
                   </div>
                 ))}
               </div>
@@ -269,7 +269,7 @@ export default function HRMS() {
                   {empLeaves.map(l => (
                     <div key={l.id} className="hrEmpLeave">
                       <IconCalendar size={13} /> <span>{fmt(l.startDate)}–{fmt(l.endDate)} · {l.type} · {l.days}d</span>
-                      <span className="hrStatus sm" style={{ background: l.status === "APPROVED" ? "#E1F5EE" : l.status === "REJECTED" ? "#F6ECEC" : "#FFF4E1", color: l.status === "APPROVED" ? "#0B6B45" : l.status === "REJECTED" ? "#A32D2D" : "#8a5a12" }}>{l.status[0] + l.status.slice(1).toLowerCase()}</span>
+                      <span className="hrStatus sm" style={{ background: l.status === "APPROVED" ? "#EAF1FE" : l.status === "REJECTED" ? "#F6ECEC" : "#FFF4E1", color: l.status === "APPROVED" ? "#2F6BE0" : l.status === "REJECTED" ? "#DC2626" : "#8a5a12" }}>{l.status[0] + l.status.slice(1).toLowerCase()}</span>
                     </div>
                   ))}
                 </div>
@@ -328,8 +328,8 @@ const CSS = `
 .hrLeaveRow{ display:flex; align-items:center; gap:12px; padding:11px 12px; background:var(--v-surface-2); border-radius:11px; }
 .hrLeaveActions{ display:flex; gap:6px; }
 
-.hrScrim{ position:fixed; inset:0; background:rgba(4,52,44,.28); z-index:70; }
-.hrDrawer{ position:fixed; top:0; right:0; height:100vh; height:100dvh; width:min(440px,94vw); background:var(--v-surface); z-index:71; box-shadow:-20px 0 60px rgba(4,52,44,.18); padding:1.4rem; overflow-y:auto; }
+.hrScrim{ position:fixed; inset:0; background:rgba(51,78,172,.28); z-index:70; }
+.hrDrawer{ position:fixed; top:0; right:0; height:100vh; height:100dvh; width:min(440px,94vw); background:var(--v-surface); z-index:71; box-shadow:-20px 0 60px rgba(51,78,172,.18); padding:1.4rem; overflow-y:auto; }
 .hrDrawerHead{ display:flex; justify-content:space-between; align-items:flex-start; gap:12px; margin-bottom:16px; }
 .hrIconBtn{ background:var(--v-surface-2); border:none; border-radius:8px; padding:7px; cursor:pointer; color:var(--v-ink-2); display:flex; }
 .hrDGrid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; padding:14px 0; border-top:1px solid var(--v-line); border-bottom:1px solid var(--v-line); font-size:13.5px; color:var(--v-ink); }

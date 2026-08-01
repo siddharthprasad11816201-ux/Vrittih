@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation"
 import styles from "@/styles/navbar.module.css"
 import NotificationBell from "@/components/ui/NotificationBell"
 import { IconX, IconMenu } from "@/components/ui/Icons"
+import { Keystone } from "@/components/vrittih/Logo"
 
 export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -33,9 +34,7 @@ export default function Navbar() {
     <>
       <nav className={styles.nav}>
         <Link href="/" className={styles.logo}>
-          <div className={styles.logoMark}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" width="14" height="14" aria-hidden="true"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-          </div>
+          <Keystone size={30} />
           Vrittih<span>.online</span>
         </Link>
 

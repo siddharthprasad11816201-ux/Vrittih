@@ -5,12 +5,12 @@ import AppShell from "@/components/vrittih/AppShell"
 import { IconCheckCircle, IconArrowRight } from "@/components/ui/Icons"
 
 const BOARD: { key: string; label: string; color: string }[] = [
-  { key: "APPLIED", label: "Applied", color: "#185FA5" },
-  { key: "SHORTLISTED", label: "Shortlisted", color: "#0F6E56" },
+  { key: "APPLIED", label: "Applied", color: "#2E9BE0" },
+  { key: "SHORTLISTED", label: "Shortlisted", color: "#6495ED" },
   { key: "INTERVIEW", label: "Interview", color: "#B45309" },
   { key: "OFFERED", label: "Offer", color: "#0891B2" },
   { key: "HIRED", label: "Hired", color: "#047857" },
-  { key: "REJECTED", label: "Not selected", color: "#A32D2D" },
+  { key: "REJECTED", label: "Not selected", color: "#DC2626" },
 ]
 const initials = (n?: string) => (n || "?").split(" ").map(s => s[0]).slice(0, 2).join("").toUpperCase()
 const ago = (iso: string) => { const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); return d <= 0 ? "today" : d === 1 ? "1d" : `${d}d` }

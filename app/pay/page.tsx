@@ -98,7 +98,7 @@ export default function PayPage() {
         key: d.keyId, amount: d.amount, currency: d.currency, order_id: d.orderId,
         name: "Vrittih", description: `${plan.name} · ${plan.priceCHF} CHF / month`,
         prefill: { email: me?.email, name: me?.name },
-        theme: { color: "#0D7A5F" },
+        theme: { color: "#6495ED" },
         handler: async (resp: any) => {
           const v = await fetch("/api/payment/verify", {
             method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(resp),
@@ -205,7 +205,7 @@ export default function PayPage() {
 
 const CSS = `
 .pw{--bg:#FAFAF8;--card:#fff;--ink:#101828;--ink2:#667085;--ink3:#98A2B3;--line:#EAECF0;--line2:#F2F4F1;
- --g:#0D7A5F;--gh:#0B6C54;--gt:rgba(13,122,95,.08);--gt2:rgba(13,122,95,.14);
+ --g:#6495ED;--gh:#0B6C54;--gt:rgba(13,122,95,.08);--gt2:rgba(13,122,95,.14);
  --sh:0 1px 2px rgba(16,24,40,.04),0 1px 3px rgba(16,24,40,.05);--shH:0 10px 26px rgba(16,24,40,.07);
  --e:cubic-bezier(.22,1,.36,1);
  min-height:100vh;background:var(--bg);color:var(--ink);display:flex;align-items:flex-start;justify-content:center;

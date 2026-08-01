@@ -12,9 +12,9 @@ const COLUMNS = [
   { key: "DONE", label: "Done" },
 ]
 const PRIO: Record<string, { label: string; bg: string; fg: string }> = {
-  HIGH: { label: "High", bg: "#FBECEC", fg: "#A32D2D" },
-  MEDIUM: { label: "Medium", bg: "#FDF3E3", fg: "#BA7517" },
-  LOW: { label: "Low", bg: "#E1F5EE", fg: "#0B6B45" },
+  HIGH: { label: "High", bg: "#FBECEC", fg: "#DC2626" },
+  MEDIUM: { label: "Medium", bg: "#FDF3E3", fg: "#B45309" },
+  LOW: { label: "Low", bg: "#EAF1FE", fg: "#2F6BE0" },
 }
 
 function Board() {
@@ -100,7 +100,7 @@ function Board() {
                     <div style={S.cardTitle}>{t.title}</div>
                     <div style={S.cardMeta}>
                       <span>{t.assignee?.name || "Unassigned"}</span>
-                      {t.dueAt && <span style={{ color: overdue(t) ? "#A32D2D" : "#6E7A73" }}>· due {new Date(t.dueAt).toLocaleDateString()}</span>}
+                      {t.dueAt && <span style={{ color: overdue(t) ? "#DC2626" : "#64748B" }}>· due {new Date(t.dueAt).toLocaleDateString()}</span>}
                     </div>
                     <div style={S.moves}>
                       {COLUMNS.filter((c) => c.key !== t.status).map((c) => (
@@ -137,14 +137,14 @@ const S: Record<string, any> = {
   newRow: { display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center", marginBottom: 8 },
   input: { flex: "1 1 130px", border: "1px solid var(--v-line-2)", borderRadius: 8, padding: "9px 11px", fontSize: 13.5, background: "var(--v-surface)", color: "var(--v-ink)", fontFamily: "var(--font-sans)" },
   btn: { background: "var(--v-accent)", color: "#fff", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13.5, fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" },
-  err: { margin: "8px 0", fontSize: 13, color: "#A32D2D", background: "#FBECEC", border: "1px solid #F0D2D2", borderRadius: 8, padding: "8px 12px" },
+  err: { margin: "8px 0", fontSize: 13, color: "#DC2626", background: "#FBECEC", border: "1px solid #F0D2D2", borderRadius: 8, padding: "8px 12px" },
   muted: { color: "var(--v-ink-3)", fontSize: 14, padding: "20px 0" },
   board: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: 14, marginTop: 14 },
   col: { background: "var(--v-surface-2)", borderRadius: 14, padding: 12, minHeight: 200 },
   colHead: { fontSize: 12.5, fontWeight: 700, color: "var(--v-ink-2)", textTransform: "uppercase", letterSpacing: ".04em", padding: "2px 4px 10px", display: "flex", alignItems: "center", gap: 8 },
   count: { background: "var(--v-surface)", color: "var(--v-ink-3)", borderRadius: 999, padding: "1px 8px", fontSize: 11 },
   colBody: { display: "flex", flexDirection: "column", gap: 10 },
-  card: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 11, padding: "11px 12px", boxShadow: "0 1px 2px rgba(4,52,44,.04)" },
+  card: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 11, padding: "11px 12px", boxShadow: "0 1px 2px rgba(51,78,172,.04)" },
   cardTop: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 },
   prio: { fontSize: 10.5, fontWeight: 700, borderRadius: 999, padding: "2px 9px" },
   del: { background: "none", border: "none", color: "var(--v-ink-3)", fontSize: 18, lineHeight: 1, cursor: "pointer", padding: 0 },

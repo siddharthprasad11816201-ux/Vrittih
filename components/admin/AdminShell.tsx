@@ -58,10 +58,10 @@ export function AdminTopBar({ title, subtitle, right }: { title: ReactNode; subt
 }
 
 const S: Record<string, any> = {
-  page: { display: "grid", gridTemplateColumns: "220px 1fr", minHeight: "100vh", background: "#FAF8F2" },
-  sidebar: { background: "#04342C", display: "flex", flexDirection: "column" as const, borderRight: "0.5px solid rgba(255,255,255,.06)" },
+  page: { display: "grid", gridTemplateColumns: "220px 1fr", minHeight: "100vh", background: "#F7F9FC" },
+  sidebar: { background: "#0B1126", display: "flex", flexDirection: "column" as const, borderRight: "0.5px solid rgba(255,255,255,.06)" },
   brand: { display: "flex", alignItems: "center", gap: 10, padding: "1.25rem 1.5rem", borderBottom: "0.5px solid rgba(255,255,255,.06)" },
-  brandMark: { width: 32, height: 32, borderRadius: 9, background: "#0F6E56", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" },
+  brandMark: { width: 32, height: 32, borderRadius: 9, background: "#6495ED", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center" },
   brandText: { fontSize: 14, fontWeight: 600, color: "#fff" },
   nav: { padding: "1rem .75rem", flex: 1, display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: { display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13, color: "rgba(255,255,255,.6)", textDecoration: "none", transition: "all .15s" },

@@ -61,7 +61,7 @@ const CSS = `
   background:
     radial-gradient(120% 80% at 12% 8%, rgba(255,255,255,.14), transparent 42%),
     radial-gradient(90% 70% at 100% 100%, rgba(0,0,0,.28), transparent 55%),
-    linear-gradient(155deg, #15806A 0%, #0F6E56 46%, #04342C 100%);
+    linear-gradient(155deg, #15806A 0%, #6495ED 46%, #0B1126 100%);
 }
 .vauth-topo { position:absolute; inset:-4% -2%; width:104%; height:108%; opacity:.06;
   animation:vauth-drift 26s ease-in-out infinite alternate; }
@@ -97,9 +97,9 @@ const CSS = `
 .vauth-formwrap .va-label { font-size:12.5px; font-weight:600; color:var(--v-ink-2); }
 .vauth-formwrap .va-input { width:100%; border:1px solid var(--v-line-2); border-radius:11px; padding:12px 14px;
   font-size:14.5px; font-family:inherit; color:var(--v-ink); outline:none; background:var(--v-surface);
-  box-shadow:inset 2px 2px 5px rgba(4,52,44,.05), inset -2px -2px 5px rgba(255,255,255,.7);
+  box-shadow:inset 2px 2px 5px rgba(51,78,172,.05), inset -2px -2px 5px rgba(255,255,255,.7);
   transition:border-color .15s, box-shadow .15s; }
-.vauth-formwrap .va-input:focus { border-color:var(--brand-400); box-shadow:0 0 0 3px rgba(29,158,117,.18), inset 2px 2px 5px rgba(4,52,44,.05); }
+.vauth-formwrap .va-input:focus { border-color:var(--brand-400); box-shadow:0 0 0 3px rgba(29,158,117,.18), inset 2px 2px 5px rgba(51,78,172,.05); }
 .vauth-formwrap .va-input::placeholder { color:var(--v-ink-3); }
 
 /* passkey-first + spring collapse */

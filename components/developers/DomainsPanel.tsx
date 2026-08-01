@@ -89,7 +89,7 @@ VALUE ${d.instructions.dns.value}`}</pre></>
               )}
             </div>
           )}
-          {msg[d.domain] && <div style={{ fontSize: 12.5, color: msg[d.domain].includes("✓") ? "#0B6B45" : "#A32D2D", marginTop: 4 }}>{msg[d.domain]}</div>}
+          {msg[d.domain] && <div style={{ fontSize: 12.5, color: msg[d.domain].includes("✓") ? "#2F6BE0" : "#DC2626", marginTop: 4 }}>{msg[d.domain]}</div>}
         </div>
       ))}
       {domains.length === 0 && <div style={{ ...S.muted, marginTop: 10 }}>No domains yet — add the one your careers page lives on.</div>}
@@ -98,26 +98,26 @@ VALUE ${d.instructions.dns.value}`}</pre></>
 }
 
 const S: Record<string, any> = {
-  card: { background: "#fff", border: "1px solid #E8E3D7", borderRadius: 16, padding: "22px 22px 24px", margin: "0 0 34px", boxShadow: "0 1px 2px rgba(4,52,44,.04)" },
-  title: { fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, color: "#04342C", marginBottom: 6 },
-  muted: { fontSize: 13.5, color: "#6E7A73", lineHeight: 1.6, margin: 0 },
+  card: { background: "#fff", border: "1px solid #E5E7EB", borderRadius: 16, padding: "22px 22px 24px", margin: "0 0 34px", boxShadow: "0 1px 2px rgba(51,78,172,.04)" },
+  title: { fontFamily: "var(--font-display)", fontSize: 20, fontWeight: 600, color: "#0B1126", marginBottom: 6 },
+  muted: { fontSize: 13.5, color: "#64748B", lineHeight: 1.6, margin: 0 },
   banner: { marginTop: 12, borderRadius: 10, padding: "9px 13px", fontSize: 13 },
-  ok: { background: "#E1F5EE", color: "#0B6B45" },
+  ok: { background: "#EAF1FE", color: "#2F6BE0" },
   warn: { background: "#FDF3E3", color: "#8A5A12" },
   genRow: { display: "flex", gap: 10, marginTop: 14, flexWrap: "wrap" },
-  input: { flex: "1 1 220px", border: "1px solid #D9D3C4", borderRadius: 8, padding: "9px 12px", fontSize: 13.5, fontFamily: "var(--font-sans)", color: "#14201B", background: "#fff" },
-  select: { border: "1px solid #D9D3C4", borderRadius: 8, padding: "9px 10px", fontSize: 13.5, background: "#fff", color: "#14201B" },
-  btn: { background: "#0F6E56", color: "#fff", border: "none", borderRadius: 9, padding: "9px 16px", fontSize: 13.5, fontWeight: 600, cursor: "pointer" },
-  err: { marginTop: 10, fontSize: 13, color: "#A32D2D", background: "#FBECEC", border: "1px solid #F0D2D2", borderRadius: 8, padding: "8px 12px" },
-  domBox: { border: "1px solid #E8E3D7", borderRadius: 11, padding: "12px 14px", marginTop: 12 },
+  input: { flex: "1 1 220px", border: "1px solid #E9EDF2", borderRadius: 8, padding: "9px 12px", fontSize: 13.5, fontFamily: "var(--font-sans)", color: "#1F2937", background: "#fff" },
+  select: { border: "1px solid #E9EDF2", borderRadius: 8, padding: "9px 10px", fontSize: 13.5, background: "#fff", color: "#1F2937" },
+  btn: { background: "#6495ED", color: "#fff", border: "none", borderRadius: 9, padding: "9px 16px", fontSize: 13.5, fontWeight: 600, cursor: "pointer" },
+  err: { marginTop: 10, fontSize: 13, color: "#DC2626", background: "#FBECEC", border: "1px solid #F0D2D2", borderRadius: 8, padding: "8px 12px" },
+  domBox: { border: "1px solid #E5E7EB", borderRadius: 11, padding: "12px 14px", marginTop: 12 },
   domHead: { display: "flex", alignItems: "center", gap: 10 },
-  domName: { fontFamily: "var(--font-mono)", fontSize: 13.5, color: "#14201B", fontWeight: 600 },
+  domName: { fontFamily: "var(--font-mono)", fontSize: 13.5, color: "#1F2937", fontWeight: 600 },
   pill: { fontSize: 11, fontWeight: 700, borderRadius: 999, padding: "2px 9px" },
-  pillOk: { background: "#E1F5EE", color: "#0B6B45" },
+  pillOk: { background: "#EAF1FE", color: "#2F6BE0" },
   pillPend: { background: "#FDF3E3", color: "#8A5A12" },
-  smallBtn: { background: "#0F6E56", color: "#fff", border: "none", borderRadius: 7, padding: "5px 12px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" },
-  smallGhost: { background: "transparent", color: "#A32D2D", border: "1px solid #F0D2D2", borderRadius: 7, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" },
-  instr: { marginTop: 10, fontSize: 13, color: "#4A5750", lineHeight: 1.6 },
-  codeInline: { fontFamily: "var(--font-mono)", fontSize: 12.5, background: "#F3F0E7", color: "#0B6B45", padding: "1px 6px", borderRadius: 5 },
-  pre: { background: "#04342C", color: "#EAF3EE", borderRadius: 10, padding: "12px 14px", fontSize: 12.5, fontFamily: "var(--font-mono)", overflowX: "auto", lineHeight: 1.6, marginTop: 6 },
+  smallBtn: { background: "#6495ED", color: "#fff", border: "none", borderRadius: 7, padding: "5px 12px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" },
+  smallGhost: { background: "transparent", color: "#DC2626", border: "1px solid #F0D2D2", borderRadius: 7, padding: "5px 10px", fontSize: 12, fontWeight: 600, cursor: "pointer" },
+  instr: { marginTop: 10, fontSize: 13, color: "#475569", lineHeight: 1.6 },
+  codeInline: { fontFamily: "var(--font-mono)", fontSize: 12.5, background: "#F1F5F9", color: "#2F6BE0", padding: "1px 6px", borderRadius: 5 },
+  pre: { background: "#0B1126", color: "#EAF1FE", borderRadius: 10, padding: "12px 14px", fontSize: 12.5, fontFamily: "var(--font-mono)", overflowX: "auto", lineHeight: 1.6, marginTop: 6 },
 }

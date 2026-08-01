@@ -34,7 +34,7 @@
   padding: 0 28px;
   border: none;
   border-radius: 10px;
-  background: linear-gradient(135deg, #0F6E56, #0B5A46);
+  background: linear-gradient(135deg, #6495ED, #334EAC);
   color: #fff;
   font-size: 14px;
   font-weight: 600;
@@ -135,7 +135,7 @@
   height: 44px;
   flex-shrink: 0;
   border-radius: 11px;
-  background: linear-gradient(135deg, #E1F5EE, #D3EDE4);
+  background: linear-gradient(135deg, #EAF1FE, #D3EDE4);
   border: 1px solid rgba(15,110,86, .15);
   display: flex;
   align-items: center;
@@ -151,7 +151,7 @@
 
 .typePill {
   flex-shrink: 0;
-  background: #E1F5EE;
+  background: #EAF1FE;
   color: var(--electric);
   padding: 5px 12px;
   border-radius: 999px;
@@ -174,7 +174,7 @@
 }
 .matchBadge[data-tier="excellent"] { background: #ECFDF5; color: #047857; border-color: #A7F3D0; }
 .matchBadge[data-tier="strong"]    { background: #EFF6FF; color: #1D4ED8; border-color: #BFDBFE; }
-.matchBadge[data-tier="good"]      { background: #E1F5EE; color: #0B5A46; border-color: #DDD6FE; }
+.matchBadge[data-tier="good"]      { background: #EAF1FE; color: #334EAC; border-color: #DDD6FE; }
 .matchBadge[data-tier="fair"]      { background: #FFFBEB; color: #B45309; border-color: #FDE68A; }
 .matchBadge[data-tier="low"]       { background: #F9FAFB; color: #6B7280; border-color: #E5E7EB; }
 .matchScore {
@@ -187,7 +187,7 @@
 }
 .matchBadge[data-tier="excellent"] .matchScore { background: #047857; }
 .matchBadge[data-tier="strong"] .matchScore    { background: #1D4ED8; }
-.matchBadge[data-tier="good"] .matchScore       { background: #0B5A46; }
+.matchBadge[data-tier="good"] .matchScore       { background: #334EAC; }
 .matchBadge[data-tier="fair"] .matchScore       { background: #B45309; }
 .matchBadge[data-tier="low"] .matchScore        { background: #6B7280; }
 .matchLabel { order: 1; }

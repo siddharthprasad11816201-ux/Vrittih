@@ -33,7 +33,7 @@ export async function PUT(req: NextRequest) {
   const clash = await prisma.partnerBrand.findFirst({ where: { slug, employerId: { not: g.user.id } }, select: { id: true } })
   if (clash) return NextResponse.json({ error: `The link /c/${slug} is taken — choose another slug.` }, { status: 409 })
 
-  const color = validHex(body.color) || "#0F6E56"
+  const color = validHex(body.color) || "#6495ED"
 
   // Optional custom domain — must be a domain the company has verified (exact or
   // subdomain of one), and not already claimed by another brand.

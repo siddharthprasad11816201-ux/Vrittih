@@ -113,8 +113,8 @@ const CSS = `
 .trkMeta { font-size: 12.5px; color: var(--v-ink-3); margin-top: 2px; }
 .trkPill { font-size: 11.5px; font-weight: 600; padding: 5px 12px; border-radius: 999px; flex-shrink: 0; }
 .pLive { background: var(--brand-100); color: var(--brand-700); }
-.pHire { background: #DFF3E8; color: #0B6B45; }
-.pRej { background: #F6ECEC; color: #A32D2D; }
+.pHire { background: #DFF3E8; color: #2F6BE0; }
+.pRej { background: #F6ECEC; color: #DC2626; }
 
 /* the 7-step pipeline */
 .trkPipe { display: grid; grid-template-columns: repeat(7, 1fr); margin: 0 6px; }
@@ -133,7 +133,7 @@ const CSS = `
 .trkFootLive { display: inline-flex; align-items: center; gap: 8px; color: var(--v-ink-2); }
 .trkFootLive b { color: var(--brand-700); }
 .trkDotLive { width: 8px; height: 8px; border-radius: 50%; background: var(--brand-400); flex-shrink: 0; }
-.trkFootHire { display: inline-flex; align-items: center; gap: 7px; color: #0B6B45; font-weight: 600; }
+.trkFootHire { display: inline-flex; align-items: center; gap: 7px; color: #2F6BE0; font-weight: 600; }
 .trkFootMuted { color: var(--v-ink-3); }
 
 .trkEmpty { text-align: center; padding: 3rem 1rem; background: var(--v-surface); border: 1px solid var(--v-line); border-radius: 18px; }

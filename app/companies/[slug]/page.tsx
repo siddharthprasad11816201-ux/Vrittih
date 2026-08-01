@@ -146,7 +146,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 const S: Record<string, any> = {
   wrap: { maxWidth: 1000, margin: "0 auto", padding: "6px 4px 40px" },
   hero: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 16, overflow: "hidden" },
-  heroBanner: { height: 96, background: "linear-gradient(120deg,var(--v-accent),#6E64D6)" },
+  heroBanner: { height: 96, background: "linear-gradient(120deg,var(--v-accent),#334EAC)" },
   heroBody: { padding: "0 24px 22px" },
   heroMain: { marginTop: 10 },
   titleRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12, flexWrap: "wrap" },

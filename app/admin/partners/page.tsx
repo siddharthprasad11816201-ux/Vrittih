@@ -57,7 +57,7 @@ export default function AdminPartnersPage() {
 }
 
 const S: Record<string, any> = {
-  err: { margin: "12px 0", color: "#A32D2D", fontSize: 14 },
+  err: { margin: "12px 0", color: "#DC2626", fontSize: 14 },
   muted: { color: "#9ca3af", fontSize: 13 },
   tableWrap: { overflowX: "auto", marginTop: 16, background: "#fff", border: "1px solid #eee", borderRadius: 12 },
   table: { width: "100%", borderCollapse: "collapse", fontSize: 13.5 },
@@ -68,6 +68,6 @@ const S: Record<string, any> = {
   ok: { background: "#dcfce7", color: "#166534" }, pend: { background: "#fef3c7", color: "#92400e" },
   dpill: { display: "inline-block", fontSize: 11, borderRadius: 6, padding: "2px 7px", margin: "2px 4px 2px 0" },
   dok: { background: "#dcfce7", color: "#166534" }, dpend: { background: "#f3f4f6", color: "#6b7280" },
-  approve: { background: "#0F6E56", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" },
-  revoke: { background: "transparent", color: "#A32D2D", border: "1px solid #fecaca", borderRadius: 8, padding: "6px 12px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" },
+  approve: { background: "#6495ED", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer" },
+  revoke: { background: "transparent", color: "#DC2626", border: "1px solid #fecaca", borderRadius: 8, padding: "6px 12px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" },
 }

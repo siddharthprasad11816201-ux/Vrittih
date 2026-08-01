@@ -110,15 +110,15 @@ function JobsInner() {
 
         <main>
           {!loading && weakProfile && (
-            <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap", background:"linear-gradient(135deg,#E1F5EE,#F1F7F4)", border:"1px solid #CFE9DF", borderRadius:14, padding:"14px 18px", marginBottom:16 }}>
-              <div style={{ width:38, height:38, borderRadius:10, background:"#0F6E56", color:"#fff", display:"grid", placeItems:"center", flexShrink:0 }}>
+            <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap", background:"linear-gradient(135deg,#EAF1FE,#F1F7F4)", border:"1px solid #CFE9DF", borderRadius:14, padding:"14px 18px", marginBottom:16 }}>
+              <div style={{ width:38, height:38, borderRadius:10, background:"#6495ED", color:"#fff", display:"grid", placeItems:"center", flexShrink:0 }}>
                 <IconTarget size={19} />
               </div>
               <div style={{ flex:1 }}>
                 <div style={{ fontSize:14, fontWeight:650, color:"#1A1633" }}>Your match scores are low because your profile is empty</div>
                 <div style={{ fontSize:13, color:"#5A5470", marginTop:2 }}>Add your skills, experience and location — matching recalculates instantly and surfaces roles that actually fit you.</div>
               </div>
-              <Link href="/profile/edit" style={{ background:"#0F6E56", color:"#fff", fontSize:13, fontWeight:600, padding:"9px 16px", borderRadius:9, textDecoration:"none", whiteSpace:"nowrap" }}>Complete profile</Link>
+              <Link href="/profile/edit" style={{ background:"#6495ED", color:"#fff", fontSize:13, fontWeight:600, padding:"9px 16px", borderRadius:9, textDecoration:"none", whiteSpace:"nowrap" }}>Complete profile</Link>
             </div>
           )}
           <div className={styles.listHeader}>

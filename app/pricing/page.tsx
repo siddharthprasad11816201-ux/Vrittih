@@ -45,7 +45,7 @@ export default function PricingPage() {
       const rzp = new window.Razorpay({
         key: d.keyId, amount: d.amount, currency: d.currency, order_id: d.orderId,
         name: "Vrittih", description: `${plans.find(p => p.id === planId)?.name} · monthly`,
-        prefill: { email: me?.email, name: me?.name }, theme: { color: "#0F6E56" },
+        prefill: { email: me?.email, name: me?.name }, theme: { color: "#6495ED" },
         handler: async (resp: any) => {
           const v = await fetch("/api/payment/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(resp) }).then(r => r.json())
           if (v.success) router.push("/dashboard"); else setError(v.error || "Verification failed.")
@@ -113,36 +113,36 @@ export default function PricingPage() {
 }
 
 const CSS = `
-.pr{ min-height:100vh; background:var(--cream-0,#FAF8F2); font-family:var(--font-sans); color:var(--v-ink,#14201B); padding-bottom:4rem; }
+.pr{ min-height:100vh; background:var(--cream-0,#F7F9FC); font-family:var(--font-sans); color:var(--v-ink,#1F2937); padding-bottom:4rem; }
 .prTop{ max-width:1080px; margin:0 auto; display:flex; justify-content:space-between; align-items:center; padding:20px 24px; }
-.prBrand{ display:inline-flex; align-items:center; gap:9px; text-decoration:none; color:#04342C; font-family:var(--font-display); font-size:18px; font-weight:600; }
-.prMark{ width:32px; height:32px; border-radius:9px; background:#0F6E56; color:#fff; display:grid; place-items:center; }
-.prSignIn{ font-size:14px; font-weight:600; color:#0F6E56; text-decoration:none; }
+.prBrand{ display:inline-flex; align-items:center; gap:9px; text-decoration:none; color:#0B1126; font-family:var(--font-display); font-size:18px; font-weight:600; }
+.prMark{ width:32px; height:32px; border-radius:9px; background:#6495ED; color:#fff; display:grid; place-items:center; }
+.prSignIn{ font-size:14px; font-weight:600; color:#6495ED; text-decoration:none; }
 .prHead{ text-align:center; max-width:640px; margin:1rem auto 2.25rem; padding:0 24px; }
-.prH1{ font-family:var(--font-display); font-size:clamp(2rem,5vw,3rem); font-weight:600; letter-spacing:-.03em; color:#04342C; }
-.prSub{ font-size:15.5px; color:#4A5750; margin-top:12px; line-height:1.6; }
-.prToggle{ display:inline-flex; background:#fff; border:1px solid #E8E3D7; border-radius:999px; padding:4px; margin-top:22px; }
-.prToggle button{ border:none; background:none; padding:9px 20px; border-radius:999px; font-size:13.5px; font-weight:600; color:#4A5750; cursor:pointer; }
-.prToggle button.on{ background:#0F6E56; color:#fff; }
-.prCur{ display:block; margin:14px auto 0; border:1px solid #D9D3C4; border-radius:9px; padding:7px 12px; font-size:13px; background:#fff; color:#14201B; }
-.prErr{ max-width:520px; margin:0 auto 18px; background:#FBEBEB; border:1px solid #E7C9C9; border-radius:9px; padding:10px 14px; font-size:13px; color:#A32D2D; text-align:center; }
+.prH1{ font-family:var(--font-display); font-size:clamp(2rem,5vw,3rem); font-weight:600; letter-spacing:-.03em; color:#0B1126; }
+.prSub{ font-size:15.5px; color:#475569; margin-top:12px; line-height:1.6; }
+.prToggle{ display:inline-flex; background:#fff; border:1px solid #E5E7EB; border-radius:999px; padding:4px; margin-top:22px; }
+.prToggle button{ border:none; background:none; padding:9px 20px; border-radius:999px; font-size:13.5px; font-weight:600; color:#475569; cursor:pointer; }
+.prToggle button.on{ background:#6495ED; color:#fff; }
+.prCur{ display:block; margin:14px auto 0; border:1px solid #E9EDF2; border-radius:9px; padding:7px 12px; font-size:13px; background:#fff; color:#1F2937; }
+.prErr{ max-width:520px; margin:0 auto 18px; background:#FBEBEB; border:1px solid #E7C9C9; border-radius:9px; padding:10px 14px; font-size:13px; color:#DC2626; text-align:center; }
 .prGrid{ max-width:1080px; margin:0 auto; padding:0 24px; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:18px; align-items:start; }
-.prCard{ position:relative; background:#fff; border:1px solid #E8E3D7; border-radius:18px; padding:26px 24px; box-shadow:0 1px 2px rgba(4,52,44,.04); }
-.prCard.pop{ border:2px solid #0F6E56; box-shadow:0 20px 50px rgba(15,110,86,.14); }
-.prBadge{ position:absolute; top:-11px; left:24px; background:#0F6E56; color:#fff; font-size:11px; font-weight:700; padding:4px 12px; border-radius:999px; }
-.prName{ font-family:var(--font-display); font-size:20px; font-weight:600; color:#04342C; }
-.prTag{ font-size:13px; color:#7C877F; margin-top:3px; min-height:34px; }
-.prPrice{ font-family:var(--font-display); font-size:40px; font-weight:600; color:#14201B; letter-spacing:-.02em; margin-top:8px; }
-.prPer{ font-family:var(--font-sans); font-size:15px; font-weight:500; color:#7C877F; }
-.prChf{ font-size:12px; color:#7C877F; margin-top:2px; }
-.prCta{ width:100%; display:inline-flex; align-items:center; justify-content:center; gap:7px; margin:18px 0 16px; padding:12px; border-radius:11px; font-size:14px; font-weight:600; cursor:pointer; border:1px solid #0F6E56; background:#fff; color:#0F6E56; }
-.prCta.pop{ background:#0F6E56; color:#fff; }
+.prCard{ position:relative; background:#fff; border:1px solid #E5E7EB; border-radius:18px; padding:26px 24px; box-shadow:0 1px 2px rgba(51,78,172,.04); }
+.prCard.pop{ border:2px solid #6495ED; box-shadow:0 20px 50px rgba(15,110,86,.14); }
+.prBadge{ position:absolute; top:-11px; left:24px; background:#6495ED; color:#fff; font-size:11px; font-weight:700; padding:4px 12px; border-radius:999px; }
+.prName{ font-family:var(--font-display); font-size:20px; font-weight:600; color:#0B1126; }
+.prTag{ font-size:13px; color:#94A3B8; margin-top:3px; min-height:34px; }
+.prPrice{ font-family:var(--font-display); font-size:40px; font-weight:600; color:#1F2937; letter-spacing:-.02em; margin-top:8px; }
+.prPer{ font-family:var(--font-sans); font-size:15px; font-weight:500; color:#94A3B8; }
+.prChf{ font-size:12px; color:#94A3B8; margin-top:2px; }
+.prCta{ width:100%; display:inline-flex; align-items:center; justify-content:center; gap:7px; margin:18px 0 16px; padding:12px; border-radius:11px; font-size:14px; font-weight:600; cursor:pointer; border:1px solid #6495ED; background:#fff; color:#6495ED; }
+.prCta.pop{ background:#6495ED; color:#fff; }
 .prCta:disabled{ opacity:.6; cursor:default; }
 .prFeat{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:9px; }
-.prFeat li{ display:flex; align-items:flex-start; gap:9px; font-size:13.5px; color:#2c3a33; }
-.prFeat li svg{ color:#0F6E56; flex-shrink:0; margin-top:1px; }
+.prFeat li{ display:flex; align-items:flex-start; gap:9px; font-size:13.5px; color:#334155; }
+.prFeat li svg{ color:#6495ED; flex-shrink:0; margin-top:1px; }
 .prAddons{ max-width:1080px; margin:26px auto 0; padding:16px 24px; display:flex; flex-wrap:wrap; gap:18px; align-items:center; }
-.prAddTitle{ font-size:13px; font-weight:700; color:#04342C; }
-.prAdd{ font-size:13px; color:#4A5750; }
-.prFoot{ max-width:640px; margin:24px auto 0; padding:0 24px; text-align:center; font-size:12.5px; color:#7C877F; line-height:1.6; }
+.prAddTitle{ font-size:13px; font-weight:700; color:#0B1126; }
+.prAdd{ font-size:13px; color:#475569; }
+.prFoot{ max-width:640px; margin:24px auto 0; padding:0 24px; text-align:center; font-size:12.5px; color:#94A3B8; line-height:1.6; }
 `

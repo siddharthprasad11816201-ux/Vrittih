@@ -1,50 +1,52 @@
 /* ============================================================
    VRITTIH DESIGN SYSTEM — single source of truth.
-   One brand everywhere: ink-green + cream + reserved gold.
+   Identity System v1: cornflower (#6495ED) → indigo (#334EAC) on
+   cool slate/white, Inter, 8-pt grid. "Keystone" logo.
    "Every industry. Every professional. One network."
    Depth jurisdiction: glass = floating chrome, neu = tactile
    controls (always bordered), 3D = one landing hero only.
    ============================================================ */
 :root {
-  /* ---- brand ramp ---- */
-  --brand-900: #04342C;   /* ink green — display, dark slabs */
-  --brand-700: #0B5A46;
-  --brand-600: #0F6E56;   /* primary actions, active */
-  --brand-400: #1D9E75;   /* hover, focus ring, live */
-  --brand-200: #A7D9C8;
-  --brand-100: #E1F5EE;   /* tints, selected rows, badges */
-  --cream-0:   #FAF8F2;   /* page canvas */
+  /* ---- brand ramp (Vrittih Identity System v1 — cornflower) ---- */
+  --brand-900: #0B1126;   /* deep slate — dark slabs */
+  --brand-700: #334EAC;   /* indigo — secondary / gradient end */
+  --brand-600: #6495ED;   /* primary actions, active — cornflower */
+  --brand-400: #4F86E8;   /* hover, focus ring */
+  --brand-200: #A9C6F6;
+  --brand-100: #EAF1FE;   /* tints, selected rows, badges */
+  --cyan:      #8ECDF8;   /* highlights, live, dark-mode accent */
+  --cream-0:   #F7F9FC;   /* page canvas */
   --gold:      #C8A24B;   /* RESERVED: Verified badge only */
 
   /* ---- surfaces (light) ---- */
-  --v-bg:        #FAF8F2;
+  --v-bg:        #F7F9FC;
   --v-surface:   #FFFFFF;
-  --v-surface-2: #F3F0E7;
+  --v-surface-2: #F1F5F9;
   --v-sidebar:   #FFFFFF;
-  --v-topbar:    rgba(250,248,242,.72);
+  --v-topbar:    rgba(255,255,255,.82);
 
   /* ---- ink ---- */
-  --v-ink:   #101311;
-  --v-ink-2: #3C443F;
-  --v-ink-3: #6E7A73;
+  --v-ink:   #1F2937;
+  --v-ink-2: #64748B;
+  --v-ink-3: #94A3B8;
 
   /* ---- lines ---- */
-  --v-line:   #E8E3D7;
-  --v-line-2: #D9D3C4;
+  --v-line:   #E5E7EB;
+  --v-line-2: #E9EDF2;
 
-  /* ---- accent (aliases → brand green so every var-driven surface flips) ---- */
-  --v-accent:      #0F6E56;
-  --v-accent-2:    #0B5A46;
-  --v-accent-soft: #E1F5EE;
+  /* ---- accent (aliases → cornflower so every var-driven surface flips) ---- */
+  --v-accent:      #6495ED;
+  --v-accent-2:    #334EAC;
+  --v-accent-soft: #EAF1FE;
   --v-accent-ink:  #FFFFFF;
 
   /* ---- semantic (status only, never decoration) ---- */
-  --v-green:  #0F6E56;
-  --v-green-soft: #E1F5EE;
-  --v-amber:  #BA7517;   --warn:   #BA7517;
-  --v-blue:   #185FA5;   --info:   #185FA5;
-  --v-red:    #A32D2D;   --danger: #A32D2D;
-  --v-chat-out: #D7F0DD;
+  --v-green:  #22C55E;
+  --v-green-soft: #E7F8EE;
+  --v-amber:  #B45309;   --warn:   #B45309;
+  --v-blue:   #2E9BE0;   --info:   #2E9BE0;
+  --v-red:    #DC2626;   --danger: #DC2626;
+  --v-chat-out: #EAF1FE;
 
   /* ---- radii ---- */
   --v-r:    12px;
@@ -53,14 +55,14 @@
   --v-r-pill: 999px;
 
   /* ---- elevation (green-tinted) + motion ---- */
-  --v-shadow-sm: 0 1px 2px rgba(4,52,44,.06);
-  --v-shadow:    0 1px 2px rgba(4,52,44,.05), 0 12px 34px rgba(4,52,44,.08);
-  --v-shadow-lg: 0 24px 60px rgba(4,52,44,.14);
+  --v-shadow-sm: 0 1px 2px rgba(16,24,40,.04);
+  --v-shadow:    0 1px 2px rgba(16,24,40,.04), 0 12px 28px -16px rgba(51,78,172,.18);
+  --v-shadow-lg: 0 20px 44px -26px rgba(51,78,172,.28);
   --v-ease: cubic-bezier(.22,1,.36,1);
   --v-spring: cubic-bezier(.34,1.56,.64,1);
 
   /* ---- type ---- */
-  --font-display: "Fraunces", "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --v-serif: var(--font-display);
@@ -77,29 +79,29 @@
 
 /* ---- dark mode: token-level flip (screens that use tokens follow automatically) ---- */
 :root[data-theme="dark"], .v-dark {
-  --v-bg:        #0C0F0D;
-  --v-surface:   #121612;
-  --v-surface-2: #171C18;
-  --v-sidebar:   #101410;
-  --v-topbar:    rgba(16,19,17,.62);
-  --v-ink:   #EAF1EC;
-  --v-ink-2: #A6B2AA;
-  --v-ink-3: #74817A;
-  --v-line:   #232A25;
-  --v-line-2: #2E362F;
-  --v-accent:      #1D9E75;
-  --v-accent-2:    #14B37F;
-  --v-accent-soft: #123028;
-  --v-green-soft:  #123028;
+  --v-bg:        #0A0F1F;
+  --v-surface:   #0C1330;
+  --v-surface-2: #111A3A;
+  --v-sidebar:   #0A0F1F;
+  --v-topbar:    rgba(10,15,31,.72);
+  --v-ink:   #FFFFFF;
+  --v-ink-2: rgba(255,255,255,.66);
+  --v-ink-3: rgba(255,255,255,.5);
+  --v-line:   rgba(255,255,255,.12);
+  --v-line-2: rgba(255,255,255,.16);
+  --v-accent:      #8ECDF8;
+  --v-accent-2:    #6495ED;
+  --v-accent-soft: rgba(100,149,237,.16);
+  --v-green-soft:  rgba(34,197,94,.16);
   --v-shadow-sm: 0 1px 2px rgba(0,0,0,.4);
   --v-shadow:    0 1px 2px rgba(0,0,0,.4), 0 12px 34px rgba(0,0,0,.5);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --v-bg:#0C0F0D; --v-surface:#121612; --v-surface-2:#171C18; --v-sidebar:#101410;
-    --v-topbar:rgba(16,19,17,.62); --v-ink:#EAF1EC; --v-ink-2:#A6B2AA; --v-ink-3:#74817A;
-    --v-line:#232A25; --v-line-2:#2E362F; --v-accent:#1D9E75; --v-accent-2:#14B37F;
-    --v-accent-soft:#123028; --v-green-soft:#123028;
+    --v-bg:#0A0F1F; --v-surface:#0C1330; --v-surface-2:#111A3A; --v-sidebar:#0A0F1F;
+    --v-topbar:rgba(10,15,31,.72); --v-ink:#FFFFFF; --v-ink-2:rgba(255,255,255,.66); --v-ink-3:rgba(255,255,255,.5);
+    --v-line:rgba(255,255,255,.12); --v-line-2:rgba(255,255,255,.16); --v-accent:#8ECDF8; --v-accent-2:#6495ED;
+    --v-accent-soft:rgba(100,149,237,.16); --v-green-soft:rgba(34,197,94,.16);
   }
 }
 
@@ -119,11 +121,11 @@
 .v-neu {
   background: var(--v-surface);
   border: 1px solid var(--v-line-2);
-  box-shadow: 4px 4px 10px rgba(4,52,44,.07), -4px -4px 10px rgba(255,255,255,.9);
+  box-shadow: 4px 4px 10px rgba(51,78,172,.07), -4px -4px 10px rgba(255,255,255,.9);
   transition: box-shadow .18s var(--v-ease), border-color .18s;
 }
 .v-neu:active, .v-neu[data-on="true"] {
-  box-shadow: inset 3px 3px 7px rgba(4,52,44,.10), inset -3px -3px 7px rgba(255,255,255,.85);
+  box-shadow: inset 3px 3px 7px rgba(51,78,172,.10), inset -3px -3px 7px rgba(255,255,255,.85);
   border-color: var(--v-accent);
 }
 .v-gold {                 /* the Verified badge — precious metal */

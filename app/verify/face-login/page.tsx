@@ -126,7 +126,7 @@ function FaceLoginInner() {
             <div style={S.statusBox}>
               <div style={S.statusText}>{status}</div>
               <div style={S.barWrap}>
-                <div style={S.barTrack}><div style={{...S.barFill,width:`${livenessScore*100}%`,background:livenessScore>0.7?"#059669":livenessScore>0.4?"#B45309":"#0F6E56"}}/></div>
+                <div style={S.barTrack}><div style={{...S.barFill,width:`${livenessScore*100}%`,background:livenessScore>0.7?"#059669":livenessScore>0.4?"#B45309":"#6495ED"}}/></div>
                 <span style={{fontSize:12,color:"#9ca3af"}}>{Math.round(livenessScore*100)}%</span>
               </div>
               <div style={{fontSize:12,color:"#9ca3af"}}>Blinks: {blinkCount}</div>
@@ -173,7 +173,7 @@ function FaceLoginInner() {
 }
 
 const S: Record<string,any> = {
-  page:{minHeight:"100vh",background:"#04342C",display:"flex",alignItems:"center",justifyContent:"center",padding:"2rem"},
+  page:{minHeight:"100vh",background:"#0B1126",display:"flex",alignItems:"center",justifyContent:"center",padding:"2rem"},
   card:{background:"#fff",borderRadius:16,padding:"2rem",width:"100%",maxWidth:480},
   title:{fontSize:20,fontWeight:600,color:"#0A0A0F",marginBottom:6},
   sub:{fontSize:13,color:"#7B7B8F",marginBottom:"1.25rem",lineHeight:1.6},
@@ -190,7 +190,7 @@ const S: Record<string,any> = {
   doneTitle:{fontSize:18,fontWeight:600,color:"#0A0A0F",margin:"12px 0 8px"},
   failBox:{textAlign:"center" as const,padding:"1rem 0",display:"flex",flexDirection:"column" as const,gap:10,alignItems:"center"},
   uncertainBox:{textAlign:"center" as const,padding:"1rem 0"},
-  primaryBtn:{width:"100%",background:"#0F6E56",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:500,cursor:"pointer",marginBottom:8},
+  primaryBtn:{width:"100%",background:"#6495ED",color:"#fff",border:"none",borderRadius:9,padding:"11px",fontSize:14,fontWeight:500,cursor:"pointer",marginBottom:8},
   secondaryBtn:{width:"100%",background:"none",border:"0.5px solid rgba(0,0,0,.13)",color:"#3D3D4E",borderRadius:9,padding:"10px",fontSize:13,cursor:"pointer",marginBottom:6},
   cancelBtn:{width:"100%",background:"none",border:"none",color:"#9ca3af",fontSize:13,cursor:"pointer",marginTop:4},
   textarea:{width:"100%",border:"0.5px solid rgba(0,0,0,.12)",borderRadius:8,padding:"8px",fontSize:13,fontFamily:"inherit",outline:"none",marginBottom:10,resize:"vertical" as const},

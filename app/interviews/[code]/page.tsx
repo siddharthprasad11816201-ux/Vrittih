@@ -474,7 +474,7 @@ export default function InterviewRoom() {
 
 const CSS = `
 .mRoot{--bg:#0B0F14;--surface:#141A21;--surface2:#1B222B;--line:rgba(255,255,255,.09);
- --ink:#E8EDF2;--ink2:#93A1B0;--ink3:#64717F;--g:#12B76A;--brand:#0D7A5F;--danger:#F04438;--amber:#F79009;
+ --ink:#E8EDF2;--ink2:#93A1B0;--ink3:#64717F;--g:#12B76A;--brand:#6495ED;--danger:#F04438;--amber:#F79009;
  --e:cubic-bezier(.22,1,.36,1);
  position:fixed;inset:0;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;
  font-family:var(--font-inter),Inter,-apple-system,"Segoe UI",Roboto,sans-serif;-webkit-font-smoothing:antialiased;overflow:hidden}
