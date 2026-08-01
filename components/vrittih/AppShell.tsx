@@ -178,6 +178,8 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   return (
     <div style={S.root}>
       <style>{ksCss}</style>
+      <div style={S.orb1} aria-hidden="true" />
+      <div style={S.orb2} aria-hidden="true" />
 
       <header style={S.topbar}>
         {isMobile && <button onClick={() => setDrawerOpen(true)} style={S.iconBtnPlain} aria-label="Open menu"><IconMenu size={20} /></button>}
@@ -267,12 +269,22 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 }
 
 const ksCss = `
+body{ overflow-x:clip; }
 .ks-navitem:hover { background:#F1F5F9 !important; }
-@media (prefers-reduced-motion: reduce){ .ks-pill,.ks-drawer{ transition:none !important; } }
+@keyframes vgfloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6px,-20px) scale(1.06)}}
+@media (prefers-reduced-motion: reduce){
+  .ks-pill,.ks-drawer{ transition:none !important; }
+  [style*="vgfloat"]{ animation:none !important; }
+}
 `
 
 const S: Record<string, any> = {
-  root: { minHeight: "100vh", background: "#F7F9FC", fontFamily: "var(--font-sans)", color: "#1F2937" },
+  // "Never flat": content sits on a mesh-gradient environment (IMPLEMENTATION.md §5, light recipe).
+  root: { position: "relative", minHeight: "100vh", color: "#1F2937", fontFamily: "var(--font-sans)",
+    background: "radial-gradient(760px 420px at 8% -8%, rgba(142,205,248,.30), transparent 60%), radial-gradient(620px 440px at 96% 4%, rgba(100,149,237,.22), transparent 58%), radial-gradient(720px 540px at 62% 120%, rgba(51,78,172,.14), transparent 62%), #F4F7FE",
+    backgroundAttachment: "fixed" },
+  orb1: { position: "fixed", top: -90, left: -70, width: 340, height: 340, borderRadius: "50%", filter: "blur(60px)", opacity: .16, background: "radial-gradient(circle,#6495ED,transparent 70%)", animation: "vgfloat 15s cubic-bezier(.4,0,.2,1) infinite", zIndex: 0, pointerEvents: "none" },
+  orb2: { position: "fixed", bottom: -110, right: -50, width: 320, height: 320, borderRadius: "50%", filter: "blur(60px)", opacity: .15, background: "radial-gradient(circle,#8ECDF8,transparent 70%)", animation: "vgfloat 18s cubic-bezier(.4,0,.2,1) infinite reverse", zIndex: 0, pointerEvents: "none" },
   topbar: { position: "sticky", top: 0, zIndex: 40, height: 72, display: "flex", alignItems: "center", gap: 16, padding: "0 24px", background: "rgba(255,255,255,.82)", backdropFilter: "blur(14px)", WebkitBackdropFilter: "blur(14px)", borderBottom: "1px solid #ECEFF3" },
   brand: { display: "flex", alignItems: "center", gap: 11, textDecoration: "none", flex: "none" },
   brandName: { font: "600 18px/1 var(--font-sans)", color: "#1F2937", letterSpacing: "-.02em" },
@@ -287,7 +299,7 @@ const S: Record<string, any> = {
   pName: { display: "block", font: "600 13.5px var(--font-sans)", color: "#1F2937" },
   pRole: { display: "block", font: "400 11.5px var(--font-sans)", color: "#94A3B8" },
 
-  body: { display: "flex", alignItems: "stretch", minHeight: "calc(100vh - 72px)" },
+  body: { position: "relative", zIndex: 1, display: "flex", alignItems: "stretch", minHeight: "calc(100vh - 72px)" },
   sidebar: { width: 264, flex: "none", background: "#fff", borderRight: "1px solid #ECEFF3", display: "flex", flexDirection: "column", padding: "16px 14px", position: "sticky", top: 72, height: "calc(100vh - 72px)", overflowY: "auto" },
   secLabel: { font: "600 11px var(--font-sans)", letterSpacing: ".07em", color: "#94A3B8", padding: "16px 12px 6px" },
   item: { position: "relative", display: "flex", alignItems: "center", gap: 12, height: 42, padding: "0 12px", borderRadius: 10, color: "#475569", font: "500 14px var(--font-sans)", textDecoration: "none", marginBottom: 2 },
