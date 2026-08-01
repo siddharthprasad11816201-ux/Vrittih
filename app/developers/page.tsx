@@ -63,6 +63,9 @@ const expected = "sha256=" + crypto.createHmac("sha256", secret).update(rawBody)
 if (expected !== req.headers["x-vrittih-signature"]) throw new Error("bad signature")`}</pre>
         <p style={S.p}>Failed deliveries retry with exponential backoff. <b>GET</b> <code style={S.inline}>/api/v1/webhooks</code> lists your subscriptions with their last delivery status; <b>DELETE</b> with <code style={S.inline}>{"{ id }"}</code> removes one.</p>
 
+        <h2 style={S.h2}>HRMS data</h2>
+        <p style={S.p}><b>GET</b> <code style={S.inline}>/api/v1/employees</code> — your HR roster (code, name, department, designation, status, join date). Filter with <code style={S.inline}>status</code>. <b>GET</b> <code style={S.inline}>/api/v1/payroll</code> — payroll runs with gross/deductions/net totals and headcount, for reconciliation in your finance tools (filter <code style={S.inline}>year</code>, <code style={S.inline}>status</code>). Both are scoped to your company and read-only via the API; runs are computed and approved in your Vrittih HRMS.</p>
+
         <h2 style={S.h2}>Fields</h2>
         <table style={S.table}><tbody>
           {[["title", "required — the role title"], ["description", "full job description"], ["company", "defaults to your company name"], ["industry", "e.g. Technology, Finance, Healthcare"], ["location", "city, country, or \"Remote\""], ["type", "FULLTIME · PARTTIME · INTERNSHIP · CONTRACT · FREELANCE"], ["salary", "free text, e.g. \"120,000 CHF\""], ["remote", "true / false"], ["active", "true (default) / false to unpublish"]].map(([k, v]) => (
