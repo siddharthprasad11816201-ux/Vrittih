@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 import { generateDkimKeyPair, dkimDnsRecord } from "@/lib/dkim"
 
 export const dynamic = "force-dynamic"
@@ -28,6 +29,7 @@ function dnsRecords(domain: string, selector: string, verifyToken: string, dnsPu
 }
 
 export async function GET(req: NextRequest) {
+  const gate = await featureGate(req, "mail"); if (gate instanceof NextResponse) return gate
   const auth = requireEmployer(req)
   if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const domains = await prisma.emailDomain.findMany({
@@ -44,6 +46,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const gate = await featureGate(req, "mail"); if (gate instanceof NextResponse) return gate
   const auth = requireEmployer(req)
   if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const { domain } = await req.json()
@@ -70,6 +73,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const gate = await featureGate(req, "mail"); if (gate instanceof NextResponse) return gate
   const auth = requireEmployer(req)
   if ("error" in auth) return NextResponse.json({ error: auth.error }, { status: auth.status })
   const { id } = await req.json()

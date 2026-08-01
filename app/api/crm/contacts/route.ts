@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { ci } from "@/lib/db"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 import { ensureWorkspace, canWrite, logActivity } from "@/lib/workspace"
 import { track } from "@/lib/analytics"
 import { z } from "zod"
@@ -35,6 +36,7 @@ const createSchema = z.object({
 })
 
 export async function GET(req: NextRequest) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const payload = auth(req)
   if (!payload) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   const { workspaceId } = await ensureWorkspace(payload.userId)
@@ -80,6 +82,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const payload = auth(req)
   if (!payload) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   const { workspaceId, role } = await ensureWorkspace(payload.userId)

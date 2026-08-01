@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 
 export async function POST(req: NextRequest) {
+  const gate = await featureGate(req, "mail"); if (gate instanceof NextResponse) return gate
   try {
     const token = req.cookies.get("er_token")?.value
     if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })

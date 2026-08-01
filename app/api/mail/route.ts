@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { ci } from "@/lib/db"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 
 export async function GET(req: NextRequest) {
+  const gate = await featureGate(req, "mail"); if (gate instanceof NextResponse) return gate
   try {
     const token = req.cookies.get("er_token")?.value
     if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
@@ -35,6 +37,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  const gate = await featureGate(req, "mail"); if (gate instanceof NextResponse) return gate
   try {
     const token = req.cookies.get("er_token")?.value
     if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })

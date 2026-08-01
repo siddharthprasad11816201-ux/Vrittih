@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 import { ensureWorkspace, canWrite, logActivity } from "@/lib/workspace"
 import { z } from "zod"
 
@@ -20,6 +21,7 @@ async function ownedContact(req: NextRequest, id: string) {
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const r = await ownedContact(req, params.id)
   if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status })
 
@@ -54,6 +56,7 @@ const patchSchema = z.object({
 })
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const r = await ownedContact(req, params.id)
   if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status })
   if (!canWrite(r.ctx.role)) return NextResponse.json({ error: "Viewers cannot edit contacts" }, { status: 403 })
@@ -77,6 +80,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const r = await ownedContact(req, params.id)
   if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status })
   if (!canWrite(r.ctx.role)) return NextResponse.json({ error: "Viewers cannot delete contacts" }, { status: 403 })

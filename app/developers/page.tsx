@@ -39,6 +39,21 @@ export default function DevelopersPage() {
         <h2 style={S.h2}>List your jobs</h2>
         <p style={S.p}><b>GET</b> <code style={S.inline}>/api/v1/jobs</code> — returns your company's postings with live applicant counts.</p>
 
+        <h2 style={S.h2}>Read applicants back</h2>
+        <p style={S.p}><b>GET</b> <code style={S.inline}>/api/v1/applications</code> — pull candidates into your own ATS/HRMS. Each applicant is the snapshot they submitted, plus screening answers, documents and the status timeline. Filter with <code style={S.inline}>jobId</code>, <code style={S.inline}>status</code>, <code style={S.inline}>since</code> (ISO); page with <code style={S.inline}>limit</code> (max 200) and <code style={S.inline}>cursor</code>.</p>
+        <pre style={S.code}>{`curl "https://vrittih.online/api/v1/applications?status=APPLIED&limit=50" \\
+  -H "Authorization: Bearer vk_live_…"
+
+{ "count": 1, "nextCursor": null,
+  "applications": [{
+    "id": "…", "jobId": "…", "jobTitle": "Backend Engineer",
+    "status": "APPLIED", "appliedAt": "2026-…",
+    "applicant": { "name": "Jane Candidate", "email": "…",
+      "experience": [], "education": [], "skills": [] },
+    "answers": [], "documents": [],
+    "timeline": [{ "status": "APPLIED", "note": "Application submitted", "at": "2026-…" }]
+  }] }`}</pre>
+
         <h2 style={S.h2}>Fields</h2>
         <table style={S.table}><tbody>
           {[["title", "required — the role title"], ["description", "full job description"], ["company", "defaults to your company name"], ["industry", "e.g. Technology, Finance, Healthcare"], ["location", "city, country, or \"Remote\""], ["type", "FULLTIME · PARTTIME · INTERNSHIP · CONTRACT · FREELANCE"], ["salary", "free text, e.g. \"120,000 CHF\""], ["remote", "true / false"], ["active", "true (default) / false to unpublish"]].map(([k, v]) => (

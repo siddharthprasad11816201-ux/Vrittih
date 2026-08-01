@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 import { ensureWorkspace, canWrite } from "@/lib/workspace"
 
 export const dynamic = "force-dynamic"
@@ -16,6 +17,7 @@ async function owned(req: NextRequest, id: string) {
 }
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const r = await owned(req, params.id)
   if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status })
   const submissions = await prisma.formSubmission.findMany({
@@ -29,6 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const r = await owned(req, params.id)
   if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status })
   if (!canWrite(r.ctx.role)) return NextResponse.json({ error: "Viewers cannot edit forms" }, { status: 403 })
@@ -45,6 +48,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 }
 
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const r = await owned(req, params.id)
   if ("error" in r) return NextResponse.json({ error: r.error }, { status: r.status })
   if (!canWrite(r.ctx.role)) return NextResponse.json({ error: "Viewers cannot delete forms" }, { status: 403 })

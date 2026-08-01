@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { featureGate } from "@/lib/guard"
 import { ensureWorkspace, canWrite } from "@/lib/workspace"
 
 export const dynamic = "force-dynamic"
@@ -13,6 +14,7 @@ function slugify(name: string) {
 }
 
 export async function GET(req: NextRequest) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const payload = auth(req)
   if (!payload) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   const { workspaceId } = await ensureWorkspace(payload.userId)
@@ -25,6 +27,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
+  const gate = await featureGate(req, "crm"); if (gate instanceof NextResponse) return gate
   const payload = auth(req)
   if (!payload) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   const { workspaceId, role } = await ensureWorkspace(payload.userId)
