@@ -4,6 +4,7 @@ import { featureGate } from "@/lib/guard"
 import { slugify } from "@/lib/company"
 import { safeExternalUrl } from "@/lib/url"
 import { validHex } from "@/lib/brand"
+import { normalizeDomain, hostMatchesDomain } from "@/lib/partnerVerify"
 
 export const dynamic = "force-dynamic"
 
@@ -33,7 +34,26 @@ export async function PUT(req: NextRequest) {
   if (clash) return NextResponse.json({ error: `The link /c/${slug} is taken — choose another slug.` }, { status: 409 })
 
   const color = validHex(body.color) || "#0F6E56"
-  const data = {
+
+  // Optional custom domain — must be a domain the company has verified (exact or
+  // subdomain of one), and not already claimed by another brand.
+  let customDomain: string | null | undefined = undefined
+  if (body.customDomain !== undefined) {
+    if (!body.customDomain) customDomain = null
+    else {
+      const dom = normalizeDomain(body.customDomain)
+      if (!dom) return NextResponse.json({ error: "Invalid custom domain." }, { status: 400 })
+      const verified = await prisma.partnerDomain.findMany({ where: { employerId: g.user.id, verified: true }, select: { domain: true } })
+      if (!verified.some((v) => hostMatchesDomain(dom, v.domain))) {
+        return NextResponse.json({ error: `Verify ${dom} (or its parent domain) under Domains before using it as your custom domain.` }, { status: 400 })
+      }
+      const taken = await prisma.partnerBrand.findFirst({ where: { customDomain: dom, employerId: { not: g.user.id } }, select: { id: true } })
+      if (taken) return NextResponse.json({ error: `${dom} is already in use.` }, { status: 409 })
+      customDomain = dom
+    }
+  }
+
+  const data: any = {
     name: name.slice(0, 120),
     slug,
     tagline: body.tagline ? String(body.tagline).slice(0, 200) : null,
@@ -42,6 +62,7 @@ export async function PUT(req: NextRequest) {
     color,
     active: body.active !== false,
   }
+  if (customDomain !== undefined) data.customDomain = customDomain
   const brand = await prisma.partnerBrand.upsert({
     where: { employerId: g.user.id },
     update: data,

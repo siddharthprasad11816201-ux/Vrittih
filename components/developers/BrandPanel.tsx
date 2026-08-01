@@ -12,6 +12,7 @@ export default function BrandPanel() {
   const [about, setAbout] = useState("")
   const [logoUrl, setLogoUrl] = useState("")
   const [color, setColor] = useState("#0F6E56")
+  const [customDomain, setCustomDomain] = useState("")
   const [saved, setSaved] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState("")
@@ -26,6 +27,7 @@ export default function BrandPanel() {
       if (d.brand) {
         setName(d.brand.name || ""); setSlug(d.brand.slug || ""); setTagline(d.brand.tagline || "")
         setAbout(d.brand.about || ""); setLogoUrl(d.brand.logoUrl || ""); setColor(d.brand.color || "#0F6E56")
+        setCustomDomain(d.brand.customDomain || "")
         setSaved(`/c/${d.brand.slug}`)
       } else { setName(d.suggestedName || ""); setSlug(d.suggestedSlug || "") }
     })()
@@ -35,7 +37,7 @@ export default function BrandPanel() {
     if (!name.trim()) { setErr("Company name is required"); return }
     setBusy(true); setErr("")
     try {
-      const r = await fetch("/api/brand", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, slug, tagline, about, logoUrl, color }) })
+      const r = await fetch("/api/brand", { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ name, slug, tagline, about, logoUrl, color, customDomain }) })
       const d = await r.json()
       if (!r.ok) { setErr(d.error || "Could not save"); return }
       setSlug(d.brand.slug); setSaved(d.url)
@@ -60,6 +62,10 @@ export default function BrandPanel() {
         </label>
         <label style={{ ...S.field, gridColumn: "1 / -1" }}><span style={S.lab}>Logo URL (optional)</span><input value={logoUrl} onChange={(e) => setLogoUrl(e.target.value)} style={S.input} placeholder="https://yourcompany.com/logo.png" /></label>
         <label style={{ ...S.field, gridColumn: "1 / -1" }}><span style={S.lab}>About (optional)</span><textarea value={about} onChange={(e) => setAbout(e.target.value)} style={{ ...S.input, minHeight: 70, resize: "vertical" }} maxLength={2000} /></label>
+        <label style={{ ...S.field, gridColumn: "1 / -1" }}><span style={S.lab}>Custom domain (optional)</span>
+          <input value={customDomain} onChange={(e) => setCustomDomain(e.target.value)} style={S.input} placeholder="careers.yourcompany.com" />
+          <span style={S.hint}>Must be a verified domain (see Domains above). Point its CNAME to Vrittih and add it to the Vercel project — then your careers site loads on your own domain.</span>
+        </label>
       </div>
       {err && <div style={S.err}>{err}</div>}
       <div style={S.actions}>
@@ -77,6 +83,7 @@ const S: Record<string, any> = {
   grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
   field: { display: "flex", flexDirection: "column", gap: 5 },
   lab: { fontSize: 12, color: "#7B857E", fontWeight: 600 },
+  hint: { fontSize: 11.5, color: "#9AA49E", lineHeight: 1.5, marginTop: 3 },
   input: { border: "1px solid #D9D3C4", borderRadius: 8, padding: "9px 12px", fontSize: 13.5, fontFamily: "var(--font-sans)", color: "#14201B", background: "#fff", width: "100%", boxSizing: "border-box" },
   slugRow: { display: "flex", alignItems: "stretch" },
   slugPre: { display: "flex", alignItems: "center", padding: "0 10px", background: "#F3F0E7", border: "1px solid #D9D3C4", borderRight: "none", borderRadius: "8px 0 0 8px", fontSize: 13, color: "#6E7A73", fontFamily: "var(--font-mono)" },
