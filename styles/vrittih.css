@@ -133,8 +133,10 @@
   border: 1px solid var(--gold);
 }
 
-/* ---- accessible focus + verbs ---- */
-.v-app :focus-visible { outline: 2px solid var(--brand-400); outline-offset: 2px; border-radius: 4px; }
+/* ---- accessible focus (Identity System §6/§9) ---- */
+.v-app :focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(100,149,237,.35); border-radius: 6px; }
+/* Form-control focus ring, app-wide */
+input:focus, textarea:focus, select:focus { outline: none; border-color: #6495ED; box-shadow: 0 0 0 3px rgba(100,149,237,.25); }
 
 /* ---- motion keyframes ---- */
 @keyframes v-rise { from { opacity:0; transform: translateY(12px); } to { opacity:1; transform:none; } }
