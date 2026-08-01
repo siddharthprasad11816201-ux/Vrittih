@@ -3,6 +3,8 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
+import EmptyState from "@/components/vrittih/EmptyState"
+import IllustrationSlot from "@/components/vrittih/IllustrationSlot"
 import {
   IconBriefcase, IconFileText, IconActivity, IconTarget, IconAward, IconCheckCircle,
   IconUsers, IconVideo, IconNetwork, IconMessage, IconSettings, IconClipboard,
@@ -276,12 +278,13 @@ export default function Dashboard() {
                   <Link href={isEmployer?"/dashboard/recruiter":"/dashboard/applications"} style={S.link}>View all <IconArrowRight size={13} /></Link>
                 </div>
                 {applications.length === 0 ? (
-                  <div style={S.empty}>
-                    <span style={S.emptyIcon}><IconFileText size={22} /></span>
-                    <p style={S.emptyTitle}>{isEmployer ? "No applicants yet" : "No applications yet"}</p>
-                    <p style={S.emptySub}>{isEmployer ? "Post a job to start receiving candidates." : "Apply to a role and track it here in real time."}</p>
-                    <Link href={isEmployer ? "/dashboard/post-job" : "/jobs"} style={S.emptyBtn}>{isEmployer ? "Post a job" : "Browse jobs"}</Link>
-                  </div>
+                  <EmptyState
+                    title={isEmployer ? "No applicants yet" : "No applications yet"}
+                    reason={isEmployer ? "Post a job and candidates will appear here, ranked by fit." : "Apply to a role and track it here in real time — from first click to offer."}
+                    ctaLabel={isEmployer ? "Post a job" : "Browse jobs"}
+                    ctaHref={isEmployer ? "/dashboard/post-job" : "/jobs"}
+                    aiTip={isEmployer ? "Roles with a clear salary and 5–8 must-have skills get 3× more qualified applicants." : "Complete your skills and location — matching recalculates instantly and surfaces roles that fit."}
+                  />
                 ) : (
                   <div>
                     {applications.slice(0,6).map(a => {
@@ -321,7 +324,9 @@ export default function Dashboard() {
               )}
             </div>
 
-            {/* Right column: quick access */}
+            {/* Right column */}
+            <div style={S.rightCol}>
+            <IllustrationSlot ratio="16 / 10" />
             <aside style={S.card}>
               <div style={S.cardHead}><h2 style={S.cardTitle}>Quick access</h2></div>
               <div style={S.quick}>
@@ -351,6 +356,7 @@ export default function Dashboard() {
                 ))}
               </div>
             </aside>
+            </div>
           </div>
         </div>
       </div>
@@ -436,6 +442,7 @@ const S: Record<string,any> = {
 
   grid:{ display:"grid", gridTemplateColumns:"1fr 340px", gap:"1.5rem", alignItems:"start" },
   col:{ display:"flex", flexDirection:"column" as const, gap:"1.5rem" },
+  rightCol:{ display:"flex", flexDirection:"column" as const, gap:"1.5rem" },
 
   onboard:{ background:"linear-gradient(135deg,#FCFBF6,#EAF1FE)", border:"1px solid #CFE9DF", borderRadius:16, padding:"1.5rem" },
   onboardHead:{ display:"flex", alignItems:"center", gap:18, marginBottom:18 },

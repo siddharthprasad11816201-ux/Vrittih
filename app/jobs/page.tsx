@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import styles from "@/styles/jobs.module.css"
 import AppShell from "@/components/vrittih/AppShell"
+import EmptyState from "@/components/vrittih/EmptyState"
 import { IconBanknote, IconGlobe, IconFolder, IconUsers, IconTarget, IconBookmark } from "@/components/ui/Icons"
 
 const INDUSTRIES = ["All","Technology","Finance","Healthcare","Education","Manufacturing","Retail","Legal","Government","Logistics","Energy","Agriculture","Media","Other"]
@@ -127,10 +128,13 @@ function JobsInner() {
           {loading ? (
             <div className={styles.loadingState}>Loading jobs...</div>
           ) : jobs.length === 0 ? (
-            <div className={styles.emptyState}>
-              <p>No jobs found.</p>
-              <p style={{fontSize:"13px",color:"#9ca3af",marginTop:"4px"}}>Try adjusting your filters.</p>
-            </div>
+            <EmptyState
+              title="No jobs match your filters"
+              reason="Nothing here right now. Widen your filters or clear the search to see more roles."
+              ctaLabel={q || industry !== "All" || type !== "All" || remote ? "Clear filters" : "Browse all jobs"}
+              onCta={() => { setQ(""); setIndustry("All"); setType("All"); setRemote(false) }}
+              aiTip="Fewer, broader filters surface more AI-matched roles — then sort by match to focus."
+            />
           ) : (
             <div className={styles.list}>
               {jobs.map((job: any) => (
