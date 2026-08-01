@@ -34,7 +34,7 @@ function ProgressBar({ status }: { status: string }) {
           const done = !rejected && i <= idx
           return (
             <div key={s} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 4 }}>
-              <div style={{ width: "100%", height: 4, background: done ? "#6495ED" : "#ECEBF1", borderRadius: i === 0 ? "4px 0 0 4px" : i === STATUSES.length - 1 ? "0 4px 4px 0" : 0 }} />
+              <div style={{ width: "100%", height: 4, background: done ? "#6495ED" : "#E5E7EB", borderRadius: i === 0 ? "4px 0 0 4px" : i === STATUSES.length - 1 ? "0 4px 4px 0" : 0 }} />
               <div style={{ width: 8, height: 8, borderRadius: "50%", background: done ? "#6495ED" : "#DCDAE6", border: s === status ? "2px solid #334EAC" : "none" }} />
               <span style={{ fontSize: 9, color: done ? "#6495ED" : "#A5A1AE", textAlign: "center", lineHeight: 1.2 }}>{label(s)}</span>
             </div>
@@ -58,7 +58,7 @@ export default function ApplicationsPage() {
   return (
     <AppShell title="Applications">
       <div style={{ maxWidth: 860, margin: "0 auto", padding: "2rem" }}>
-        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#16151D", letterSpacing: "-.02em", marginBottom: 6 }}>My applications</h1>
+        <h1 style={{ fontSize: 24, fontWeight: 700, color: "#1F2937", letterSpacing: "-.02em", marginBottom: 6 }}>My applications</h1>
         <p style={{ fontSize: 13.5, color: "#8A8595", marginBottom: 22 }}>{apps === null ? "Loading…" : `${apps.length} application${apps.length !== 1 ? "s" : ""}`}</p>
 
         {apps === null ? (
@@ -66,7 +66,7 @@ export default function ApplicationsPage() {
         ) : apps.length === 0 ? (
           <div style={{ ...card(), textAlign: "center", padding: "3.5rem 2rem" }}>
             <span style={{ display: "grid", placeItems: "center", width: 52, height: 52, borderRadius: 14, background: "#EAF1FE", color: "#6495ED", margin: "0 auto 12px" }}><IconFileText size={22} /></span>
-            <p style={{ fontSize: 15, fontWeight: 650, color: "#16151D" }}>No applications yet</p>
+            <p style={{ fontSize: 15, fontWeight: 650, color: "#1F2937" }}>No applications yet</p>
             <p style={{ fontSize: 13, color: "#8A8595", marginTop: 4 }}>Apply to a role and track every stage here in real time.</p>
             <Link href="/jobs" style={{ display: "inline-block", marginTop: 14, background: "#6495ED", color: "#fff", padding: "9px 18px", borderRadius: 9, fontSize: 13, fontWeight: 600, textDecoration: "none" }}>Browse jobs</Link>
           </div>
@@ -79,7 +79,7 @@ export default function ApplicationsPage() {
                 <div key={app.id} style={card()}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
                     <div>
-                      <Link href={`/jobs/${app.job?.id}`} style={{ fontSize: 16, fontWeight: 650, color: "#16151D", textDecoration: "none" }}>{app.job?.title}</Link>
+                      <Link href={`/jobs/${app.job?.id}`} style={{ fontSize: 16, fontWeight: 650, color: "#1F2937", textDecoration: "none" }}>{app.job?.title}</Link>
                       <div style={{ fontSize: 13, color: "#8A8595", marginTop: 2 }}>{[app.job?.company, app.job?.location].filter(Boolean).join(" · ")}</div>
                     </div>
                     <StatusPill status={app.status} />
@@ -94,14 +94,14 @@ export default function ApplicationsPage() {
                     </div>
                   )}
 
-                  <div style={{ marginTop: "1rem", borderTop: "1px solid #F3F2F7", paddingTop: "1rem" }}>
+                  <div style={{ marginTop: "1rem", borderTop: "1px solid #F1F5F9", paddingTop: "1rem" }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: "#8A8595", marginBottom: 10, textTransform: "uppercase", letterSpacing: ".05em" }}>Timeline</div>
                     <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                       {timeline.map((ev: any, i: number) => (
                         <div key={i} style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
                           <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
                             <div style={{ width: 8, height: 8, borderRadius: "50%", background: "#6495ED", marginTop: 5, flexShrink: 0 }} />
-                            {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, minHeight: 22, background: "#ECEBF1" }} />}
+                            {i < timeline.length - 1 && <div style={{ width: 1, flex: 1, minHeight: 22, background: "#E5E7EB" }} />}
                           </div>
                           <div style={{ flex: 1 }}>
                             <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
@@ -125,5 +125,5 @@ export default function ApplicationsPage() {
 }
 
 function card(): React.CSSProperties {
-  return { background: "#fff", border: "1px solid #ECEBF1", borderRadius: 14, padding: "1.5rem", color: "#56535F", fontSize: 14 }
+  return { background: "#fff", border: "1px solid #E5E7EB", borderRadius: 14, padding: "1.5rem", color: "#56535F", fontSize: 14 }
 }

@@ -137,7 +137,7 @@ export default function Dashboard() {
     <AppShell title="Overview">
       <style dangerouslySetInnerHTML={{ __html: `
         .dtile{transition:box-shadow .18s cubic-bezier(.22,1,.36,1),transform .18s cubic-bezier(.22,1,.36,1),border-color .18s;}
-        .dtile:hover{box-shadow:0 8px 26px rgba(23,18,45,.10);transform:translateY(-3px);border-color:#E0DEEC;}
+        .dtile:hover{box-shadow:0 8px 26px rgba(23,18,45,.10);transform:translateY(-3px);border-color:#E5E7EB;}
         .dstep{transition:border-color .14s,transform .14s,box-shadow .14s;}
         .dstep:hover{border-color:#6495ED !important;box-shadow:0 4px 14px rgba(15,110,86,.10);}
         .dquick{transition:background .14s;}
@@ -157,7 +157,12 @@ export default function Dashboard() {
 
           {/* Greeting */}
           <header style={S.head} className="dHead">
-            <div>
+            <div style={S.heroOrb} />
+            <div style={{ position: "relative" }}>
+              <Link href={isEmployer ? "/dashboard/recruiter" : "/jobs/match"} style={S.aiBadge}>
+                <span style={S.aiDot} className="v-live" />
+                {isEmployer ? "AI-ranked candidates ready" : "AI-matched roles ready for you"}
+              </Link>
               <div style={S.kicker}>{today}</div>
               <h1 style={S.greeting}>Good {partOfDay}, <em style={S.greetingName}>{first}</em></h1>
               <p style={S.greetingSub}>{isEmployer ? "Here's what's happening with your hiring." : "Here's where your job search stands today."}</p>
@@ -191,6 +196,7 @@ export default function Dashboard() {
               const delta = last - prev
               return (
                 <Link key={t.label} href={t.href || "#"} className="dtile" style={S.tile}>
+                  <span style={{ ...S.tileBar, background: t.color }} />
                   <div style={S.tileTop}>
                     <span style={{...S.tileIcon, background:`${t.color}14`, color:t.color}}>{t.icon}</span>
                     <span style={S.tileLabel}>{t.label}</span>
@@ -227,7 +233,7 @@ export default function Dashboard() {
                           {s.done ? <IconCheck size={14} /> : s.icon}
                         </span>
                         <div style={{ flex: 1 }}>
-                          <div style={{...S.stepTitle, ...(s.done ? { color: "#9A96A5", textDecoration: "line-through" } : {})}}>{s.title}</div>
+                          <div style={{...S.stepTitle, ...(s.done ? { color: "#94A3B8", textDecoration: "line-through" } : {})}}>{s.title}</div>
                           <div style={S.stepDesc}>{s.desc}</div>
                         </div>
                         {!s.done && <IconArrowRight size={15} />}
@@ -255,7 +261,7 @@ export default function Dashboard() {
                           <div style={S.funnelTrack}>
                             <div style={{...S.funnelFill, width:`${(count/max)*100}%`, background:sc.color, opacity: count?1:0}} />
                           </div>
-                          <span style={{...S.funnelCount, color: count ? sc.color : "#C4C1CD"}}>{count}</span>
+                          <span style={{...S.funnelCount, color: count ? sc.color : "#CBD5E1"}}>{count}</span>
                         </div>
                       )
                     })}
@@ -383,27 +389,30 @@ function Ring({ pct }: { pct: number }) {
   const size = 78, sw = 8, r = (size - sw) / 2, c = 2 * Math.PI * r
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#D9EDE6" strokeWidth={sw} />
+      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E9EDF2" strokeWidth={sw} />
       <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#6495ED" strokeWidth={sw} strokeLinecap="round"
         strokeDasharray={c} strokeDashoffset={c * (1 - pct/100)} transform={`rotate(-90 ${size/2} ${size/2})`} style={{ transition: "stroke-dashoffset .6s ease" }} />
-      <text x="50%" y="50%" textAnchor="middle" dominantBaseline="central" fontSize={19} fontWeight={700} fill="#16151D" fontFamily="'Iowan Old Style', Palatino, Georgia, serif">{pct}%</text>
+      <text x="var(--font-display)">{pct}%</text>
     </svg>
   )
 }
 
-const SERIF = "'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, 'Times New Roman', serif"
+const SERIF = "var(--font-display)"
 const S: Record<string,any> = {
   page:{ background:"#F7F9FC", minHeight:"calc(100vh - 60px)", padding:"2.25rem 2rem 3rem" },
   wrap:{ maxWidth:1140, margin:"0 auto", display:"flex", flexDirection:"column" as const, gap:"1.5rem" },
-  loading:{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"60vh", fontSize:14, color:"#9A96A5" },
+  loading:{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"60vh", fontSize:14, color:"#94A3B8" },
 
-  head:{ display:"flex", justifyContent:"space-between", alignItems:"flex-end", flexWrap:"wrap" as const, gap:14 },
-  kicker:{ fontSize:12, fontWeight:600, color:"#9A96A5", textTransform:"uppercase" as const, letterSpacing:".08em", marginBottom:8 },
-  greeting:{ fontFamily:SERIF, fontSize:32, fontWeight:600, color:"#16151D", letterSpacing:"-.02em", lineHeight:1.1 },
+  head:{ position:"relative" as const, overflow:"hidden", display:"flex", justifyContent:"space-between", alignItems:"flex-end", flexWrap:"wrap" as const, gap:14, background:"linear-gradient(115deg,#E9F1FE,#EFF5FF 46%,#F8FBFF)", border:"1px solid #E7EEF8", borderRadius:22, padding:"26px 30px" },
+  heroOrb:{ position:"absolute" as const, top:-70, right:120, width:260, height:260, borderRadius:"50%", background:"radial-gradient(circle,#8ECDF8 0%,rgba(142,205,248,0) 70%)", opacity:.5, pointerEvents:"none" as const },
+  aiBadge:{ display:"inline-flex", alignItems:"center", gap:7, background:"rgba(255,255,255,.72)", border:"1px solid rgba(255,255,255,.9)", borderRadius:20, padding:"5px 12px", marginBottom:14, fontSize:12, fontWeight:600, color:"#334EAC", textDecoration:"none" },
+  aiDot:{ width:7, height:7, borderRadius:"50%", background:"#22C55E", flexShrink:0 },
+  kicker:{ fontSize:12, fontWeight:600, color:"#94A3B8", textTransform:"uppercase" as const, letterSpacing:".08em", marginBottom:8 },
+  greeting:{ fontFamily:SERIF, fontSize:32, fontWeight:600, color:"#1F2937", letterSpacing:"-.02em", lineHeight:1.1 },
   greetingName:{ fontStyle:"italic", color:"#334EAC" },
-  greetingSub:{ fontSize:15, color:"#57545F", marginTop:7 },
+  greetingSub:{ fontSize:15, color:"#475569", marginTop:7 },
   headActions:{ display:"flex", gap:10 },
-  primaryBtn:{ display:"inline-flex", alignItems:"center", gap:8, background:"#16151D", color:"#fff", padding:"12px 20px", borderRadius:10, fontSize:14, fontWeight:600, textDecoration:"none", boxShadow:"0 4px 14px rgba(20,19,29,.15)" },
+  primaryBtn:{ display:"inline-flex", alignItems:"center", gap:8, background:"#6495ED", color:"#fff", padding:"12px 20px", borderRadius:12, fontSize:14, fontWeight:600, textDecoration:"none", boxShadow:"0 12px 24px -10px rgba(100,149,237,.8)" },
 
   attn:{ background:"var(--v-surface)", border:"1px solid var(--v-line)", borderLeft:"3px solid var(--brand-500, #6495ED)", borderRadius:14, padding:"14px 16px", boxShadow:"var(--v-shadow-sm)" },
   attnHead:{ fontSize:12, fontWeight:700, textTransform:"uppercase" as const, letterSpacing:".05em", color:"var(--v-ink-3)", marginBottom:8 },
@@ -411,16 +420,17 @@ const S: Record<string,any> = {
   attnDot:{ width:9, height:9, borderRadius:"50%", flexShrink:0 },
   attnLabel:{ flex:1, fontSize:14, fontWeight:550, color:"var(--v-ink)" },
   statRow:{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14 },
-  tile:{ background:"#fff", border:"1px solid #ECEBF1", borderRadius:16, padding:"16px 18px 0", display:"flex", flexDirection:"column" as const, gap:9, boxShadow:"0 1px 2px rgba(23,18,45,.04)", overflow:"hidden", textDecoration:"none", color:"inherit" },
+  tile:{ position:"relative" as const, background:"#fff", border:"1px solid #E5E7EB", borderRadius:16, padding:"16px 18px 0 20px", display:"flex", flexDirection:"column" as const, gap:9, boxShadow:"0 1px 2px rgba(16,24,40,.04)", overflow:"hidden", textDecoration:"none", color:"inherit" },
+  tileBar:{ position:"absolute" as const, left:0, top:14, bottom:14, width:3, borderRadius:"0 3px 3px 0" },
   tileTop:{ display:"flex", alignItems:"center", gap:9 },
   tileIcon:{ width:30, height:30, borderRadius:8, display:"grid", placeItems:"center", flexShrink:0 },
-  tileLabel:{ fontSize:11.5, fontWeight:600, color:"#8E8B99", textTransform:"uppercase" as const, letterSpacing:".03em" },
+  tileLabel:{ fontSize:11.5, fontWeight:600, color:"#94A3B8", textTransform:"uppercase" as const, letterSpacing:".03em" },
   tileNumRow:{ display:"flex", alignItems:"baseline", gap:8 },
-  tileNum:{ fontFamily:SERIF, fontSize:34, fontWeight:600, color:"#16151D", letterSpacing:"-.02em", lineHeight:1, fontVariantNumeric:"tabular-nums" as const },
+  tileNum:{ fontFamily:SERIF, fontSize:34, fontWeight:600, color:"#1F2937", letterSpacing:"-.02em", lineHeight:1, fontVariantNumeric:"tabular-nums" as const },
   tileDelta:{ display:"inline-flex", alignItems:"baseline", gap:1, fontSize:12, fontWeight:700, fontVariantNumeric:"tabular-nums" as const },
   deltaUp:{ color:"#0E9F6E" },
   deltaDown:{ color:"#DC2626" },
-  deltaFlat:{ color:"#C4C1CD", fontWeight:600 },
+  deltaFlat:{ color:"#CBD5E1", fontWeight:600 },
   deltaWk:{ fontSize:10, fontWeight:600, opacity:.7 },
   tileSpark:{ margin:"6px -18px 0", height:40 },
 
@@ -429,42 +439,42 @@ const S: Record<string,any> = {
 
   onboard:{ background:"linear-gradient(135deg,#FCFBF6,#EAF1FE)", border:"1px solid #CFE9DF", borderRadius:16, padding:"1.5rem" },
   onboardHead:{ display:"flex", alignItems:"center", gap:18, marginBottom:18 },
-  onboardTitle:{ fontFamily:SERIF, fontSize:21, fontWeight:600, color:"#16151D", letterSpacing:"-.01em" },
-  onboardSub:{ fontSize:13.5, color:"#57545F", marginTop:4, maxWidth:"40ch" },
+  onboardTitle:{ fontFamily:SERIF, fontSize:21, fontWeight:600, color:"#1F2937", letterSpacing:"-.01em" },
+  onboardSub:{ fontSize:13.5, color:"#475569", marginTop:4, maxWidth:"40ch" },
   steps:{ display:"flex", flexDirection:"column" as const, gap:8 },
-  step:{ display:"flex", alignItems:"center", gap:13, background:"#fff", border:"1px solid #E3E9E2", borderRadius:11, padding:"12px 14px", textDecoration:"none", transition:"border-color .12s, transform .12s" },
+  step:{ display:"flex", alignItems:"center", gap:13, background:"#fff", border:"1px solid #E5E7EB", borderRadius:11, padding:"12px 14px", textDecoration:"none", transition:"border-color .12s, transform .12s" },
   stepCheck:{ width:32, height:32, borderRadius:9, background:"#EAF1FE", color:"#6495ED", display:"grid", placeItems:"center", flexShrink:0 },
   stepCheckDone:{ background:"#059669", color:"#fff" },
-  stepTitle:{ fontSize:14, fontWeight:600, color:"#16151D" },
-  stepDesc:{ fontSize:12.5, color:"#8E8B99", marginTop:1 },
+  stepTitle:{ fontSize:14, fontWeight:600, color:"#1F2937" },
+  stepDesc:{ fontSize:12.5, color:"#94A3B8", marginTop:1 },
 
-  card:{ background:"#fff", border:"1px solid #ECEBF1", borderRadius:16, padding:"1.35rem 1.5rem", boxShadow:"0 1px 2px rgba(23,18,45,.04)" },
+  card:{ background:"#fff", border:"1px solid #E5E7EB", borderRadius:16, padding:"1.35rem 1.5rem", boxShadow:"0 1px 2px rgba(23,18,45,.04)" },
   cardHead:{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 },
-  cardTitle:{ fontSize:16, fontWeight:650, color:"#16151D", letterSpacing:"-.01em" },
+  cardTitle:{ fontSize:16, fontWeight:650, color:"#1F2937", letterSpacing:"-.01em" },
   link:{ display:"inline-flex", alignItems:"center", gap:4, fontSize:13, color:"#334EAC", textDecoration:"none", fontWeight:600 },
 
   funnel:{ display:"flex", flexDirection:"column" as const, gap:11 },
   funnelRow:{ display:"flex", alignItems:"center", gap:12 },
-  funnelLabel:{ fontSize:12.5, color:"#57545F", width:82, flexShrink:0 },
-  funnelTrack:{ flex:1, height:9, background:"#F1F0F5", borderRadius:5, overflow:"hidden" },
+  funnelLabel:{ fontSize:12.5, color:"#475569", width:82, flexShrink:0 },
+  funnelTrack:{ flex:1, height:9, background:"#F1F5F9", borderRadius:5, overflow:"hidden" },
   funnelFill:{ height:9, borderRadius:5, transition:"width .5s ease" },
   funnelCount:{ fontSize:13, fontWeight:700, width:24, textAlign:"right" as const, fontVariantNumeric:"tabular-nums" as const },
 
   empty:{ textAlign:"center" as const, padding:"1.5rem 0 0.5rem" },
   emptyIcon:{ display:"grid", placeItems:"center", width:52, height:52, borderRadius:14, background:"#EAF1FE", color:"#6495ED", margin:"0 auto 12px" },
-  emptyTitle:{ fontSize:15, fontWeight:650, color:"#16151D" },
-  emptySub:{ fontSize:13, color:"#8E8B99", marginTop:4, maxWidth:"34ch", marginLeft:"auto", marginRight:"auto" },
-  emptyBtn:{ display:"inline-block", marginTop:14, background:"#16151D", color:"#fff", padding:"9px 18px", borderRadius:9, fontSize:13, fontWeight:600, textDecoration:"none" },
+  emptyTitle:{ fontSize:15, fontWeight:650, color:"#1F2937" },
+  emptySub:{ fontSize:13, color:"#94A3B8", marginTop:4, maxWidth:"34ch", marginLeft:"auto", marginRight:"auto" },
+  emptyBtn:{ display:"inline-block", marginTop:14, background:"#6495ED", color:"#fff", padding:"9px 18px", borderRadius:10, fontSize:13, fontWeight:600, textDecoration:"none", boxShadow:"0 12px 24px -10px rgba(100,149,237,.8)" },
 
-  appRow:{ display:"flex", alignItems:"center", gap:12, padding:"11px 0", borderTop:"1px solid #F3F2F7" },
+  appRow:{ display:"flex", alignItems:"center", gap:12, padding:"11px 0", borderTop:"1px solid #F1F5F9" },
   appDot:{ width:8, height:8, borderRadius:"50%", flexShrink:0 },
-  appTitle:{ fontSize:14, fontWeight:600, color:"#16151D", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const },
-  appSub:{ fontSize:12.5, color:"#8E8B99", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const },
+  appTitle:{ fontSize:14, fontWeight:600, color:"#1F2937", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const },
+  appSub:{ fontSize:12.5, color:"#94A3B8", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const },
   pill:{ fontSize:11.5, fontWeight:600, padding:"4px 11px", borderRadius:999, flexShrink:0 },
 
   quick:{ display:"flex", flexDirection:"column" as const, gap:6 },
-  quickRow:{ display:"flex", alignItems:"center", gap:12, padding:"11px 12px", borderRadius:11, textDecoration:"none", color:"#8E8B99", transition:"background .12s" },
+  quickRow:{ display:"flex", alignItems:"center", gap:12, padding:"11px 12px", borderRadius:11, textDecoration:"none", color:"#94A3B8", transition:"background .12s" },
   quickIcon:{ width:34, height:34, borderRadius:9, background:"#EAF1FE", color:"#334EAC", display:"grid", placeItems:"center", flexShrink:0 },
-  quickTitle:{ fontSize:13.5, fontWeight:600, color:"#16151D" },
-  quickDesc:{ fontSize:12, color:"#8E8B99", marginTop:1 },
+  quickTitle:{ fontSize:13.5, fontWeight:600, color:"#1F2937" },
+  quickDesc:{ fontSize:12, color:"#94A3B8", marginTop:1 },
 }

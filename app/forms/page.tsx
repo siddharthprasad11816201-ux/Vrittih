@@ -71,7 +71,7 @@ const S: Record<string, any> = {
   row: { display: "flex", alignItems: "center", gap: 14, background: "#fff", border: "1px solid #ECEBF0", borderRadius: 12, padding: "14px 18px", cursor: "pointer" },
   icon: { width: 40, height: 40, borderRadius: 10, background: "#EAF1FE", color: "#6495ED", display: "grid", placeItems: "center", flexShrink: 0 },
   name: { fontSize: 15, fontWeight: 600, color: "#1A1A2E" },
-  meta: { fontSize: 12.5, color: "#9A96A5", marginTop: 2, fontFamily: "monospace" },
+  meta: { fontSize: 12.5, color: "#94A3B8", marginTop: 2, fontFamily: "monospace" },
   subs: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "#6B6777" },
   status: { fontSize: 11.5, fontWeight: 600, padding: "4px 11px", borderRadius: 999 },
   live: { background: "#ECFDF5", color: "#047857" },

@@ -160,7 +160,7 @@ const S: Record<string, any> = {
   tab: { display: "inline-flex", alignItems: "center", gap: 7, background: "none", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 13.5, fontWeight: 600, color: "#8A8595", cursor: "pointer" },
   tabOn: { background: "#EAF1FE", color: "#6495ED" },
   card: { background: "#fff", border: "1px solid #ECEBF0", borderRadius: 14, padding: "1.5rem" },
-  muted: { fontSize: 13.5, color: "#9A96A5", textAlign: "center", padding: "1.5rem 0" },
+  muted: { fontSize: 13.5, color: "#94A3B8", textAlign: "center", padding: "1.5rem 0" },
   timeline: { display: "flex", flexDirection: "column", gap: 2 },
   item: { display: "flex", gap: 12, padding: "9px 0" },
   dot: { width: 9, height: 9, borderRadius: "50%", background: "#6495ED", marginTop: 5, flexShrink: 0 },

@@ -106,7 +106,7 @@ const S: Record<string, any> = {
   sub: { fontSize: 13.5, color: "#8A8595", marginTop: 3 },
   addBtn: { display: "inline-flex", alignItems: "center", gap: 7, background: "#6495ED", color: "#fff", padding: "10px 16px", borderRadius: 9, fontSize: 14, fontWeight: 600, textDecoration: "none" },
   toolbar: { display: "flex", gap: 12, alignItems: "center", marginBottom: 16, flexWrap: "wrap" },
-  searchWrap: { display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #E7E6EC", borderRadius: 10, padding: "0 12px", color: "#9A96A5", flex: 1, minWidth: 220 },
+  searchWrap: { display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #E7E6EC", borderRadius: 10, padding: "0 12px", color: "#94A3B8", flex: 1, minWidth: 220 },
   search: { border: "none", outline: "none", padding: "11px 0", fontSize: 14, flex: 1, background: "transparent", color: "#1A1A2E" },
   chips: { display: "flex", gap: 6, flexWrap: "wrap" },
   chip: { border: "1px solid #E7E6EC", background: "#fff", borderRadius: 999, padding: "7px 13px", fontSize: 12.5, fontWeight: 600, color: "#6B6777", cursor: "pointer" },

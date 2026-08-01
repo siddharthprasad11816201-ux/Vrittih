@@ -252,7 +252,7 @@ const S: Record<string, any> = {
   editBtn: { display: "inline-flex", alignItems: "center", gap: 6, background: "var(--v-surface)", border: "1px solid var(--v-line-2)", color: "var(--v-ink)", borderRadius: 9, padding: "8px 14px", fontSize: 13, fontWeight: 600, cursor: "pointer", flexShrink: 0 },
   between: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.25rem 1.5rem 0" },
   h2: { fontSize: 16.5, fontWeight: 700, color: "var(--v-ink)", letterSpacing: "-.01em" },
-  bar: { height: 8, background: "#F1F0F5", borderRadius: 5, margin: "12px 1.5rem 0", overflow: "hidden" },
+  bar: { height: 8, background: "#F1F5F9", borderRadius: 5, margin: "12px 1.5rem 0", overflow: "hidden" },
   barFill: { height: 8, background: "linear-gradient(90deg,#6495ED,#8A7FE8)", borderRadius: 5, transition: "width .5s ease" },
   hint: { fontSize: 12.5, color: "var(--v-ink-3)", padding: "8px 1.5rem 1.25rem" },
   body: { fontSize: 14.5, color: "var(--v-ink-2)", lineHeight: 1.7, padding: "10px 1.5rem 1.5rem", whiteSpace: "pre-wrap" },

@@ -148,7 +148,7 @@ const S: Record<string, any> = {
   delFieldBtn: { border: "1px solid #E1E0E7", background: "#fff", borderRadius: 7, width: 28, height: 28, cursor: "pointer", color: "#B91C1C", display: "grid", placeItems: "center" },
   optionsInput: { width: "100%", marginTop: 8, border: "1px solid #E1E0E7", borderRadius: 8, padding: "8px 11px", fontSize: 13, outline: "none" },
   addField: { display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 7, border: "1.5px dashed #D4D2DC", background: "none", borderRadius: 10, padding: "11px", fontSize: 13.5, fontWeight: 600, color: "#6B6777", cursor: "pointer" },
-  muted: { fontSize: 13.5, color: "#9A96A5", textAlign: "center", padding: "1.5rem 0" },
+  muted: { fontSize: 13.5, color: "#94A3B8", textAlign: "center", padding: "1.5rem 0" },
   sub: { border: "1px solid #ECEBF0", borderRadius: 11, padding: 14 },
   subHead: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 },
   subTime: { fontSize: 12.5, color: "#8A8595" },
