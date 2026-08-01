@@ -4,14 +4,15 @@ import { useRouter } from "next/navigation"
 import {
   IconActivity, IconBriefcase, IconTarget, IconFileText, IconUsers, IconTrendingUp,
   IconClipboard, IconMessage, IconMail, IconVideo, IconNetwork, IconSettings, IconSearch,
-  IconPlus, IconUser, IconLock, IconGlobe,
+  IconPlus, IconUser, IconLock, IconGlobe, IconKey,
 } from "@/components/ui/Icons"
 import { slugify } from "@/lib/company"
 
 type Item = { id: string; group: string; label: string; sub?: string; icon: ReactNode; run: () => void; keywords?: string }
 type SearchResults = { jobs: any[]; people: any[]; companies: any[] }
+type Caps = { isEmployer: boolean; canCrm?: boolean; canMail?: boolean; canInterviews?: boolean; canApi?: boolean }
 
-export default function CommandPalette({ isEmployer, canInterviews }: { isEmployer: boolean; canInterviews?: boolean }) {
+export default function CommandPalette({ isEmployer, canCrm, canMail, canInterviews, canApi }: Caps) {
   const router = useRouter()
   const [open, setOpen] = useState(false)
   const [q, setQ] = useState("")
@@ -27,33 +28,37 @@ export default function CommandPalette({ isEmployer, canInterviews }: { isEmploy
     const nav: Item[] = [
       { id: "overview", group: "Go to", label: "Overview", icon: <IconActivity size={16} />, run: go("/dashboard"), keywords: "home dashboard" },
       { id: "jobs", group: "Go to", label: "Find jobs", icon: <IconBriefcase size={16} />, run: go("/jobs") },
-      { id: "matched", group: "Go to", label: "Matched for you", icon: <IconTarget size={16} />, run: go("/jobs/match") },
-      { id: "apps", group: "Go to", label: "Applications", icon: <IconFileText size={16} />, run: go("/dashboard/applications") },
-      { id: "contacts", group: "Go to", label: "Contacts", icon: <IconUsers size={16} />, run: go("/contacts") },
-      { id: "pipeline", group: "Go to", label: "Pipeline", icon: <IconTrendingUp size={16} />, run: go("/pipeline") },
-      { id: "forms", group: "Go to", label: "Forms", icon: <IconClipboard size={16} />, run: go("/forms") },
+      ...(!isEmployer ? [{ id: "matched", group: "Go to", label: "Matched for you", icon: <IconTarget size={16} />, run: go("/jobs/match") }] : []),
+      { id: "apps", group: "Go to", label: "Applications", icon: <IconFileText size={16} />, run: go(isEmployer ? "/dashboard/applications" : "/applications") },
+      // CRM (Contacts/Pipeline/Forms) is employer + Growth-tier only.
+      ...(canCrm ? [
+        { id: "contacts", group: "Go to", label: "Contacts", icon: <IconUsers size={16} />, run: go("/contacts") },
+        { id: "pipeline", group: "Go to", label: "Pipeline", icon: <IconTrendingUp size={16} />, run: go("/pipeline") },
+        { id: "forms", group: "Go to", label: "Forms", icon: <IconClipboard size={16} />, run: go("/forms") },
+      ] : []),
       { id: "messages", group: "Go to", label: "Messages", icon: <IconMessage size={16} />, run: go("/messages") },
-      { id: "mail", group: "Go to", label: "Mail", icon: <IconMail size={16} />, run: go("/mail") },
+      ...(canMail ? [{ id: "mail", group: "Go to", label: "Mail", icon: <IconMail size={16} />, run: go("/mail") }] : []),
       ...(canInterviews ? [{ id: "interviews", group: "Go to", label: "Interviews", icon: <IconVideo size={16} />, run: go("/interviews") }] : []),
       { id: "network", group: "Go to", label: "Network", icon: <IconNetwork size={16} />, run: go("/network") },
       { id: "community", group: "Go to", label: "Community", icon: <IconMessage size={16} />, run: go("/community") },
       { id: "tests", group: "Go to", label: "Assessments", icon: <IconClipboard size={16} />, run: go("/tests") },
-      { id: "resume", group: "Go to", label: "Résumé", icon: <IconFileText size={16} />, run: go("/resume") },
+      ...(!isEmployer ? [{ id: "resume", group: "Go to", label: "Résumé", icon: <IconFileText size={16} />, run: go("/resume") }] : []),
+      ...(canApi ? [{ id: "developers", group: "Go to", label: "Developers", icon: <IconKey size={16} />, run: go("/developers"), keywords: "api keys integration" }] : []),
       { id: "profile", group: "Go to", label: "Profile", icon: <IconUser size={16} />, run: go("/profile") },
       { id: "settings", group: "Go to", label: "Settings", icon: <IconSettings size={16} />, run: go("/settings") },
     ]
     const actions: Item[] = [
-      { id: "a-contact", group: "Actions", label: "New contact", icon: <IconPlus size={16} />, run: go("/contacts/new"), keywords: "create add crm" },
       { id: "a-2fa", group: "Actions", label: "Set up 2-factor / passkey", icon: <IconLock size={16} />, run: go("/settings"), keywords: "totp authenticator fingerprint webauthn security" },
       { id: "a-logout", group: "Actions", label: "Log out", icon: <IconUser size={16} />, keywords: "sign out account", run: async () => { setOpen(false); await fetch("/api/auth/logout", { method: "POST" }); router.push("/login") } },
     ]
+    if (canCrm) actions.unshift({ id: "a-contact", group: "Actions", label: "New contact", icon: <IconPlus size={16} />, run: go("/contacts/new"), keywords: "create add crm" })
     if (isEmployer) actions.unshift(
       { id: "a-post", group: "Actions", label: "Post a job", icon: <IconPlus size={16} />, run: go("/dashboard/post-job"), keywords: "create hire" },
       { id: "a-cand", group: "Actions", label: "View candidates", icon: <IconUsers size={16} />, run: go("/dashboard/recruiter"), keywords: "applicants ranked" },
     )
     return [...nav, ...actions]
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEmployer, canInterviews])
+  }, [isEmployer, canCrm, canMail, canInterviews, canApi])
 
   // debounced live search against the platform (jobs + people + companies)
   useEffect(() => {

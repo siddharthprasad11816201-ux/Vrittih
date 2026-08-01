@@ -9,19 +9,27 @@ import {
   IconSearch, IconBell, IconShield, IconScan, IconMenu, IconX, IconHome, IconBookmark, IconGlobe,
   IconBanknote, IconKey,
 } from "@/components/ui/Icons"
-import { hasFeature } from "@/lib/entitlements"
+import { hasFeature, type Feature } from "@/lib/entitlements"
 
 type Item = { href: string; label: string; icon: ReactNode }
 type Group = { title: string; items: Item[] }
 
-function nav(isEmployer: boolean, isAdmin: boolean, canInterviews: boolean): Group[] {
-  const work: Group = isEmployer
+// Every advanced/employer capability is gated by hasFeature(). Because the
+// feature->plan map (lib/entitlements.ts) lists only employer plans, one check
+// hides these from job seekers AND from employers on a lower tier. Basic hiring
+// (post/candidates/pipeline) stays role-only so any company can recruit.
+function nav(user: any): Group[] {
+  const emp = !!user && ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user.role)
+  const isAdmin = !!user && ["ADMIN", "SUPER_ADMIN"].includes(user.role)
+  const can = (f: Feature) => hasFeature(user, f)
+
+  const work: Group = emp
     ? { title: "Hiring", items: [
         { href: "/dashboard/post-job", label: "Post a job", icon: <IconFileText size={17} /> },
         { href: "/dashboard/recruiter", label: "Candidates", icon: <IconUsers size={17} /> },
         { href: "/dashboard/pipeline", label: "Pipeline", icon: <IconTrendingUp size={17} /> },
-        { href: "/hrms", label: "HRMS", icon: <IconClipboard size={17} /> },
-        { href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={17} /> },
+        ...(can("hrms") ? [{ href: "/hrms", label: "HRMS", icon: <IconClipboard size={17} /> }] : []),
+        ...(can("payroll") ? [{ href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={17} /> }] : []),
         { href: "/jobs", label: "All jobs", icon: <IconBriefcase size={17} /> },
         { href: "/companies", label: "Companies", icon: <IconGlobe size={17} /> },
       ] }
@@ -33,34 +41,39 @@ function nav(isEmployer: boolean, isAdmin: boolean, canInterviews: boolean): Gro
         { href: "/applications", label: "Applications", icon: <IconFileText size={17} /> },
         { href: "/resume", label: "Résumé", icon: <IconFileText size={17} /> },
       ] }
+
   const groups: Group[] = [
     { title: "", items: [
       { href: "/dashboard", label: "Overview", icon: <IconActivity size={17} /> },
       { href: "/feed", label: "Feed", icon: <IconHome size={17} /> },
     ] },
     work,
-    { title: "CRM", items: [
-      { href: "/contacts", label: "Contacts", icon: <IconUsers size={17} /> },
-      { href: "/pipeline", label: "Pipeline", icon: <IconTrendingUp size={17} /> },
-      { href: "/forms", label: "Forms", icon: <IconClipboard size={17} /> },
-    ] },
-    { title: "Connect", items: [
-      { href: "/messages", label: "Messages", icon: <IconMessage size={17} /> },
-      { href: "/mail", label: "Mail", icon: <IconMail size={17} /> },
-      // Video interviews are enterprise-only (max employer tier). Hidden for
-      // everyone else — see lib/entitlements.ts.
-      ...(canInterviews ? [{ href: "/interviews", label: "Interviews", icon: <IconVideo size={17} /> }] : []),
-      { href: "/network", label: "Network", icon: <IconNetwork size={17} /> },
-      { href: "/community", label: "Community", icon: <IconMessage size={17} /> },
-    ] },
-    { title: "Grow", items: [
-      { href: "/tests", label: "Assessments", icon: <IconClipboard size={17} /> },
-      { href: "/tools", label: "Tools", icon: <IconTarget size={17} /> },
-      // API + integrations are a company concern — surface it for employers/staff.
-      ...(isEmployer ? [{ href: "/developers", label: "Developers", icon: <IconKey size={17} /> }] : []),
-      { href: "/verify/face-setup", label: "Security", icon: <IconScan size={17} /> },
-    ] },
   ]
+
+  // CRM is an employer capability (Growth+). Never shown to job seekers.
+  if (can("crm")) groups.push({ title: "CRM", items: [
+    { href: "/contacts", label: "Contacts", icon: <IconUsers size={17} /> },
+    { href: "/pipeline", label: "Pipeline", icon: <IconTrendingUp size={17} /> },
+    { href: "/forms", label: "Forms", icon: <IconClipboard size={17} /> },
+  ] })
+
+  const connect: Item[] = [{ href: "/messages", label: "Messages", icon: <IconMessage size={17} /> }]
+  if (can("mail")) connect.push({ href: "/mail", label: "Mail", icon: <IconMail size={17} /> })
+  if (can("interviews")) connect.push({ href: "/interviews", label: "Interviews", icon: <IconVideo size={17} /> })
+  connect.push(
+    { href: "/network", label: "Network", icon: <IconNetwork size={17} /> },
+    { href: "/community", label: "Community", icon: <IconMessage size={17} /> },
+  )
+  groups.push({ title: "Connect", items: connect })
+
+  const grow: Item[] = [
+    { href: "/tests", label: "Assessments", icon: <IconClipboard size={17} /> },
+    { href: "/tools", label: "Tools", icon: <IconTarget size={17} /> },
+  ]
+  if (can("api")) grow.push({ href: "/developers", label: "Developers", icon: <IconKey size={17} /> })
+  grow.push({ href: "/verify/face-setup", label: "Security", icon: <IconScan size={17} /> })
+  groups.push({ title: "Grow", items: grow })
+
   if (isAdmin) groups.push({ title: "Admin", items: [{ href: "/admin", label: "Admin panel", icon: <IconShield size={17} /> }] })
   return groups
 }
@@ -90,8 +103,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   useEffect(() => { setNavOpen(false) }, [pathname]) // close drawer on navigate
 
   const isEmployer = ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user?.role)
-  const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(user?.role)
-  const groups = nav(isEmployer, isAdmin, hasFeature(user, "interviews"))
+  const groups = nav(user)
   const active = (href: string) => href === "/dashboard" ? pathname === "/dashboard" : (pathname === href || pathname.startsWith(href + "/"))
   const initials = (user?.name || "?").split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
 
@@ -170,7 +182,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
         <div style={S.content}>{children}</div>
       </div>
 
-      <CommandPalette isEmployer={isEmployer} canInterviews={hasFeature(user, "interviews")} />
+      <CommandPalette isEmployer={isEmployer} canCrm={hasFeature(user, "crm")} canMail={hasFeature(user, "mail")} canInterviews={hasFeature(user, "interviews")} canApi={hasFeature(user, "api")} />
     </div>
   )
 }
