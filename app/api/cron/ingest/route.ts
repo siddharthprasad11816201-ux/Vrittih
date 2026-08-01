@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { allSourcesAsync } from "@/lib/sources"
 import { ingestSource, expireClosed } from "@/lib/ingest"
+import { retryDue } from "@/lib/webhooks"
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 300
@@ -26,8 +27,9 @@ async function run(req: NextRequest) {
   const reports = []
   for (const s of sources) reports.push(await ingestSource(s))
   const expired = await expireClosed()
+  const webhooksRetried = await retryDue().catch(() => 0)
 
-  return NextResponse.json({ ok: true, at: new Date().toISOString(), sources: sources.length, reports, expired })
+  return NextResponse.json({ ok: true, at: new Date().toISOString(), sources: sources.length, reports, expired, webhooksRetried })
 }
 
 export async function GET(req: NextRequest) { return run(req) }

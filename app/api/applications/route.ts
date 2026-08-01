@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { createNotification } from "@/lib/notify"
+import { emit } from "@/lib/webhooks"
 
 export async function GET(req: NextRequest) {
   try {
@@ -131,6 +132,11 @@ export async function POST(req: NextRequest) {
       body: `${applicant?.name} has applied for ${job.title}.`,
       link: "/dashboard/recruiter",
       sendEmail: false,
+    })
+    // Real-time sync to the company's subscribed webhooks (HRMS/ATS). Never blocks the apply.
+    await emit(job.postedById, "application.created", {
+      applicationId: application.id, jobId, jobTitle: job.title, status: "APPLIED",
+      appliedAt: application.appliedAt, applicant: { name: applicant?.name || null },
     })
     return NextResponse.json({ success:true, application }, { status:201 })
   } catch (err: any) {

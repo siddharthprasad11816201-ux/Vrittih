@@ -54,6 +54,15 @@ export default function DevelopersPage() {
     "timeline": [{ "status": "APPLIED", "note": "Application submitted", "at": "2026-…" }]
   }] }`}</pre>
 
+        <h2 style={S.h2}>Webhooks</h2>
+        <p style={S.p}><b>POST</b> <code style={S.inline}>/api/v1/webhooks</code> — subscribe an <b>https</b> endpoint to real-time events (<code style={S.inline}>application.created</code>, <code style={S.inline}>application.updated</code>, <code style={S.inline}>job.expired</code>, or omit for all). The signing secret is returned once. We POST <code style={S.inline}>{"{ event, at, data }"}</code> and sign the raw body so you can verify it's us:</p>
+        <pre style={S.code}>{`X-Vrittih-Signature: sha256=<hex HMAC-SHA256(secret, rawBody)>
+
+// verify (Node):
+const expected = "sha256=" + crypto.createHmac("sha256", secret).update(rawBody).digest("hex")
+if (expected !== req.headers["x-vrittih-signature"]) throw new Error("bad signature")`}</pre>
+        <p style={S.p}>Failed deliveries retry with exponential backoff. <b>GET</b> <code style={S.inline}>/api/v1/webhooks</code> lists your subscriptions with their last delivery status; <b>DELETE</b> with <code style={S.inline}>{"{ id }"}</code> removes one.</p>
+
         <h2 style={S.h2}>Fields</h2>
         <table style={S.table}><tbody>
           {[["title", "required — the role title"], ["description", "full job description"], ["company", "defaults to your company name"], ["industry", "e.g. Technology, Finance, Healthcare"], ["location", "city, country, or \"Remote\""], ["type", "FULLTIME · PARTTIME · INTERNSHIP · CONTRACT · FREELANCE"], ["salary", "free text, e.g. \"120,000 CHF\""], ["remote", "true / false"], ["active", "true (default) / false to unpublish"]].map(([k, v]) => (

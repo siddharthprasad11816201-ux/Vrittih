@@ -398,6 +398,40 @@ model ApiKey {
   @@index([employerId])
 }
 
+// Outbound webhooks — a company subscribes an endpoint and we POST signed events
+// (e.g. application.created) so their own systems react in real time.
+model Webhook {
+  id         String    @id @default(cuid())
+  employerId String                     // the company that owns this subscription
+  url        String                     // where we POST events
+  secret     String                     // HMAC-SHA256 signing secret (shown once)
+  events     String    @default("*")    // csv of event names, or "*" for all
+  active     Boolean   @default(true)
+  createdAt  DateTime  @default(now())
+  lastStatus Int?                        // last HTTP status returned by the endpoint
+  lastAt     DateTime?
+  failCount  Int       @default(0)       // consecutive failures (auto-disables past a threshold)
+  deliveries WebhookDelivery[]
+  @@index([employerId])
+}
+
+model WebhookDelivery {
+  id           String    @id @default(cuid())
+  webhookId    String
+  event        String
+  payload      String                    // JSON body we send
+  status       String    @default("pending") // pending | delivered | failed
+  attempts     Int       @default(0)
+  responseCode Int?
+  lastError    String?
+  nextRetryAt  DateTime?
+  createdAt    DateTime  @default(now())
+  webhook      Webhook   @relation(fields: [webhookId], references: [id], onDelete: Cascade)
+  @@index([webhookId])
+  @@index([status])
+  @@index([nextRetryAt])
+}
+
 // ---- HRMS ----
 model Employee {
   id             String    @id @default(cuid())
