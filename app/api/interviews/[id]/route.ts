@@ -18,6 +18,11 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       },
     })
     if (!interview) return NextResponse.json({ error: "Interview not found" }, { status: 404 })
+    // Only the host or an invited participant may see it — notes, recordingUrl and
+    // the roomCode (the join credential) must not leak to anyone with the id/code.
+    const isMember = interview.hostId === payload.userId || (interview.participants || []).some((pp: any) => pp.userId === payload.userId)
+    const isAdmin = payload.role === "ADMIN" || payload.role === "SUPER_ADMIN"
+    if (!isMember && !isAdmin) return NextResponse.json({ error: "Interview not found" }, { status: 404 })
     return NextResponse.json({ interview })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
