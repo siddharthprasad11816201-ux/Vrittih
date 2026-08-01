@@ -67,8 +67,18 @@ const expected = "sha256=" + crypto.createHmac("sha256", secret).update(rawBody)
 if (expected !== req.headers["x-vrittih-signature"]) throw new Error("bad signature")`}</pre>
         <p style={S.p}>Failed deliveries retry with exponential backoff. <b>GET</b> <code style={S.inline}>/api/v1/webhooks</code> lists your subscriptions with their last delivery status; <b>DELETE</b> with <code style={S.inline}>{"{ id }"}</code> removes one.</p>
 
-        <h2 style={S.h2}>HRMS data</h2>
-        <p style={S.p}><b>GET</b> <code style={S.inline}>/api/v1/employees</code> — your HR roster (code, name, department, designation, status, join date). Filter with <code style={S.inline}>status</code>. <b>GET</b> <code style={S.inline}>/api/v1/payroll</code> — payroll runs with gross/deductions/net totals and headcount, for reconciliation in your finance tools (filter <code style={S.inline}>year</code>, <code style={S.inline}>status</code>). Both are scoped to your company and read-only via the API; runs are computed and approved in your Vrittih HRMS.</p>
+        <h2 style={S.h2}>HRMS &amp; payroll</h2>
+        <p style={S.p}>Run your whole HR operation over the API.</p>
+        <p style={S.p}><b>Employees</b> — <b>GET</b>/<b>POST</b> <code style={S.inline}>/api/v1/employees</code> (add by email; links to an existing user or creates the record), <b>PATCH</b> <code style={S.inline}>/api/v1/employees/:id</code> to update details or set a salary structure via a <code style={S.inline}>compensation</code> block.</p>
+        <p style={S.p}><b>Payroll</b> — <b>POST</b> <code style={S.inline}>/api/v1/payroll</code> computes a draft run for everyone with a salary structure (refuses mixed currencies); <b>PATCH</b> <code style={S.inline}>/api/v1/payroll</code> with <code style={S.inline}>{"{ runId, action }"}</code> (approve / paid / cancel); <b>GET</b> lists runs with gross/deduction/net totals.</p>
+        <pre style={S.code}>{`# add an employee, set their salary, run + approve payroll
+curl -X POST .../api/v1/employees -H "Authorization: Bearer vk_live_…" \\
+  -d '{"email":"ravi@acme.com","name":"Ravi Kumar","department":"Engineering"}'
+curl -X PATCH .../api/v1/employees/<id> -H "Authorization: Bearer vk_live_…" \\
+  -d '{"compensation":{"currency":"CHF","annualCTC":120000,"components":[
+        {"name":"Basic","kind":"earning","calc":"pct_ctc","value":50},
+        {"name":"PF","kind":"deduction","calc":"pct_basic","value":12}]}}'
+curl -X POST .../api/v1/payroll -H "Authorization: Bearer vk_live_…" -d '{"periodYear":2026,"periodMonth":8}'`}</pre>
 
         <h2 style={S.h2}>Tasks</h2>
         <p style={S.p}><b>GET/POST</b> <code style={S.inline}>/api/v1/tasks</code> — create and read team assignments from your own tools. A task takes <code style={S.inline}>title</code>, and optionally <code style={S.inline}>description</code>, <code style={S.inline}>priority</code> (LOW/MEDIUM/HIGH), <code style={S.inline}>status</code> (TODO/DOING/DONE), <code style={S.inline}>assigneeId</code> (one of your employees) and <code style={S.inline}>dueAt</code>. Filter with <code style={S.inline}>status</code> / <code style={S.inline}>assigneeId</code>. Also available as a board inside Vrittih at <code style={S.inline}>/tasks</code>.</p>
