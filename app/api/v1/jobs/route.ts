@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { authApiKey } from "@/lib/apikey"
 import { safeExternalUrl } from "@/lib/url"
+import { canPublishApply } from "@/lib/partnerVerify"
 
 export const dynamic = "force-dynamic"
 
@@ -23,16 +24,25 @@ export async function POST(req: NextRequest) {
   const ctx = await authApiKey(req)
   if (!ctx) return NextResponse.json({ error: "Invalid or missing API key. Use 'Authorization: Bearer vk_live_…'." }, { status: 401 })
 
-  const employer = await prisma.user.findUnique({ where: { id: ctx.employerId }, select: { name: true } })
+  const employer = await prisma.user.findUnique({ where: { id: ctx.employerId }, select: { name: true, role: true, apiApproved: true } })
+  if (!employer) return NextResponse.json({ error: "Account not found" }, { status: 401 })
   let body: any
   try { body = await req.json() } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }) }
   const list: any[] = Array.isArray(body) ? body : Array.isArray(body?.jobs) ? body.jobs : [body]
   if (!list.length) return NextResponse.json({ error: "No jobs provided" }, { status: 400 })
 
   const created: any[] = [], errors: any[] = []
+  let pendingCount = 0
   for (const j of list) {
     if (!j || !j.title) { errors.push({ input: j?.title || null, error: "title is required" }); continue }
     try {
+      const applyUrl = safeExternalUrl(j.applyUrl ?? j.apply_url ?? j.url)
+      const govUrl = safeExternalUrl(j.govUrl ?? j.gov_url ?? j.governmentUrl)
+      // Anti-fraud gate: the job only goes public if the company is approved AND
+      // its apply link is on a domain it verified. Otherwise it's saved pending.
+      const pub = await canPublishApply({ id: ctx.employerId, role: employer.role, apiApproved: employer.apiApproved }, applyUrl)
+      const active = pub.ok ? (j.active !== false) : false
+      if (!pub.ok) pendingCount++
       const job = await prisma.job.create({
         data: {
           title: String(j.title).slice(0, 200),
@@ -43,17 +53,16 @@ export async function POST(req: NextRequest) {
           type: normType(j.type || j.employmentType),
           salary: j.salary ? String(j.salary) : null,
           remote: !!(j.remote ?? /remote/i.test(j.location || "")),
-          applyUrl: safeExternalUrl(j.applyUrl ?? j.apply_url ?? j.url),
-          govUrl: safeExternalUrl(j.govUrl ?? j.gov_url ?? j.governmentUrl),
-          active: j.active !== false,
+          applyUrl, govUrl,
+          active,
           postedById: ctx.employerId,
         },
         select: { id: true, title: true },
       })
-      created.push(job)
+      created.push({ ...job, status: active ? "live" : "pending", ...(pub.ok ? {} : { reason: pub.reason }) })
     } catch (e: any) { errors.push({ input: j.title, error: e.message }) }
   }
-  return NextResponse.json({ ok: true, created: created.length, jobs: created, errors }, { status: created.length ? 201 : 400 })
+  return NextResponse.json({ ok: true, created: created.length, pending: pendingCount, jobs: created, errors }, { status: created.length ? 201 : 400 })
 }
 
 // GET -> list this company's jobs.

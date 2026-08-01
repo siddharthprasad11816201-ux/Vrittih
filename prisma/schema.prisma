@@ -37,6 +37,9 @@ model User {
   faceChangeDate       DateTime?
   idType               String?
   idVerified       Boolean        @default(false)
+  // Partner API: an admin must approve a company before its API-posted jobs go
+  // public, and each job's apply link must sit on a domain the company verified.
+  apiApproved      Boolean        @default(false)
   banned           Boolean        @default(false)
   createdAt        DateTime       @default(now())
   updatedAt        DateTime       @updatedAt
@@ -430,6 +433,22 @@ model WebhookDelivery {
   @@index([webhookId])
   @@index([status])
   @@index([nextRetryAt])
+}
+
+// A domain a partner company has proven it controls. A job posted via the API
+// only goes public if its apply link is on one of these AND the company is
+// admin-approved — the structural defense against fake listings.
+model PartnerDomain {
+  id         String    @id @default(cuid())
+  employerId String
+  domain     String                          // registrable host, e.g. acme.com
+  token      String                          // vrittih-verify=<token>
+  method     String    @default("dns")        // dns | file
+  verified   Boolean   @default(false)
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  @@unique([employerId, domain])
+  @@index([domain])
 }
 
 // Task / assignment management — the company assigns work to team members and

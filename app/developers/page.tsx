@@ -1,5 +1,6 @@
 import Link from "next/link"
 import KeysPanel from "@/components/developers/KeysPanel"
+import DomainsPanel from "@/components/developers/DomainsPanel"
 
 export const metadata = { title: "Vrittih — Developer API" }
 
@@ -12,6 +13,7 @@ export default function DevelopersPage() {
         <p style={S.lead}>Connect your company's systems to Vrittih and post jobs programmatically — then read applicants back and run HRMS from your own tools. Generate a key below and you're live in a minute.</p>
 
         <KeysPanel />
+        <DomainsPanel />
 
         <h2 style={S.h2}>Authentication</h2>
         <p style={S.p}>Every request sends your key as a bearer token. Generate one in <b>Your API keys</b> above — it's shown only once.</p>
@@ -76,7 +78,7 @@ if (expected !== req.headers["x-vrittih-signature"]) throw new Error("bad signat
           ))}
         </tbody></table>
 
-        <p style={S.foot}>Posted jobs go live on the Vrittih job board, ranked to candidates by fit, with the full applicant pipeline and HRMS available in your dashboard. Generate your key in <b>Your API keys</b> at the top of this page.</p>
+        <p style={S.foot}>Posted jobs go live on the Vrittih job board once your company is approved and the apply link is on a <b>verified domain</b> (see Verified domains above) — until then they're saved as <code style={S.inline}>pending</code>. Live jobs are ranked to candidates by fit, with the full applicant pipeline and HRMS in your dashboard. Generate your key in <b>Your API keys</b> at the top of this page.</p>
       </div>
     </div>
   )

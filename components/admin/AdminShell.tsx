@@ -2,13 +2,14 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import type { ReactNode } from "react"
-import { IconBarChart, IconZap, IconUsers, IconBriefcase, IconCreditCard, IconSettings, IconUpload, IconBanknote } from "@/components/ui/Icons"
+import { IconBarChart, IconZap, IconUsers, IconBriefcase, IconCreditCard, IconSettings, IconUpload, IconBanknote, IconKey } from "@/components/ui/Icons"
 
 const NAV: [string, string, ReactNode][] = [
   ["Overview", "/admin", <IconBarChart key="i" size={15} />],
   ["Super Control", "/admin/super", <IconZap key="i" size={15} />],
   ["Users", "/admin/users", <IconUsers key="i" size={15} />],
   ["Jobs", "/admin/jobs", <IconBriefcase key="i" size={15} />],
+  ["Partners", "/admin/partners", <IconKey key="i" size={15} />],
   ["Import", "/admin/import", <IconUpload key="i" size={15} />],
   ["Payments", "/admin/payments", <IconCreditCard key="i" size={15} />],
   ["Pricing", "/admin/pricing", <IconBanknote key="i" size={15} />],
