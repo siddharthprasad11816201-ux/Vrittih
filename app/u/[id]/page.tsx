@@ -126,7 +126,7 @@ const S: Record<string, any> = {
   loading: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", color: "var(--v-ink-3)", fontSize: 14 },
   page: { maxWidth: 780, margin: "0 auto", padding: "2rem", display: "flex", flexDirection: "column", gap: "1.25rem" },
   card: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 16, overflow: "hidden" },
-  cover: { height: 96, background: "linear-gradient(120deg,#6495ED,#334EAC 55%,#8A7FE8)" },
+  cover: { height: 96, background: "linear-gradient(140deg,#8ECDF8,#6495ED 45%,#334EAC)" },
   headBody: { padding: "0 1.75rem 1.5rem" },
   avatar: { width: 108, height: 108, borderRadius: "50%", background: "#EAF1FE", color: ACCENT, border: "4px solid #fff", marginTop: -54, display: "grid", placeItems: "center", fontSize: 36, fontWeight: 700, fontFamily: "var(--v-serif)" },
   avatarImg: { width: 108, height: 108, borderRadius: "50%", objectFit: "cover", border: "4px solid #fff", marginTop: -54 },
