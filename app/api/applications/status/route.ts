@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { createNotification } from "@/lib/notify"
+import { emit } from "@/lib/webhooks"
 
 const STATUS_MESSAGES: Record<string,{title:string,body:string,sendEmail:boolean}> = {
   REVIEWED:    { title:"Application under review", body:"Your application is being reviewed by the employer.", sendEmail:false },
@@ -22,6 +23,16 @@ export async function PATCH(req: NextRequest) {
     const { applicationId, status, note, interview } = await req.json()
     if (!applicationId || !status) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
 
+    // Only the employer who owns the job (or an admin) may move an application.
+    const existing = await prisma.application.findUnique({
+      where: { id: applicationId },
+      select: { id: true, userId: true, job: { select: { postedById: true, title: true } } },
+    })
+    if (!existing) return NextResponse.json({ error: "Application not found" }, { status: 404 })
+    const isOwner = existing.job.postedById === payload.userId
+    const isAdmin = payload.role === "ADMIN" || payload.role === "SUPER_ADMIN"
+    if (!isOwner && !isAdmin) return NextResponse.json({ error: "You can only manage applications to your own jobs." }, { status: 403 })
+
     const application = await prisma.application.update({
       where: { id: applicationId },
       data: {
@@ -31,6 +42,12 @@ export async function PATCH(req: NextRequest) {
         timeline: { create: { status, note: note || STATUS_MESSAGES[status]?.body || "" } },
       },
       include: { user: true, job: true },
+    })
+
+    // Real-time sync to the employer's webhooks. Never blocks the response.
+    await emit(existing.job.postedById, "application.updated", {
+      applicationId: application.id, jobId: application.jobId, jobTitle: application.job.title,
+      status: application.status, applicant: { name: application.user?.name || null },
     })
 
     const msg = STATUS_MESSAGES[status]

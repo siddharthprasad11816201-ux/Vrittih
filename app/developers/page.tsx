@@ -1,6 +1,7 @@
 import Link from "next/link"
 import KeysPanel from "@/components/developers/KeysPanel"
 import DomainsPanel from "@/components/developers/DomainsPanel"
+import WebhooksPanel from "@/components/developers/WebhooksPanel"
 import BrandPanel from "@/components/developers/BrandPanel"
 
 export const metadata = { title: "Vrittih — Developer API" }
@@ -15,6 +16,7 @@ export default function DevelopersPage() {
 
         <KeysPanel />
         <DomainsPanel />
+        <WebhooksPanel />
         <BrandPanel />
 
         <h2 style={S.h2}>Authentication</h2>

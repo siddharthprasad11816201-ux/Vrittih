@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { safeExternalUrl } from "@/lib/url"
 import { slugify } from "@/lib/company"
 import { randomBytes } from "crypto"
+import { emit } from "@/lib/webhooks"
 import type { SourceAdapter, NormalisedListing } from "@/lib/sources/types"
 
 // Ingestion engine for aggregated listings (government portals, partner feeds).
@@ -132,11 +133,18 @@ export async function ingestSource(adapter: SourceAdapter): Promise<IngestReport
   return report
 }
 
-/** Close any aggregated listing whose deadline has passed, across all sources. */
+/** Close any listing whose deadline has passed, across all sources, and notify
+ * each job's owner via the job.expired webhook. */
 export async function expireClosed(): Promise<number> {
-  const r = await prisma.job.updateMany({
-    where: { active: true, closesAt: { lt: new Date() } },
-    data: { active: false },
+  const now = new Date()
+  const expiring = await prisma.job.findMany({
+    where: { active: true, closesAt: { lt: now } },
+    select: { id: true, title: true, postedById: true, closesAt: true },
   })
-  return r.count
+  if (!expiring.length) return 0
+  await prisma.job.updateMany({ where: { id: { in: expiring.map((j) => j.id) } }, data: { active: false } })
+  for (const j of expiring) {
+    emit(j.postedById, "job.expired", { jobId: j.id, jobTitle: j.title, closedAt: j.closesAt }).catch(() => {})
+  }
+  return expiring.length
 }
