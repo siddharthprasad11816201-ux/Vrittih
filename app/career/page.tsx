@@ -5,6 +5,7 @@ import AppShell from "@/components/vrittih/AppShell"
 import DnaPanel from "@/components/career/DnaPanel"
 import ProgressPanel from "@/components/career/ProgressPanel"
 import PathSimulatorPanel from "@/components/career/PathSimulatorPanel"
+import FrontierPanel from "@/components/career/FrontierPanel"
 import DocumentUpload from "@/components/career/DocumentUpload"
 
 /* ICIRE — the Career Intelligence dashboard: the whole in-house engine for the
@@ -95,6 +96,7 @@ export default function CareerPage() {
 
         <ProgressPanel />
         <PathSimulatorPanel />
+        <FrontierPanel />
 
         <div style={S.panel}>
           <div style={S.panelTitle}>Add documents</div>

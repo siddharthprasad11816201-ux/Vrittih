@@ -7,11 +7,13 @@ import { useEffect, useState } from "react"
 
 type Delta = { skill: string; from: number; to: number; delta: number; direction: "up" | "down" | "new" | "gone" }
 type Point = { at: string; avgConfidence: number; skillCount: number; explicitCount: number }
+type Drift = { fromArchetype?: string; toArchetype?: string; fromSeniority?: string; toSeniority?: string; changed: boolean }
 type Data = {
   snapshots: number
   series: Point[]
   movers: Delta[]
   momentum: { direction: "up" | "down" | "flat"; deltaPct: number }
+  drift?: Drift | null
   latest: { skillCount: number; explicitCount: number; avgConfidence: number; at: string } | null
 }
 
@@ -75,6 +77,14 @@ export default function ProgressPanel() {
 
       <Spark pts={d.series.map((s) => s.avgConfidence)} />
 
+      {d.drift?.changed && (
+        <div style={S.drift}>
+          {d.drift.fromArchetype && d.drift.fromArchetype !== d.drift.toArchetype
+            ? <>Your profile has evolved: <b>{d.drift.fromArchetype}</b> → <b>{d.drift.toArchetype}</b>.</>
+            : <>Seniority signal moved: <b>{d.drift.fromSeniority}</b> → <b>{d.drift.toSeniority}</b>.</>}
+        </div>
+      )}
+
       {d.movers.length > 0 && (
         <div style={S.movers}>
           <div style={S.moversLabel}>Recent movers</div>
@@ -102,6 +112,7 @@ const S: Record<string, any> = {
   muted: { font: "400 13.5px var(--font-sans)", color: "#64748B" },
   empty: { font: "400 13px/1.55 var(--font-sans)", color: "#475569", background: "#F7F9FC", border: "1px solid #E9EDF2", borderRadius: 11, padding: "12px 14px", margin: 0 },
   mom: { font: "600 12px var(--font-sans)", borderRadius: 999, padding: "5px 12px", whiteSpace: "nowrap" },
+  drift: { font: "400 12.5px/1.5 var(--font-sans)", color: "#334EAC", background: "#F3F6FF", border: "1px solid #E1E9FE", borderRadius: 11, padding: "10px 13px", margin: "12px 0 0" },
   movers: { marginTop: 14 },
   moversLabel: { font: "700 11px var(--font-sans)", textTransform: "uppercase", letterSpacing: ".05em", color: "#94A3B8", marginBottom: 8 },
   mover: { display: "flex", alignItems: "center", gap: 10, padding: "5px 0", borderTop: "1px solid #F1F5F9" },

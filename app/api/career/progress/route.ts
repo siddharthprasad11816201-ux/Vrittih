@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
 
   const snaps = await prisma.careerSnapshot.findMany({
     where: { userId: p.userId }, orderBy: { createdAt: "asc" }, take: 24,
-    select: { avgConfidence: true, skillCount: true, explicitCount: true, skillVector: true, createdAt: true, trigger: true },
+    select: { avgConfidence: true, skillCount: true, explicitCount: true, skillVector: true, dna: true, createdAt: true, trigger: true },
   })
   const series: SeriesPoint[] = snaps.map((s) => ({
     at: s.createdAt.toISOString(), avgConfidence: Math.round(s.avgConfidence * 100) / 100, skillCount: s.skillCount, explicitCount: s.explicitCount,
@@ -29,11 +29,21 @@ export async function GET(req: NextRequest) {
     movers = diffVectors(prev, cur).slice(0, 8)
   }
   const latest = snaps[snaps.length - 1]
+  // Archetype / seniority drift between the first and latest recorded snapshot.
+  let drift: { fromArchetype?: string; toArchetype?: string; fromSeniority?: string; toSeniority?: string; changed: boolean } | null = null
+  if (snaps.length >= 2) {
+    const a = safe(snaps[0].dna), b = safe(snaps[snaps.length - 1].dna)
+    if (a?.label || b?.label) drift = {
+      fromArchetype: a?.label, toArchetype: b?.label, fromSeniority: a?.seniority, toSeniority: b?.seniority,
+      changed: a?.label !== b?.label || a?.seniority !== b?.seniority,
+    }
+  }
   return NextResponse.json({
     snapshots: snaps.length,
     series,
     movers,
     momentum: momentum(series),
+    drift,
     latest: latest ? { skillCount: latest.skillCount, explicitCount: latest.explicitCount, avgConfidence: Math.round(latest.avgConfidence * 100) / 100, at: latest.createdAt.toISOString() } : null,
   })
 }

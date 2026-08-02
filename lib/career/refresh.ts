@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma"
 import { analyzeCareer, type CareerAnalysis } from "@/lib/career/engine"
 import { inputFromUser } from "@/lib/career/fromUser"
 import { toVector, contentHash } from "@/lib/career/progress"
+import { computeCareerDNA } from "@/lib/career/dna"
 
 /** The SINGLE writer of a user's Career Intelligence profile (§20). Recomputes
  * from all current evidence (profile + skills + experience + uploaded documents),
@@ -39,11 +40,16 @@ export async function refreshCareer(userId: string, trigger = "manual"): Promise
     if (changed || stale) {
       const explicit = analysis.skills.filter((s) => !s.implied).length
       const avg = analysis.skills.length ? analysis.skills.reduce((n, s) => n + s.confidence, 0) / analysis.skills.length : 0
+      // Compact DNA signature so archetype/seniority drift is visible over time (§20/§6).
+      const experienceMonths = (input.experiences || []).reduce((n, e) => n + (e.months || 0), 0)
+      const roleTitles = (input.experiences || []).map((e) => e.title).filter(Boolean)
+      const dna = computeCareerDNA(analysis, { experienceMonths, roleTitles })
+      const dnaSig = { archetype: dna.archetype.key, label: dna.archetype.label, signature: dna.signature, seniority: dna.dimensions.find((d) => d.key === "seniority")?.band || null }
       await prisma.careerSnapshot.create({
         data: {
           userId, contentHash: hash, trigger,
           skillCount: analysis.skills.length, explicitCount: explicit, impliedCount: analysis.skills.length - explicit,
-          avgConfidence: avg, skillVector: JSON.stringify(toVector(analysis.skills)),
+          avgConfidence: avg, skillVector: JSON.stringify(toVector(analysis.skills)), dna: JSON.stringify(dnaSig),
         },
       })
     }
