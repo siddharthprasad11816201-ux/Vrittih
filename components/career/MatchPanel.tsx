@@ -12,8 +12,9 @@ type Match = {
   missing: { skill: string; difficulty: string; prepDays: number; must: boolean }[]
   why: string[]
   subscores: { technical: number; communication: number | null; leadership: number | null; research: number | null }
-  hiring: { screening: number; shortlist: number; technical: number; offer: number; label: string }
+  hiring: { screening: number; shortlist: number; technical: number; offer: number; label: string; calibrated?: number; basis?: number }
 }
+type Feedback = { skill: string; direction: "up" | "down"; liftPct: number }[]
 
 const tierColor = (n: number) => (n >= 75 ? "#16A34A" : n >= 55 ? "#6495ED" : n >= 35 ? "#B45309" : "#94A3B8")
 const diffColor: Record<string, { bg: string; fg: string }> = {
@@ -23,13 +24,14 @@ const diffColor: Record<string, { bg: string; fg: string }> = {
 export default function MatchPanel({ jobId }: { jobId: string }) {
   const [state, setState] = useState<"loading" | "anon" | "ready" | "error">("loading")
   const [m, setM] = useState<Match | null>(null)
+  const [feedback, setFeedback] = useState<Feedback | null>(null)
 
   useEffect(() => {
     fetch(`/api/career/match/${jobId}`).then((r) => {
       if (r.status === 401) { setState("anon"); return null }
       if (!r.ok) { setState("error"); return null }
       return r.json()
-    }).then((d) => { if (d?.match) { setM(d.match); setState("ready") } }).catch(() => setState("error"))
+    }).then((d) => { if (d?.match) { setM(d.match); setFeedback(d.feedback || null); setState("ready") } }).catch(() => setState("error"))
   }, [jobId])
 
   if (state === "loading") return <div style={S.card}><div style={S.muted}>Analysing your fit…</div></div>
@@ -103,7 +105,22 @@ export default function MatchPanel({ jobId }: { jobId: string }) {
             </div>
           ))}
         </div>
+        {typeof m.hiring.calibrated === "number" && (
+          <div style={S.calNote}>Calibrated on real outcomes: candidates at your score reach shortlist about <b>{m.hiring.calibrated}%</b> of the time here (from {m.hiring.basis} decided applications).</div>
+        )}
       </div>
+
+      {feedback && feedback.length > 0 && (
+        <div style={S.block}>
+          <div style={S.blockLabel}>What tends to help here</div>
+          <div style={S.chips}>
+            {feedback.map((f) => (
+              <span key={f.skill} style={f.direction === "up" ? S.fbUp : S.fbDown}>{f.direction === "up" ? "↑" : "↓"} {f.skill} <span style={S.fbLift}>{f.direction === "up" ? "+" : "−"}{f.liftPct}%</span></span>
+            ))}
+          </div>
+          <div style={S.calNote}>Aggregate, anonymised patterns from applicants to similar roles — this mirrors recruiter behaviour, not an endorsement.</div>
+        </div>
+      )}
     </div>
   )
 }
@@ -149,4 +166,8 @@ const S: Record<string, any> = {
   fTrack: { flex: 1, height: 7, background: "#F1F5F9", borderRadius: 5, overflow: "hidden" },
   fFill: { height: 7, borderRadius: 5, transition: "width .5s ease" },
   fVal: { font: "600 12px var(--font-sans)", color: "#475569", width: 34, textAlign: "right", fontVariantNumeric: "tabular-nums" },
+  calNote: { font: "400 11.5px/1.5 var(--font-sans)", color: "#94A3B8", marginTop: 9 },
+  fbUp: { display: "inline-flex", alignItems: "center", gap: 5, font: "600 12px var(--font-sans)", background: "#E7F8EE", color: "#166534", borderRadius: 8, padding: "4px 10px" },
+  fbDown: { display: "inline-flex", alignItems: "center", gap: 5, font: "600 12px var(--font-sans)", background: "#FDECEC", color: "#B42318", borderRadius: 8, padding: "4px 10px" },
+  fbLift: { fontWeight: 500, opacity: 0.85 },
 }

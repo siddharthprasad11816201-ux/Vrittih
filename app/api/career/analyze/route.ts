@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { analyzeCareer, type AnalyzeInput } from "@/lib/career/engine"
-import { inputFromUser } from "@/lib/career/fromUser"
+import { refreshCareer } from "@/lib/career/refresh"
 
 export const dynamic = "force-dynamic"
 
@@ -25,24 +24,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, persisted: false, analysis: analyzeCareer(body.input as AnalyzeInput) })
   }
 
-  const input = await inputFromUser(p.userId)
-  const analysis = analyzeCareer(input)
-
-  // Persist: replace this user's skill proficiencies + upsert the graph/summary.
-  await prisma.$transaction([
-    prisma.skillProficiency.deleteMany({ where: { userId: p.userId } }),
-    prisma.skillProficiency.createMany({
-      data: analysis.skills.map((s) => ({
-        userId: p.userId, skill: s.skill, category: s.category, confidence: s.confidence, level: s.level, implied: s.implied,
-        scores: JSON.stringify(s.scores), evidence: JSON.stringify(s.evidence),
-      })),
-    }),
-    prisma.careerProfile.upsert({
-      where: { userId: p.userId },
-      update: { graph: JSON.stringify(analysis.graph), summary: JSON.stringify(analysis.summary), computedAt: new Date() },
-      create: { userId: p.userId, graph: JSON.stringify(analysis.graph), summary: JSON.stringify(analysis.summary) },
-    }),
-  ])
-
+  const analysis = await refreshCareer(p.userId, "manual")
   return NextResponse.json({ ok: true, persisted: true, analysis })
 }

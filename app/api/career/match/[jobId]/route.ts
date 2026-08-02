@@ -4,6 +4,8 @@ import { verifyToken } from "@/lib/jwt"
 import { analyzeCareer } from "@/lib/career/engine"
 import { matchJob } from "@/lib/career/match"
 import { inputFromUser } from "@/lib/career/fromUser"
+import { getCalibration, familyOf } from "@/lib/career/calibrationStore"
+import { feedbackSignals } from "@/lib/career/calibration"
 
 export const dynamic = "force-dynamic"
 
@@ -24,10 +26,15 @@ export async function GET(req: NextRequest, { params }: { params: { jobId: strin
   if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 })
 
   const candidate = analyzeCareer(await inputFromUser(p.userId)).skills
-  const match = matchJob(candidate, {
-    title: job.title, description: job.description, industry: job.industry,
-    skills: (job.skills || []).map((s: any) => s.skill?.name).filter(Boolean),
-  })
+  const jobSkills = (job.skills || []).map((s: any) => s.skill?.name).filter(Boolean)
+  const jobLike = { title: job.title, description: job.description, industry: job.industry, skills: jobSkills }
 
-  return NextResponse.json({ job: { id: job.id, title: job.title, company: job.company }, match })
+  // §21: load this cohort's calibration (falls back to global). Informational —
+  // the funnel shows a real advancement rate; the score itself is unchanged
+  // unless an owner has explicitly enabled weight calibration.
+  const cal = (await getCalibration(familyOf(jobSkills))) || (await getCalibration("global"))
+  const match = matchJob(candidate, jobLike, cal)
+  const feedback = cal ? feedbackSignals(cal) : null
+
+  return NextResponse.json({ job: { id: job.id, title: job.title, company: job.company }, match, feedback })
 }

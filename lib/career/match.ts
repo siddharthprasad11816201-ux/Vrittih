@@ -4,6 +4,7 @@
  * close it / projected match / offer odds" breakdown. */
 import { extract, type SkillResult } from "./engine"
 import { canonical, categoryOf, IMPLY } from "./taxonomy"
+import { skillWeightFactor, calibratedFunnel, type Calibration } from "./calibration"
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n))
 const pct = (n: number) => Math.round(clamp01(n) * 100)
@@ -47,28 +48,35 @@ export type MatchResult = {
   subscores: { technical: number; communication: number | null; leadership: number | null; research: number | null }
   projectedMatch: number   // after closing the top missing must-haves
   prepDays: number         // total to reach projectedMatch
-  hiring: { screening: number; shortlist: number; technical: number; offer: number; label: "High" | "Medium" | "Low" }
+  hiring: { screening: number; shortlist: number; technical: number; offer: number; label: "High" | "Medium" | "Low"; calibrated?: number; basis?: number }
 }
 
-// Weighted coverage of a requirement set under a confidence function.
-function coverage(req: Requirement[], confFn: (s: string) => number) {
+// Weighted coverage of a requirement set under a confidence function. weightFn
+// optionally nudges per-skill weight (§21 calibration; identity by default).
+function coverage(req: Requirement[], confFn: (s: string) => number, weightFn: (s: string) => number = () => 1) {
   let wSum = 0, cov = 0, techW = 0, techCov = 0, namedW = 0, namedCov = 0, mustW = 0, mustCov = 0
   for (const r of req) {
     const c = confFn(r.skill)
-    wSum += r.weight; cov += r.weight * c
-    if (r.category !== "soft") { techW += r.weight; techCov += r.weight * c }
-    if (r.weight >= 0.8) { namedW += r.weight; namedCov += r.weight * clamp01(c / 0.5) } // tagged or spelled out in the JD
-    if (r.must) { mustW += r.weight; mustCov += r.weight * clamp01(c / 0.5) }
+    const w = r.weight * weightFn(r.skill)
+    wSum += w; cov += w * c
+    if (r.category !== "soft") { techW += w; techCov += w * c }
+    if (w >= 0.8) { namedW += w; namedCov += w * clamp01(c / 0.5) } // tagged or spelled out in the JD
+    if (r.must) { mustW += w; mustCov += w * clamp01(c / 0.5) }
   }
   const technical = techW ? techCov / techW : wSum ? cov / wSum : 0.5
   const priority = mustW ? mustCov / mustW : namedW ? namedCov / namedW : technical
   return { technical, priority, overall: clamp01(0.65 * technical + 0.35 * priority) }
 }
 
-export function matchJob(candidate: SkillResult[], job: JobLike): MatchResult {
+export function matchJob(candidate: SkillResult[], job: JobLike, cal?: Calibration | null): MatchResult {
   const req = jobRequirements(job)
   const cand = new Map(candidate.map((s) => [s.skill, s]))
   const conf = (sk: string) => cand.get(sk)?.confidence ?? 0
+
+  // §21: recruiter-feedback weight nudge is OFF unless explicitly enabled by an
+  // owner, so scores never silently mirror (and entrench) recruiter behaviour.
+  const calibrateWeights = cal && process.env.CAREER_CALIBRATE_WEIGHTS === "on"
+  const weightFn = calibrateWeights ? (sk: string) => skillWeightFactor(sk, cal) : undefined
 
   const matched: MatchResult["matched"] = []
   const missingRaw: { skill: string; category: string; must: boolean }[] = []
@@ -77,13 +85,13 @@ export function matchJob(candidate: SkillResult[], job: JobLike): MatchResult {
     if (c >= 0.4) matched.push({ skill: r.skill, category: r.category, confidence: c, must: r.must })
     else missingRaw.push({ skill: r.skill, category: r.category, must: r.must })
   }
-  const actual = coverage(req, conf)
+  const actual = coverage(req, conf, weightFn)
   const technical = actual.technical, mustHave = actual.priority, overall = actual.overall
 
   const missing = missingRaw
     .map((m) => {
       const d = difficulty(m.skill, cand)
-      const gain = coverage(req, (sk) => (sk === m.skill ? Math.max(0.7, conf(sk)) : conf(sk))).overall - actual.overall
+      const gain = coverage(req, (sk) => (sk === m.skill ? Math.max(0.7, conf(sk)) : conf(sk)), weightFn).overall - actual.overall
       return { ...m, difficulty: d.label, prepDays: d.days, expectedGain: Math.max(0, Math.round(gain * 100)) }
     })
     .sort((a, b) => Number(b.must) - Number(a.must) || b.expectedGain - a.expectedGain || a.prepDays - b.prepDays)
@@ -91,7 +99,7 @@ export function matchJob(candidate: SkillResult[], job: JobLike): MatchResult {
   // Projected match after closing the top missing skills (must-haves first), ~0.7 mastery.
   const focus = missing.slice(0, 5)
   const gained = new Set(focus.map((m) => m.skill))
-  const projected = coverage(req, (sk) => (gained.has(sk) ? Math.max(0.7, conf(sk)) : conf(sk))).overall
+  const projected = coverage(req, (sk) => (gained.has(sk) ? Math.max(0.7, conf(sk)) : conf(sk)), weightFn).overall
   const prepDays = focus.reduce((n, m) => n + m.prepDays, 0)
 
   // Hiring funnel (§18): each stage conditioned on the previous.
@@ -101,6 +109,9 @@ export function matchJob(candidate: SkillResult[], job: JobLike): MatchResult {
   const techRound = shortlist * (0.5 + 0.5 * technical)
   const offer = techRound * (0.55 + 0.45 * avgMatched)
   const label: MatchResult["hiring"]["label"] = offer >= 0.6 ? "High" : offer >= 0.33 ? "Medium" : "Low"
+  // §21: informational calibrated advancement rate for this score, when there's
+  // enough real outcome data. Display-only — never changes the score above.
+  const cf = cal ? calibratedFunnel(pct(overall), cal) : null
 
   const why = matched.filter((m) => m.must || m.confidence >= 0.6).sort((a, b) => b.confidence - a.confidence).slice(0, 6).map((m) => m.skill)
   const softOrNull = (name: string) => (cand.has(name) ? pct(conf(name)) : null)
@@ -115,7 +126,7 @@ export function matchJob(candidate: SkillResult[], job: JobLike): MatchResult {
     missing, why,
     subscores: { technical: pct(technical), communication: softOrNull("Communication"), leadership: softOrNull("Leadership"), research: softOrNull("Research") },
     projectedMatch: pct(projected), prepDays,
-    hiring: { screening: pct(screening), shortlist: pct(shortlist), technical: pct(techRound), offer: pct(offer), label },
+    hiring: { screening: pct(screening), shortlist: pct(shortlist), technical: pct(techRound), offer: pct(offer), label, ...(cf ? { calibrated: Math.round(cf.advanceRate * 100), basis: cf.basis } : {}) },
   }
 }
 

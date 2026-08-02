@@ -43,3 +43,23 @@ export async function resumeFromUser(userId: string): Promise<{ bullets: string[
   const months = (user?.experience || []).reduce((sum: number, e: any) => sum + monthsBetween(new Date(e.startDate), e.endDate ? new Date(e.endDate) : new Date()), 0)
   return { bullets, bio: user?.bio || undefined, headline: user?.headline || undefined, years: Math.round(months / 12) }
 }
+
+/** Rebuild an AnalyzeInput from an Application.snapshot (§21 calibration) — the
+ * candidate exactly as they were when they applied. Defensive: snapshots vary. */
+export function inputFromSnapshot(snapshot?: string | null): AnalyzeInput {
+  let s: any = {}
+  try { s = JSON.parse(snapshot || "{}") } catch { s = {} }
+  const exps = Array.isArray(s.experience) ? s.experience : []
+  return {
+    name: s.name, headline: s.headline || undefined, bio: s.bio || s.summary || undefined,
+    skills: (Array.isArray(s.skills) ? s.skills : []).map((x: any) => (typeof x === "string" ? x : x?.name)).filter(Boolean),
+    experiences: exps.map((e: any) => {
+      const start = e.startDate ? new Date(e.startDate) : null
+      const end = e.endDate ? new Date(e.endDate) : new Date()
+      const months = start ? monthsBetween(start, end) : undefined
+      return { title: e.title || "", company: e.company || "", description: e.description || undefined, months, ageYears: start ? Math.round(yearsSince(end)) : undefined }
+    }),
+    education: (Array.isArray(s.education) ? s.education : []).map((e: any) => ({ school: e.school || "", degree: e.degree || "", field: e.field })),
+    documents: [],
+  }
+}

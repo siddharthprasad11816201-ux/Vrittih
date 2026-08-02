@@ -54,6 +54,7 @@ function buildNav(user: any): Section[] {
           { href: "/companies", label: "Companies", icon: <IconGlobe size={19} /> },
         ]
       : [
+          { href: "/career", label: "Career AI", icon: <IconActivity size={19} /> },
           { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={19} /> },
           { href: "/jobs/match", label: "Matched", icon: <IconTarget size={19} /> },
           { href: "/applications", label: "Applications", icon: <IconFileText size={19} /> },

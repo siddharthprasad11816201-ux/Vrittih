@@ -531,6 +531,56 @@ model CareerProfile {
   updatedAt  DateTime @updatedAt
 }
 
+// §20 continuous learning — immutable time series of proficiency snapshots. Gated
+// (real content change OR >=30d) so growth is bounded. Drives growth/decay deltas.
+model CareerSnapshot {
+  id            String   @id @default(cuid())
+  userId        String
+  contentHash   String                       // sha256 of USER-AUTHORED input only
+  trigger       String   @default("manual")  // manual|profile.*|resume|document|scheduled
+  skillCount    Int      @default(0)
+  explicitCount Int      @default(0)
+  impliedCount  Int      @default(0)
+  avgConfidence Float    @default(0)
+  skillVector   String   @default("{}")      // JSON Record<skill,{c,l,i}>
+  dna           String   @default("{}")      // JSON compact DNA signature for drift
+  createdAt     DateTime @default(now())
+  @@index([userId, createdAt])
+}
+
+// §20 — per-(user,job) roadmap progress. Self-reported task ticks live in `phases`;
+// "skill closed" + matchDelta are RECOMPUTED from real analysis, never from ticks.
+model RoadmapProgress {
+  id            String   @id @default(cuid())
+  userId        String
+  jobId         String
+  timeframeDays Int      @default(30)
+  startMatch    Int      @default(0)          // frozen honest baseline at plan start
+  targetMatch   Int      @default(0)          // buildRoadmap projectedMatch at start
+  phases        String   @default("[]")       // JSON [{skill, tasksDone:boolean[]}]
+  startedAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@unique([userId, jobId])                   // IDOR guard: key on token userId + jobId
+  @@index([userId])
+}
+
+// §21 — aggregate, PII-free match calibration per cohort ("global"|"family:backend"…).
+// Populated by cron/admin recompute over Application.snapshot; read via short cache.
+model MatchCalibration {
+  id            String   @id @default(cuid())
+  cohort        String   @unique
+  version       Int      @default(1)
+  buckets       String   @default("[]")       // JSON per-score-decile stage rates (isotonic)
+  skills        String   @default("{}")       // JSON Record<skill,{withN,withAdv,withoutN,withoutAdv}>
+  baseAdvRate   Float    @default(0)
+  sampleSize    Int      @default(0)          // decided applications (k-anonymity)
+  jobCount      Int      @default(0)          // distinct jobs (k-anonymity)
+  employerCount Int      @default(0)          // distinct employers (k-anonymity)
+  computedAt    DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([cohort])
+}
+
 // ---- HRMS ----
 model Employee {
   id             String    @id @default(cuid())
