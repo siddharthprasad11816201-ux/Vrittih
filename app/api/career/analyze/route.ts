@@ -21,7 +21,11 @@ export async function POST(req: NextRequest) {
 
   // Preview / self-analysis mode — analyze provided text, do not persist.
   if (body.input && typeof body.input === "object") {
-    return NextResponse.json({ ok: true, persisted: false, analysis: analyzeCareer(body.input as AnalyzeInput) })
+    try {
+      return NextResponse.json({ ok: true, persisted: false, analysis: analyzeCareer(body.input as AnalyzeInput) })
+    } catch {
+      return NextResponse.json({ error: "Invalid input" }, { status: 400 })
+    }
   }
 
   const analysis = await refreshCareer(p.userId, "manual")

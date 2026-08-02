@@ -145,12 +145,15 @@ export function computeCareerDNA(analysis: CareerAnalysis, meta: { experienceMon
     ],
   })
 
-  // 7) Learning velocity — HONESTY GATE: recency is only meaningful for skills
-  // evidenced by dated experience. Fewer than 3 such skills -> omit (never invent).
-  const recencyBearing = skills.filter((s) => s.evidence.sources.includes("experience") && s.evidence.recencyYears !== null)
+  // 7) Learning velocity — HONESTY GATE: recency must come from DATED experience,
+  // not from a skill merely being listed now. experienceRecencyYears is derived
+  // ONLY from dated experience signals (undated mentions never pin it to 0), so a
+  // skill last used years ago is correctly NOT counted as recent. Fewer than 3
+  // dated-recency skills -> omit the dimension entirely (never invent).
+  const recencyBearing = skills.filter((s) => s.evidence.experienceRecencyYears !== null)
   let recentSkills = 0
   if (recencyBearing.length >= 3) {
-    const recent = recencyBearing.filter((s) => (s.evidence.recencyYears as number) <= 1)
+    const recent = recencyBearing.filter((s) => (s.evidence.experienceRecencyYears as number) <= 1)
     recentSkills = recent.length
     const velocityValue = r0(100 * clamp01(0.7 * (recent.length / recencyBearing.length) + 0.3 * clamp01(recent.length / 6)))
     dimensions.push({

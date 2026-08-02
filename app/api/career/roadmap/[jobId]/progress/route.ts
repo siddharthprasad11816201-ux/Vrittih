@@ -63,16 +63,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { jobId: str
     return NextResponse.json({ ok: true, started: true, timeframeDays: row.timeframeDays, startMatch: row.startMatch, targetMatch: row.targetMatch, liveMatch: lm.match.overall, phases: safe(row.phases) })
   }
 
-  // Tick a task.
+  // Tick a task. Optimistic compare-and-swap so two rapid ticks on different
+  // tasks can't clobber each other via a stale read-modify-write of the blob.
   if (typeof body.phaseIndex === "number" && typeof body.taskIndex === "number") {
-    const row = await prisma.roadmapProgress.findUnique({ where: key })
-    if (!row) return NextResponse.json({ error: "No plan started" }, { status: 400 })
-    const phases = safe(row.phases) as { skill: string; tasksDone: boolean[] }[]
-    const ph = phases[body.phaseIndex]
-    if (!ph || body.taskIndex < 0 || body.taskIndex >= ph.tasksDone.length) return NextResponse.json({ error: "Invalid task" }, { status: 400 })
-    ph.tasksDone[body.taskIndex] = !!body.done
-    await prisma.roadmapProgress.update({ where: key, data: { phases: JSON.stringify(phases) } })
-    return NextResponse.json({ ok: true, phases })
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const row = await prisma.roadmapProgress.findUnique({ where: key })
+      if (!row) return NextResponse.json({ error: "No plan started" }, { status: 400 })
+      const phases = safe(row.phases) as { skill: string; tasksDone: boolean[] }[]
+      const ph = phases[body.phaseIndex]
+      if (!ph || body.taskIndex < 0 || body.taskIndex >= ph.tasksDone.length) return NextResponse.json({ error: "Invalid task" }, { status: 400 })
+      ph.tasksDone[body.taskIndex] = !!body.done
+      // Only write if the row still holds exactly what we read (CAS on the blob).
+      const res = await prisma.roadmapProgress.updateMany({ where: { userId: p.userId, jobId: params.jobId, phases: row.phases }, data: { phases: JSON.stringify(phases) } })
+      if (res.count === 1) return NextResponse.json({ ok: true, phases })
+      // Lost the race — another tick landed first; re-read and retry.
+    }
+    return NextResponse.json({ error: "Conflict — please retry" }, { status: 409 })
   }
 
   return NextResponse.json({ error: "Nothing to update" }, { status: 400 })

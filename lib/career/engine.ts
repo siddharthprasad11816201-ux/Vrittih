@@ -13,7 +13,8 @@ type Ev = {
   projects: number           // # of project signals mentioning it
   experienceMonths: number   // months across experience signals mentioning it
   mentions: number           // total signals mentioning it
-  minAgeYears: number        // most-recent usage (years ago)
+  minAgeYears: number        // most-recent usage (years ago) — undated signals count as 0 (feeds confidence)
+  datedMinAgeYears: number   // most-recent usage from DATED signals ONLY (never pinned to 0 by undated mentions)
   impliedOnly: boolean       // reached only via implication
   sources: Set<SignalKind>
 }
@@ -25,7 +26,7 @@ export type SkillResult = {
   level: "Novice" | "Familiar" | "Proficient" | "Advanced" | "Expert"
   implied: boolean
   scores: { claim: number; projectDepth: number; experience: number; frequency: number; recency: number }
-  evidence: { explicit: boolean; projects: number; experienceMonths: number; mentions: number; recencyYears: number | null; sources: SignalKind[] }
+  evidence: { explicit: boolean; projects: number; experienceMonths: number; mentions: number; recencyYears: number | null; experienceRecencyYears: number | null; sources: SignalKind[] }
 }
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n))
@@ -62,15 +63,15 @@ export function extract(signals: Signal[]): Map<string, Ev> {
   const ev = new Map<string, Ev>()
   const touch = (skill: string, s: Signal, explicit: boolean, implied: boolean) => {
     let e = ev.get(skill)
-    if (!e) { e = { explicit: false, projects: 0, experienceMonths: 0, mentions: 0, minAgeYears: Infinity, impliedOnly: true, sources: new Set() }; ev.set(skill, e) }
+    if (!e) { e = { explicit: false, projects: 0, experienceMonths: 0, mentions: 0, minAgeYears: Infinity, datedMinAgeYears: Infinity, impliedOnly: true, sources: new Set() }; ev.set(skill, e) }
     e.mentions++
     e.sources.add(s.kind)
     if (explicit) e.explicit = true
     if (!implied) e.impliedOnly = false
     if (s.kind === "project") e.projects++
     if (s.kind === "experience") e.experienceMonths += s.months || 6
-    if (typeof s.ageYears === "number") e.minAgeYears = Math.min(e.minAgeYears, s.ageYears)
-    else e.minAgeYears = Math.min(e.minAgeYears, 0)
+    if (typeof s.ageYears === "number") { e.minAgeYears = Math.min(e.minAgeYears, s.ageYears); e.datedMinAgeYears = Math.min(e.datedMinAgeYears, s.ageYears) }
+    else e.minAgeYears = Math.min(e.minAgeYears, 0) // undated mention: recent for confidence, but NOT a dated-recency claim
   }
 
   for (const s of signals) {
@@ -113,7 +114,7 @@ export function proficiencies(ev: Map<string, Ev>): SkillResult[] {
     out.push({
       skill, category: categoryOf(skill), confidence: s.confidence, level: levelFor(s.confidence), implied: e.impliedOnly,
       scores: { claim: s.claim, projectDepth: s.projectDepth, experience: s.experience, frequency: s.frequency, recency: s.recency },
-      evidence: { explicit: e.explicit, projects: e.projects, experienceMonths: e.experienceMonths, mentions: e.mentions, recencyYears: e.minAgeYears === Infinity ? null : e.minAgeYears, sources: [...e.sources] },
+      evidence: { explicit: e.explicit, projects: e.projects, experienceMonths: e.experienceMonths, mentions: e.mentions, recencyYears: e.minAgeYears === Infinity ? null : e.minAgeYears, experienceRecencyYears: e.datedMinAgeYears === Infinity ? null : e.datedMinAgeYears, sources: [...e.sources] },
     })
   }
   return out.sort((a, b) => b.confidence - a.confidence)
@@ -162,13 +163,21 @@ export type AnalyzeInput = {
 
 export function signalsFrom(input: AnalyzeInput): Signal[] {
   const s: Signal[] = []
-  if (input.headline) s.push({ kind: "headline", text: input.headline })
-  if (input.bio) s.push({ kind: "bio", text: input.bio })
-  for (const sk of input.skills || []) s.push({ kind: "skill", text: sk })
-  for (const p of input.projects || []) s.push({ kind: "project", text: [p.title, p.description].filter(Boolean).join(". ") })
-  for (const e of input.experiences || []) s.push({ kind: "experience", text: [e.title, e.company, e.description].filter(Boolean).join(". "), months: e.months, ageYears: e.ageYears })
-  for (const e of input.education || []) s.push({ kind: "education", text: [e.degree, e.field, e.school].filter(Boolean).join(". ") })
-  for (const d of input.documents || []) s.push({ kind: d.kind || "document", text: d.text })
+  // Coerce every text to a string and drop empties — inputs can come straight
+  // from a client (the analyze preview), so a non-string field must never crash
+  // norm()/detect() downstream (and we never fabricate: empty stays dropped).
+  const str = (v: unknown) => (v == null ? "" : String(v)).trim()
+  const join = (parts: unknown[]) => parts.map(str).filter(Boolean).join(". ")
+  const num = (v: unknown) => (typeof v === "number" && isFinite(v) ? v : undefined)
+  const push = (kind: SignalKind, text: string, extra?: { months?: number; ageYears?: number }) => { if (text) s.push({ kind, text, ...extra }) }
+
+  push("headline", str(input.headline))
+  push("bio", str(input.bio))
+  for (const sk of input.skills || []) push("skill", str(sk))
+  for (const p of input.projects || []) push("project", join([p?.title, p?.description]))
+  for (const e of input.experiences || []) push("experience", join([e?.title, e?.company, e?.description]), { months: num(e?.months), ageYears: num(e?.ageYears) })
+  for (const e of input.education || []) push("education", join([e?.degree, e?.field, e?.school]))
+  for (const d of input.documents || []) push((d?.kind as SignalKind) || "document", str(d?.text))
   return s
 }
 

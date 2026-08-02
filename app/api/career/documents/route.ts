@@ -53,8 +53,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Keep the original file too, so the user can download exactly what they sent.
+    // Private kind: these are the user's analysis inputs, never shared with
+    // recruiters — /api/media/[id] serves career_doc bytes to the owner only.
     const asset = await prisma.mediaAsset.create({
-      data: { ownerId: p.userId, kind: "resume", mime: file.type || "application/octet-stream", size: buffer.length, filename: file.name, data: buffer },
+      data: { ownerId: p.userId, kind: "career_doc", mime: file.type || "application/octet-stream", size: buffer.length, filename: file.name, data: buffer },
       select: { id: true },
     })
     const doc = await prisma.careerDocument.create({
