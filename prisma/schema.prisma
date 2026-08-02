@@ -489,6 +489,48 @@ model Task {
   @@index([assigneeId])
 }
 
+// ==== ICIRE — Career Intelligence (in-house knowledge graph) ====
+
+// An uploaded/analyzed career document; rawText is parsed into structured signals.
+model CareerDocument {
+  id        String   @id @default(cuid())
+  userId    String
+  kind      String   @default("resume") // resume|transcript|certificate|cover_letter|portfolio|other
+  title     String?
+  mediaId   String?                       // -> MediaAsset if a file was uploaded
+  rawText   String                        // extracted text
+  parsed    String   @default("{}")       // JSON structured extraction
+  createdAt DateTime @default(now())
+  @@index([userId])
+}
+
+// Per-applicant, per-skill proficiency with evidence (§5). One row per (user,skill).
+model SkillProficiency {
+  id              String   @id @default(cuid())
+  userId          String
+  skill           String                   // canonical skill name
+  category        String   @default("backend")
+  confidence      Float    @default(0)      // 0..1
+  level           String   @default("Novice")
+  implied         Boolean  @default(false)  // inferred vs demonstrated
+  scores          String   @default("{}")   // JSON sub-scores
+  evidence        String   @default("{}")   // JSON evidence
+  updatedAt       DateTime @updatedAt
+  @@unique([userId, skill])
+  @@index([userId])
+  @@index([skill])
+}
+
+// The assembled professional knowledge graph + summary for an applicant (§3).
+model CareerProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  graph      String   @default("{}")       // JSON nodes/edges
+  summary    String   @default("{}")       // JSON strengths, growth areas, stats
+  computedAt DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
 // ---- HRMS ----
 model Employee {
   id             String    @id @default(cuid())
