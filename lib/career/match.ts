@@ -42,7 +42,7 @@ export type MatchResult = {
   technical: number
   confidence: number       // how sure we are (evidence coverage)
   matched: { skill: string; category: string; confidence: number; must: boolean }[]
-  missing: { skill: string; category: string; must: boolean; difficulty: string; prepDays: number }[]
+  missing: { skill: string; category: string; must: boolean; difficulty: string; prepDays: number; expectedGain: number }[]
   why: string[]
   subscores: { technical: number; communication: number | null; leadership: number | null; research: number | null }
   projectedMatch: number   // after closing the top missing must-haves
@@ -81,8 +81,12 @@ export function matchJob(candidate: SkillResult[], job: JobLike): MatchResult {
   const technical = actual.technical, mustHave = actual.priority, overall = actual.overall
 
   const missing = missingRaw
-    .map((m) => { const d = difficulty(m.skill, cand); return { ...m, difficulty: d.label, prepDays: d.days } })
-    .sort((a, b) => Number(b.must) - Number(a.must) || a.prepDays - b.prepDays)
+    .map((m) => {
+      const d = difficulty(m.skill, cand)
+      const gain = coverage(req, (sk) => (sk === m.skill ? Math.max(0.7, conf(sk)) : conf(sk))).overall - actual.overall
+      return { ...m, difficulty: d.label, prepDays: d.days, expectedGain: Math.max(0, Math.round(gain * 100)) }
+    })
+    .sort((a, b) => Number(b.must) - Number(a.must) || b.expectedGain - a.expectedGain || a.prepDays - b.prepDays)
 
   // Projected match after closing the top missing skills (must-haves first), ~0.7 mastery.
   const focus = missing.slice(0, 5)
