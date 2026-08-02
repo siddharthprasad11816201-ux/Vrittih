@@ -19,6 +19,19 @@ const LIMIT = (() => { const i = process.argv.indexOf("--limit"); return i > -1 
 
 const p = new PrismaClient()
 
+// Retry transient pooler drops (P1001 / reset / timeout). Each wrapped block is
+// idempotent, so re-running it is safe.
+async function withRetry(fn, tries = 5) {
+  for (let i = 0; i < tries; i++) {
+    try { return await fn() }
+    catch (e) {
+      const transient = /P1001|ECONNRESET|ETIMEDOUT|terminating|Closed|timeout|Can't reach/i.test(String(e?.code || "") + " " + String(e?.message || ""))
+      if (i === tries - 1 || !transient) throw e
+      await new Promise((r) => setTimeout(r, 800 * (i + 1)))
+    }
+  }
+}
+
 const TYPES = ["FULLTIME", "PARTTIME", "INTERNSHIP", "CONTRACT", "FREELANCE"]
 const normType = (t) => { const s = String(t || "").toUpperCase().replace(/[^A-Z]/g, ""); return TYPES.includes(s) ? s : "FULLTIME" }
 
@@ -91,17 +104,16 @@ async function main() {
 
   const employerId = await ensureEmployer()
 
-  // Pre-upsert every unique skill once, then reuse the id map.
+  // Pre-create every unique skill in ONE round-trip, then map name -> id.
   const allSkills = [...new Set(interns.flatMap((j) => parseSkills(j.description)))]
-  const skillId = {}
-  for (const name of allSkills) {
-    const s = await p.skill.upsert({ where: { name }, update: {}, create: { name }, select: { id: true } })
-    skillId[name] = s.id
-  }
-  console.log(`skills upserted: ${allSkills.length}`)
+  if (allSkills.length) await withRetry(() => p.skill.createMany({ data: allSkills.map((name) => ({ name })), skipDuplicates: true }))
+  const skillRows = await withRetry(() => p.skill.findMany({ where: { name: { in: allSkills } }, select: { id: true, name: true } }))
+  const skillId = Object.fromEntries(skillRows.map((s) => [s.name, s.id]))
+  console.log(`skills ready: ${skillRows.length}`)
 
-  let created = 0, migrated = 0, updated = 0, withForm = 0, skillLinks = 0
+  let created = 0, migrated = 0, updated = 0, withForm = 0, skillLinks = 0, done = 0
   for (const j of interns) {
+   await withRetry(async () => {
     const extId = String(j.externalId)
     const fields = {
       title: String(j.title).slice(0, 200),
@@ -135,17 +147,17 @@ async function main() {
       created++
     }
 
-    // Skills (replace set)
+    // Skills (replace set) — one delete + one batch insert
     const skills = parseSkills(j.description)
     await p.jobSkill.deleteMany({ where: { jobId } })
-    for (const name of skills) {
-      if (!skillId[name]) continue
-      await p.jobSkill.create({ data: { jobId, skillId: skillId[name] } }).then(() => skillLinks++).catch(() => {})
-    }
+    const links = skills.map((name) => skillId[name]).filter(Boolean).map((sid) => ({ jobId, skillId: sid }))
+    if (links.length) { const r = await p.jobSkill.createMany({ data: links, skipDuplicates: true }); skillLinks += r.count }
 
     // Tailored internship application form
     await p.applicationForm.upsert({ where: { jobId }, update: INTERN_FORM, create: { jobId, ...INTERN_FORM } })
     withForm++
+   })
+   if (++done % 100 === 0) console.log(`  …${done}/${interns.length}`)
   }
 
   console.log(`\ncreated=${created} migrated(from aggregated)=${migrated} updated=${updated}`)
