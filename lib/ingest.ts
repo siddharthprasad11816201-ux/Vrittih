@@ -78,6 +78,11 @@ export async function ingestSource(adapter: SourceAdapter): Promise<IngestReport
     const govUrl = safeExternalUrl(l.govUrl)
     const applyUrl = safeExternalUrl(l.applyUrl)
     if (!l.externalId || !l.title || !(govUrl || applyUrl)) { report.skipped++; continue }
+    // EduRankAI internships are imported as NATIVE Vrittih jobs (their own applicant
+    // form) by scripts/import-edurankai-internships.mjs under sourceKey
+    // "edurankai-internships". Skip them here so the aggregated feed never creates a
+    // duplicate external-only listing for the same role.
+    if (adapter.key === "edurankai" && normType(l.type) === "INTERNSHIP") { report.skipped++; continue }
     seen.add(l.externalId)
 
     const closed = !!(l.closesAt && l.closesAt.getTime() < now.getTime())
