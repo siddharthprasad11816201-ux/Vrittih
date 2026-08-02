@@ -24,6 +24,7 @@ const DEFAULT_FORM = {
 // own profile so the form can be prefilled. A job with no form configured falls
 // back to sensible defaults rather than 404ing, so every job stays applicable.
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+ try {
   const job = await prisma.job.findUnique({
     where: { id: params.id },
     select: { id: true, title: true, company: true, postedById: true, applyUrl: true, govUrl: true, form: true },
@@ -80,6 +81,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     job: { id: job.id, title: job.title, company: job.company },
     form, profile, alreadyApplied, test, aggregated,
   })
+ } catch (e: any) {
+  // A transient DB/cold-start error must NOT look like "job not found" — return a
+  // distinct temporary error so the client can retry instead of dead-ending.
+  console.error("[JOB_FORM]", e?.message)
+  return NextResponse.json({ error: "temporary", temporary: true }, { status: 503 })
+ }
 }
 
 // PUT -> the employer who owns this job defines what it collects.

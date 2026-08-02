@@ -22,6 +22,7 @@ export default function ApplyPage() {
   const router = useRouter()
   const [data, setData] = useState<any>(null)
   const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<"notfound" | "temporary" | null>(null)
   const [step, setStep] = useState(0)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState("")
@@ -34,19 +35,32 @@ export default function ApplyPage() {
   const [docs, setDocs] = useState<Record<string, { mediaId: string; filename: string; size: number }>>({})
   const [uploading, setUploading] = useState<string | null>(null)
 
-  useEffect(() => {
-    fetch(`/api/jobs/${id}/form`).then(r => r.json()).then(d => {
+  // Resilient load: a transient cold-start/DB blip must never dead-end the applicant.
+  // Retry a few times, and distinguish a real 404 (job gone) from a temporary error.
+  async function load(attempt = 0) {
+    setErr(null); setLoading(true)
+    try {
+      const r = await fetch(`/api/jobs/${id}/form`)
+      if (r.status === 404) { setErr("notfound"); setLoading(false); return }
+      if (!r.ok) throw new Error("http " + r.status)
+      const d = await r.json()
+      if (d?.error) { if (d.error === "Job not found") { setErr("notfound"); setLoading(false); return } throw new Error(d.error) }
       setData(d)
       if (d.profile) setMe({
         name: d.profile.name || "", email: d.profile.email || "", phone: d.profile.phone || "",
         location: d.profile.location || "", headline: d.profile.headline || "", bio: d.profile.bio || "",
       })
       setLoading(false)
-    }).catch(() => setLoading(false))
-  }, [id])
+    } catch {
+      if (attempt < 3) { setTimeout(() => load(attempt + 1), 600 * (attempt + 1)); return }
+      setErr("temporary"); setLoading(false)
+    }
+  }
+  useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [id])
 
   if (loading) return <AppShell title="Apply"><div style={S.dim}>Loading application…</div></AppShell>
-  if (!data || data.error) return <AppShell title="Apply"><div style={S.dim}>This job could not be found.</div></AppShell>
+  if (err === "notfound") return <AppShell title="Apply"><div style={S.dim}>This job could not be found. <Link href="/jobs" style={{ color: "#334EAC", fontWeight: 600 }}>Browse jobs</Link></div></AppShell>
+  if (err === "temporary" || !data) return <AppShell title="Apply"><div style={S.dim}>We couldn’t load this application just now. <button onClick={() => load()} style={S.retry}>Try again</button></div></AppShell>
 
   const form = data.form
   const questions: Q[] = form.questions || []
@@ -326,4 +340,5 @@ const S: Record<string, any> = {
   tick: { width: 54, height: 54, borderRadius: "50%", background: "var(--v-accent-soft)", color: "var(--v-accent)", display: "grid", placeItems: "center", margin: "0 auto 14px" },
   link: { color: "var(--v-accent)", fontWeight: 600 },
   dim: { padding: 40, textAlign: "center", color: "var(--v-ink-3)" },
+  retry: { marginLeft: 8, font: "600 13px var(--font-sans)", color: "#fff", background: "#6495ED", border: "none", borderRadius: 9, padding: "7px 14px", cursor: "pointer" },
 }

@@ -182,7 +182,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
         <span style={{ font: "600 13.5px var(--font-sans)" }}>AI Career Coach</span>
       </div>
       <p style={{ margin: "0 0 12px", font: "400 12.5px/1.5 var(--font-sans)", color: "rgba(255,255,255,.85)" }}>Tailored guidance for your next move.</p>
-      <Link href="/tools" style={S.coachBtn}>Ask the coach</Link>
+      <Link href="/career" style={S.coachBtn}>Ask the coach</Link>
     </div>
   )
 
@@ -234,7 +234,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
           <aside style={{ ...S.sidebar, ...(rail ? S.sidebarRail : {}) }}>
             <nav style={S.navScroll} className="ks-scroll"><SectionedNav rail={rail} /></nav>
             {rail
-              ? <Link href="/tools" title="AI Career Coach" aria-label="AI Career Coach" style={S.railCoach}><IconActivity size={20} /></Link>
+              ? <Link href="/career" title="AI Career Coach" aria-label="AI Career Coach" style={S.railCoach}><IconActivity size={20} /></Link>
               : <CoachCard />}
           </aside>
         )}
