@@ -118,16 +118,19 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const [user, setUser] = useState<any>(null)
   const [authLoaded, setAuthLoaded] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
+  const [isTablet, setIsTablet] = useState(false)
   const [drawerOpen, setDrawerOpen] = useState(false)
 
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.json()).then((d) => setUser(d.user || null)).catch(() => setUser(null)).finally(() => setAuthLoaded(true))
   }, [])
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 900px)")
-    const on = () => setIsMobile(mq.matches)
-    on(); mq.addEventListener("change", on)
-    return () => mq.removeEventListener("change", on)
+    // <720 = mobile (bottom nav + drawer); 720–1119 = tablet (72px icon rail); ≥1120 = full sidebar. §7
+    const mMob = window.matchMedia("(max-width: 719px)")
+    const mTab = window.matchMedia("(min-width: 720px) and (max-width: 1119px)")
+    const on = () => { setIsMobile(mMob.matches); setIsTablet(mTab.matches) }
+    on(); mMob.addEventListener("change", on); mTab.addEventListener("change", on)
+    return () => { mMob.removeEventListener("change", on); mTab.removeEventListener("change", on) }
   }, [])
   useEffect(() => { setDrawerOpen(false) }, [pathname])
   useEffect(() => {
@@ -136,29 +139,36 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   }, [])
 
   const isEmployer = !!user && ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user.role)
+  const rail = isTablet // 72px icon-rail sidebar
   const sections = buildNav(user)
   const tabs = bottomTabs(user)
   const active = (href: string) => href === "/dashboard" ? pathname === "/dashboard" : (pathname === href || pathname.startsWith(href + "/"))
   const activeTab = tabs.findIndex((t) => active(t.href))
   const initials = (user?.name || "?").split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
 
-  const NavItem = ({ it, indicator = true }: { it: Item; indicator?: boolean }) => {
+  const NavItem = ({ it, rail = false }: { it: Item; rail?: boolean }) => {
     const on = active(it.href)
+    if (rail) return (
+      <Link href={it.href} title={it.label} aria-label={it.label} style={{ ...S.railItem, ...(on ? S.railItemOn : {}) }} className="ks-navitem">
+        <span style={{ display: "inline-flex", color: on ? "#2F6BE0" : "#94A3B8" }}>{it.icon}</span>
+      </Link>
+    )
     return (
       <Link href={it.href} style={{ ...S.item, ...(on ? S.itemOn : {}) }} className="ks-navitem">
-        {indicator && <span style={{ ...S.indicator, background: on ? "#6495ED" : "transparent" }} />}
+        <span style={{ ...S.indicator, background: on ? "#6495ED" : "transparent" }} />
         <span style={{ display: "inline-flex", width: 19, height: 19, color: on ? "#2F6BE0" : "#94A3B8" }}>{it.icon}</span>
         {it.label}
       </Link>
     )
   }
 
-  const SectionedNav = () => (
+  const SectionedNav = ({ rail = false }: { rail?: boolean }) => (
     <>
       {sections.map((sec, i) => (
         <div key={i}>
-          {sec.title && <div style={S.secLabel}>{sec.title}</div>}
-          {sec.items.map((it) => <NavItem key={it.href} it={it} />)}
+          {sec.title && !rail && <div style={S.secLabel}>{sec.title}</div>}
+          {sec.title && rail && i > 0 && <div style={S.railDivider} />}
+          {sec.items.map((it) => <NavItem key={it.href} it={it} rail={rail} />)}
         </div>
       ))}
     </>
@@ -220,10 +230,11 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
       <div style={S.body}>
         {!isMobile && (
-          <aside style={S.sidebar}>
-            <nav style={{ display: "flex", flexDirection: "column" }}><SectionedNav /></nav>
-            <div style={{ flex: 1, minHeight: 16 }} />
-            <CoachCard />
+          <aside style={{ ...S.sidebar, ...(rail ? S.sidebarRail : {}) }}>
+            <nav style={S.navScroll} className="ks-scroll"><SectionedNav rail={rail} /></nav>
+            {rail
+              ? <Link href="/tools" title="AI Career Coach" aria-label="AI Career Coach" style={S.railCoach}><IconActivity size={20} /></Link>
+              : <CoachCard />}
           </aside>
         )}
         {/* `title` is accepted for backward-compat; pages render their own headers
@@ -271,6 +282,11 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 const ksCss = `
 body{ overflow-x:clip; }
 .ks-navitem:hover { background:#F1F5F9 !important; }
+.ks-scroll{ scrollbar-width:thin; scrollbar-color:#D9E0EA transparent; }
+.ks-scroll::-webkit-scrollbar{ width:8px; }
+.ks-scroll::-webkit-scrollbar-thumb{ background:#D9E0EA; border-radius:8px; border:2px solid #fff; }
+.ks-scroll::-webkit-scrollbar-thumb:hover{ background:#C3CDDA; }
+.ks-scroll::-webkit-scrollbar-track{ background:transparent; }
 @keyframes vgfloat{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(6px,-20px) scale(1.06)}}
 @media (prefers-reduced-motion: reduce){
   .ks-pill,.ks-drawer{ transition:none !important; }
@@ -300,7 +316,13 @@ const S: Record<string, any> = {
   pRole: { display: "block", font: "400 11.5px var(--font-sans)", color: "#94A3B8" },
 
   body: { position: "relative", zIndex: 1, display: "flex", alignItems: "stretch", minHeight: "calc(100vh - 72px)" },
-  sidebar: { width: 264, flex: "none", background: "#fff", borderRight: "1px solid #ECEFF3", display: "flex", flexDirection: "column", padding: "16px 14px", position: "sticky", top: 72, height: "calc(100vh - 72px)", overflowY: "auto" },
+  sidebar: { width: 264, flex: "none", background: "#fff", borderRight: "1px solid #ECEFF3", display: "flex", flexDirection: "column", padding: "16px 14px", position: "sticky", top: 72, height: "calc(100vh - 72px)", overflow: "hidden" },
+  navScroll: { flex: 1, minHeight: 0, overflowY: "auto", display: "flex", flexDirection: "column", paddingBottom: 12 },
+  sidebarRail: { width: 72, padding: "16px 10px" },
+  railItem: { position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, margin: "2px auto", borderRadius: 12, color: "#475569", textDecoration: "none" },
+  railItemOn: { background: "#EAF1FE", color: "#2F6BE0" },
+  railDivider: { height: 1, background: "#EDF0F4", margin: "10px 8px" },
+  railCoach: { display: "flex", alignItems: "center", justifyContent: "center", width: 44, height: 44, margin: "4px auto 0", borderRadius: 12, background: "linear-gradient(135deg,#6495ED,#334EAC)", color: "#fff", textDecoration: "none", boxShadow: "0 14px 30px -16px rgba(51,78,172,.7)", flex: "none" },
   secLabel: { font: "600 11px var(--font-sans)", letterSpacing: ".07em", color: "#94A3B8", padding: "16px 12px 6px" },
   item: { position: "relative", display: "flex", alignItems: "center", gap: 12, height: 42, padding: "0 12px", borderRadius: 10, color: "#475569", font: "500 14px var(--font-sans)", textDecoration: "none", marginBottom: 2 },
   itemOn: { background: "#EAF1FE", color: "#2F6BE0" },
