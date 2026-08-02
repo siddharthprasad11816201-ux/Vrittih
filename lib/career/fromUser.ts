@@ -25,9 +25,10 @@ export async function inputFromUser(userId: string): Promise<AnalyzeInput> {
   }
 }
 
-/** Assemble the raw material for a résumé/ATS critique (§14): the applicant's
- * headline, summary, and their experience/project bullets (one per line). */
-export async function resumeFromUser(userId: string): Promise<{ bullets: string[]; bio?: string; headline?: string }> {
+/** Assemble the raw material for a résumé/ATS critique (§14) and auto-enhance
+ * (§15): the applicant's headline, summary, experience/project bullets (one per
+ * line), and their total years of experience. */
+export async function resumeFromUser(userId: string): Promise<{ bullets: string[]; bio?: string; headline?: string; years: number }> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: { experience: true },
@@ -39,5 +40,6 @@ export async function resumeFromUser(userId: string): Promise<{ bullets: string[
     ...(user?.experience || []).flatMap((e: any) => splitBullets(e.description)),
     ...docs.flatMap((d) => splitBullets(d.rawText)),
   ]
-  return { bullets, bio: user?.bio || undefined, headline: user?.headline || undefined }
+  const months = (user?.experience || []).reduce((sum: number, e: any) => sum + monthsBetween(new Date(e.startDate), e.endDate ? new Date(e.endDate) : new Date()), 0)
+  return { bullets, bio: user?.bio || undefined, headline: user?.headline || undefined, years: Math.round(months / 12) }
 }

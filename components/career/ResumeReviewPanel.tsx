@@ -13,6 +13,13 @@ type Review = {
   matchedKeywords: string[]
   findings: Finding[]
 }
+type Rewrite = { original: string; improved: string; reason: string }
+type Enhance = {
+  rewrites: Rewrite[]
+  summary: string
+  summaryNote?: string
+  tailoring: { emphasizeSkills: string[]; leadBullets: string[]; note: string }
+}
 
 const scoreTone = (s: number) => (s >= 75 ? { c: "#16A34A", bg: "#E7F8EE" } : s >= 50 ? { c: "#B45309", bg: "#FEF3E2" } : { c: "#DC2626", bg: "#FDECEC" })
 const sev: Record<Finding["severity"], { c: string; bg: string; label: string }> = {
@@ -23,15 +30,17 @@ const sev: Record<Finding["severity"], { c: string; bg: string; label: string }>
 
 export default function ResumeReviewPanel({ jobId }: { jobId: string }) {
   const [d, setD] = useState<Review | null>(null)
+  const [enh, setEnh] = useState<Enhance | null>(null)
   const [state, setState] = useState<"loading" | "ready" | "hidden">("loading")
   const [all, setAll] = useState(false)
+  const [tab, setTab] = useState<"review" | "improve">("review")
 
   useEffect(() => {
     let live = true
     fetch(`/api/career/resume-review/${jobId}`).then((r) => {
       if (!r.ok) { if (live) setState("hidden"); return null }
       return r.json()
-    }).then((j) => { if (live && j?.review) { setD(j.review); setState("ready") } }).catch(() => live && setState("hidden"))
+    }).then((j) => { if (live && j?.review) { setD(j.review); setEnh(j.enhance || null); setState("ready") } }).catch(() => live && setState("hidden"))
     return () => { live = false }
   }, [jobId])
 
@@ -53,8 +62,53 @@ export default function ResumeReviewPanel({ jobId }: { jobId: string }) {
         <div style={{ ...S.score, color: t.c, background: t.bg }}><b style={{ fontSize: 18 }}>{d.score}</b><span style={{ opacity: .75 }}>/100</span></div>
       </div>
 
+      {!empty && enh && (enh.rewrites.length > 0 || enh.summary || enh.tailoring.emphasizeSkills.length > 0) && (
+        <div style={S.tabs}>
+          <button style={{ ...S.tab, ...(tab === "review" ? S.tabOn : {}) }} onClick={() => setTab("review")}>Review</button>
+          <button style={{ ...S.tab, ...(tab === "improve" ? S.tabOn : {}) }} onClick={() => setTab("improve")}>Auto-improve</button>
+        </div>
+      )}
+
       {empty ? (
         <p style={S.warn}>Add your experience and projects to your profile so we can review your résumé against this role.</p>
+      ) : tab === "improve" && enh ? (
+        <div style={S.improve}>
+          {enh.tailoring.emphasizeSkills.length > 0 && (
+            <div style={S.block}>
+              <div style={S.blockLabel}>Tailor for this role</div>
+              <div style={S.tailorNote}>{enh.tailoring.note}</div>
+              <div style={S.kwWrap}>{enh.tailoring.emphasizeSkills.map((k) => <span key={k} style={S.kwHave}>{k}</span>)}</div>
+              {enh.tailoring.leadBullets.length > 0 && (
+                <ul style={S.leadList}>
+                  {enh.tailoring.leadBullets.map((b, i) => <li key={i} style={S.leadItem}>{b.length > 130 ? b.slice(0, 130) + "…" : b}</li>)}
+                </ul>
+              )}
+            </div>
+          )}
+
+          {(enh.summary || enh.summaryNote) && (
+            <div style={S.block}>
+              <div style={S.blockLabel}>Suggested summary</div>
+              {enh.summary ? <div style={S.summaryBox}>{enh.summary}</div> : <div style={S.tailorNote}>{enh.summaryNote}</div>}
+            </div>
+          )}
+
+          {enh.rewrites.length > 0 && (
+            <div style={S.block}>
+              <div style={S.blockLabel}>Stronger bullets</div>
+              <div style={S.rewrites}>
+                {enh.rewrites.map((r, i) => (
+                  <div key={i} style={S.rewrite}>
+                    <div style={S.rwOld}><span style={S.rwTag}>Before</span>{r.original}</div>
+                    <div style={S.rwNew}><span style={{ ...S.rwTag, color: "#166534", background: "#E7F8EE" }}>After</span>{r.improved}</div>
+                    <div style={S.rwReason}>{r.reason}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={S.disclaimer}>Suggestions only — edit to keep every claim true. Bracketed placeholders are for you to fill with real numbers.</div>
+            </div>
+          )}
+        </div>
       ) : (
         <>
           <div style={S.stats}>
@@ -119,4 +173,22 @@ const S: Record<string, any> = {
   fbullet: { font: "400 12px/1.5 var(--font-sans)", color: "#94A3B8", fontStyle: "italic" },
   ffix: { font: "400 12.5px/1.5 var(--font-sans)", color: "#475569" },
   more: { marginTop: 12, font: "600 12.5px var(--font-sans)", color: "#334EAC", background: "#F3F6FF", border: "1px solid #E1E9FE", borderRadius: 9, padding: "7px 13px", cursor: "pointer" },
+  tabs: { display: "inline-flex", gap: 4, background: "#F1F5F9", borderRadius: 999, padding: 3, marginBottom: 16 },
+  tab: { font: "600 12.5px var(--font-sans)", color: "#64748B", background: "none", border: "none", borderRadius: 999, padding: "6px 14px", cursor: "pointer" },
+  tabOn: { background: "#fff", color: "#334EAC", boxShadow: "0 1px 2px rgba(16,24,40,.08)" },
+  improve: { display: "flex", flexDirection: "column", gap: 18 },
+  block: { display: "flex", flexDirection: "column", gap: 8 },
+  blockLabel: { font: "700 11px var(--font-sans)", textTransform: "uppercase", letterSpacing: ".05em", color: "#94A3B8" },
+  tailorNote: { font: "400 12.5px/1.5 var(--font-sans)", color: "#475569" },
+  kwHave: { font: "500 12.5px var(--font-sans)", color: "#166534", background: "#E7F8EE", border: "1px solid #CDEFDB", borderRadius: 999, padding: "4px 11px" },
+  leadList: { margin: "6px 0 0", padding: "0 0 0 18px", display: "flex", flexDirection: "column", gap: 5 },
+  leadItem: { font: "400 12.5px/1.5 var(--font-sans)", color: "#334155" },
+  summaryBox: { font: "400 13px/1.55 var(--font-sans)", color: "#1F2937", background: "#F7F9FC", border: "1px solid #E9EDF2", borderRadius: 11, padding: "12px 14px" },
+  rewrites: { display: "flex", flexDirection: "column", gap: 12 },
+  rewrite: { display: "flex", flexDirection: "column", gap: 5, background: "#F7F9FC", border: "1px solid #E9EDF2", borderRadius: 11, padding: "12px 14px" },
+  rwOld: { font: "400 12.5px/1.5 var(--font-sans)", color: "#94A3B8", textDecoration: "line-through", display: "flex", gap: 8, alignItems: "baseline" },
+  rwNew: { font: "500 13px/1.5 var(--font-sans)", color: "#1F2937", display: "flex", gap: 8, alignItems: "baseline" },
+  rwTag: { font: "700 9px var(--font-sans)", textTransform: "uppercase", letterSpacing: ".04em", color: "#94A3B8", background: "#EEF2F6", borderRadius: 5, padding: "2px 6px", flexShrink: 0 },
+  rwReason: { font: "400 11.5px var(--font-sans)", color: "#94A3B8" },
+  disclaimer: { font: "400 11.5px/1.5 var(--font-sans)", color: "#94A3B8", marginTop: 2 },
 }
