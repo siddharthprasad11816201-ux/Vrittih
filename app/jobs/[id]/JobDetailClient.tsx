@@ -6,6 +6,8 @@ import AppShell from "@/components/vrittih/AppShell"
 import CompanyLogo from "@/components/vrittih/CompanyLogo"
 import MatchPanel from "@/components/career/MatchPanel"
 import RoadmapPanel from "@/components/career/RoadmapPanel"
+import ResumeReviewPanel from "@/components/career/ResumeReviewPanel"
+import InterviewPanel from "@/components/career/InterviewPanel"
 import styles from "@/styles/jobdetail.module.css"
 import { IconBanknote } from "@/components/ui/Icons"
 import { slugify } from "@/lib/company"
@@ -119,6 +121,8 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
 
           <MatchPanel jobId={id} />
           <RoadmapPanel jobId={id} />
+          <ResumeReviewPanel jobId={id} />
+          <InterviewPanel jobId={id} />
 
           {error && <div className={styles.errorBox}>{error}</div>}
 

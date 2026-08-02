@@ -24,3 +24,20 @@ export async function inputFromUser(userId: string): Promise<AnalyzeInput> {
     documents: docs.map((d) => ({ kind: "document" as const, text: d.rawText })),
   }
 }
+
+/** Assemble the raw material for a résumé/ATS critique (§14): the applicant's
+ * headline, summary, and their experience/project bullets (one per line). */
+export async function resumeFromUser(userId: string): Promise<{ bullets: string[]; bio?: string; headline?: string }> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: { experience: true },
+  })
+  const docs = await prisma.careerDocument.findMany({ where: { userId }, select: { rawText: true }, take: 25 })
+  const splitBullets = (t?: string | null) =>
+    (t || "").split(/\r?\n|(?<=[.!?])\s+(?=[A-Z])|[•▪◦·]\s*/).map((s) => s.replace(/^[\s\-*•▪◦·]+/, "").trim()).filter((s) => s.length > 12)
+  const bullets = [
+    ...(user?.experience || []).flatMap((e: any) => splitBullets(e.description)),
+    ...docs.flatMap((d) => splitBullets(d.rawText)),
+  ]
+  return { bullets, bio: user?.bio || undefined, headline: user?.headline || undefined }
+}
