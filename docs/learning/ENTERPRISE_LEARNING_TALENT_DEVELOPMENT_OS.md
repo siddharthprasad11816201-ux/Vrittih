@@ -77,7 +77,9 @@ Legend: ✅ reuse · ◐ extend · ⬜ build · ▶ now.
 | 14 | Certifications | ✅ | `lib/certificate` + `Certificate` — competency‑linked credentials on completion. |
 | 15 | Learning Experience Platform (LXP) | ⬜ | Learner dashboard: paths, recommendations, progress, goals, achievements. Batch 2/3. |
 
-**Batch 1 (now): Module 1 — the Enterprise Competency Framework (the spine).**
+**ELTOS COMPLETE (Batches 1–4 shipped + reviewed; remaining modules mapped to reused
+systems). Production readiness: GO — see `docs/learning/ELTOS_COMPLETION_REPORT.md`.
+Next: Phase 3 (Enterprise Research & Innovation Platform).**
 
 ---
 
