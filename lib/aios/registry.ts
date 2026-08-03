@@ -18,6 +18,12 @@ export const MODELS: ModelSeed[] = [
   { modelId: "outcome-calibrate-v1", task: "prediction", capabilities: ["hiring-probability", "recommendation-calibration"] },
   { modelId: "doc-extract-v1", task: "extraction", capabilities: ["pdf-extract", "docx-extract"] },
   { modelId: "career-dna-v1", task: "reasoning", capabilities: ["career-dna"] },
+  // §10/§11/§19/§25/§18 — the cognitive engines (in-house deterministic).
+  { modelId: "reason-engine-v1", task: "reasoning", capabilities: ["argumentation", "forward-chaining"] },
+  { modelId: "plan-engine-v1", task: "planning", capabilities: ["goal-planning"] },
+  { modelId: "reflect-engine-v1", task: "reflection", capabilities: ["self-critique"] },
+  { modelId: "evaluate-engine-v1", task: "evaluation", capabilities: ["rubric-scoring"] },
+  { modelId: "recommend-engine-v1", task: "recommendation", capabilities: ["ranking", "recommendation-calibration"] },
 ]
 
 // §9 — capabilities (authorization derives from these, never role names).
@@ -27,6 +33,12 @@ export const CAPABILITIES: CapabilitySeed[] = [
   { capId: "career.dna", name: "Compute Career DNA", provider: "career.dna", modelId: "career-dna-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "career.frontier", name: "Market skill frontier", provider: "career.frontier", modelId: "icire-rank-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "career.coach.answer", name: "AI Career Coach answer", provider: "career.coach.answer", modelId: "intent-classify-v1", safetyClass: "standard", permissions: ["auth"] },
+  // §10/§11/§19/§25/§18 — cognitive engines, gateway-executable + audited.
+  { capId: "reasoning.infer", name: "Reasoning (argumentation + inference)", provider: "reasoning.infer", modelId: "reason-engine-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "planning.plan", name: "Goal planning", provider: "planning.plan", modelId: "plan-engine-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "reflection.reflect", name: "Reflection / self-critique", provider: "reflection.reflect", modelId: "reflect-engine-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "evaluation.evaluate", name: "Rubric evaluation", provider: "evaluation.evaluate", modelId: "evaluate-engine-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "recommendation.rank", name: "Recommendation ranking + calibration", provider: "recommendation.rank", modelId: "recommend-engine-v1", safetyClass: "standard", permissions: ["auth"] },
 ]
 
 // §7 — registered agents. The Career Coach is the first.

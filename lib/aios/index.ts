@@ -1,6 +1,7 @@
 /* AIOS bootstrap — import this to use the gateway; it guarantees the built-in
  * capability providers + knowledge event handlers are registered before use. */
 import "./providers"
+import "./engine-providers"
 import { registerKnowledgeHandlers } from "@/lib/knowledge/handlers"
 registerKnowledgeHandlers()
 
