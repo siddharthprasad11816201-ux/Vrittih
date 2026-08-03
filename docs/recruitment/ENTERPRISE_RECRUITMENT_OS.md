@@ -62,7 +62,7 @@ Legend: ✅ exists & reused · ◐ partial (extend) · ⬜ gap (build) · ▶ bu
 |---|---|---|
 | **1. Strategic Workforce Planning** | ◐ | Forecasting engine exists (`lib/intelligence/forecast.ts`); EIDP series. GAP: a hiring-forecast/demand dashboard + budget/scenario. Plan: `/recruitment/planning` on the forecast engine. |
 | **2. Job Architecture** | ✅ | Families/levels/ladders (`lib/career/roles.ts`) + **versioned `JobTemplate`** with a governed approval lifecycle (`lib/jobarch/lifecycle.ts`), an **in-house deterministic JD assistant** (`lib/jobarch/jd.ts`, no external LLM — 15 tests) + competency libraries, a **role-similarity engine** (`lib/jobarch/similarity.ts` — comparison/semantic search, 14 tests w/ lifecycle), `/api/job-templates*` and the `/job-architecture` UI (create → JD preview → draft → approve → reusable library). |
-| **3. Talent CRM** | ◐ | `Contact` CRM (stages), `Company`, referrals partial. GAP: `TalentPool`/pools, silver-medalists, alumni, recruiter notes on candidates. |
+| **3. Talent CRM** | ✅ | **TalentPool** (8 kinds: pool/silver-medalist/campus/alumni/referral/passive/community/research) + **TalentPoolMember** with relationship stages + deterministic **pipeline-health** (`lib/talent/pools.ts`), **semantic talent discovery** (`lib/talent/discovery.ts` — skill-graph match, no embeddings; 12 tests across both), **Referral** network with status workflow. `/api/talent/*` + `/api/referrals` + `/talent` UI (pools · discover · referrals). |
 | **4. AI Candidate Discovery** | ✅ | ICAE (`lib/opportunity/*`, `/api/opportunities/groups`), `lib/career/match`, semantic index (`lib/knowledge/semindex`), recommendations. Reused. |
 | **5. Application Management** | ✅ | `Application`(+Form/Answer/Document), `StatusEvent` timeline, `/api/applications` (+ `/batch` from ICAE), status workflow. Reused. |
 | **6. Interview Intelligence** | ✅ | Scheduling + governance + panels; **scorecards** (`InterviewScorecard`, `/api/interviews/[id]/scorecard`, `/interviews/[code]/evaluate`) with competency aggregation, panel consensus + bias signals (`lib/interview/scorecard.ts`, 13 tests); **semantic proctoring Phase 1** (`ProctorSession`/`ProctorEvent`, `lib/proctor/events.ts` 14 tests, `/api/proctor/*`, consent-gated on-device `ProctorCapture`, human-authoritative reviewer console `/proctoring`). Architecture: `docs/interview/MULTIMODAL_INTERVIEW_PROCTORING_PLATFORM.md`. Follow-ups: room/test-attempt capture mounts, interview analytics dashboard, Phase-2 on-device CV. |
@@ -174,6 +174,14 @@ modules add their models the same way. Local schema provider is always restored 
 - **2026-08-03** — Batch 3 shipped: **Module 2/3 Job Architecture** (JobTemplate +
   versioned approval lifecycle, in-house JD assistant, competency libraries,
   role-similarity engine, `/api/job-templates*`, `/job-architecture`). Both DBs migrated.
+- **2026-08-03** — Batch 3 review (6 agents) → **2 confirmed fixed**: JD nice-to-haves
+  inverted (advanced/adjacent skills that build on the required ones, never a required
+  skill's prerequisites shown as optional); admin "Approved library" no longer empties
+  (author-scoped `mine` + an admin "Awaiting approval" tab makes the approval workflow
+  reachable).
+- **2026-08-03** — Batch 4 shipped: **Module 4 Talent CRM** (TalentPool/Member +
+  pipeline health, semantic discovery, Referral network; `/api/talent/*`,
+  `/api/referrals`, `/talent`). Both DBs migrated. Build green.
 - **2026-08-03** — Batch 2 shipped: **Module 6 Interview Intelligence + Semantic
   Proctoring (Phase 1)**. InterviewScorecard model + submit/aggregate API +
   `/interviews/[code]/evaluate` (competency ratings → explainable panel decision with

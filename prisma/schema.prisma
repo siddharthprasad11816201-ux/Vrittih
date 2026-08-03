@@ -5,7 +5,7 @@ generator client {
 datasource db {
   // LOCAL DEV = sqlite. TO DEPLOY: change provider to "postgresql" (the url is
   // already env-driven — just set DATABASE_URL to your Postgres string).
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -102,6 +102,9 @@ model User {
   scorecardsGiven      InterviewScorecard[] @relation("ScorecardPanelist")
   proctorSessions      ProctorSession[]     @relation("ProctorSubject")
   jobTemplates         JobTemplate[]        @relation("JobTemplateCreator")
+  talentPools          TalentPool[]         @relation("TalentPoolOwner")
+  talentMemberships    TalentPoolMember[]   @relation("TalentPoolMemberUser")
+  referralsMade        Referral[]           @relation("ReferralReferrer")
 }
 
 // A structured internship engagement (native "InternshipOS"): a weekly milestone
@@ -1253,6 +1256,54 @@ model JobTemplate {
   createdBy             User     @relation("JobTemplateCreator", fields: [createdById], references: [id], onDelete: Cascade)
   @@index([createdById, status])
   @@index([family, level])
+}
+
+// EROS Module 4 — Talent CRM. A recruiter's talent pool (pipeline of a given kind) and
+// its members (platform users or external candidates), each at a relationship stage.
+model TalentPool {
+  id          String   @id @default(cuid())
+  ownerId     String
+  name        String
+  kind        String   @default("POOL")   // POOL|SILVER_MEDALIST|CAMPUS|ALUMNI|REFERRAL|PASSIVE|COMMUNITY|RESEARCH
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  owner       User     @relation("TalentPoolOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members     TalentPoolMember[]
+  @@index([ownerId, kind])
+}
+
+model TalentPoolMember {
+  id             String   @id @default(cuid())
+  poolId         String
+  userId         String?                    // linked platform user, if known
+  email          String?                    // external/passive candidate not yet on-platform
+  name           String?
+  stage          String   @default("NEW")   // NEW|CONTACTED|ENGAGED|INTERESTED|NURTURING|CONVERTED|DORMANT
+  note           String?
+  source         String?
+  addedById      String
+  addedAt        DateTime @default(now())
+  lastActivityAt DateTime?
+  pool           TalentPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
+  member         User?      @relation("TalentPoolMemberUser", fields: [userId], references: [id], onDelete: SetNull)
+  @@index([poolId, stage])
+}
+
+model Referral {
+  id             String   @id @default(cuid())
+  referrerId     String
+  candidateEmail String
+  candidateName  String?
+  jobId          String?
+  relationship   String?                    // how the referrer knows them
+  status         String   @default("SUBMITTED") // SUBMITTED|REVIEWING|INTERVIEWING|HIRED|REJECTED
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  referrer       User     @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
+  @@index([referrerId])
+  @@index([jobId, status])
 }
 
 // What a given job requires of an applicant. Employers differ: some want a CV

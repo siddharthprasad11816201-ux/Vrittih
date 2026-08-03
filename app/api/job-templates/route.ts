@@ -23,17 +23,23 @@ export async function GET(req: NextRequest) {
   const ctx = await resolveContext(req)
   if (!ctx.userId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   if (!canManage(ctx)) return NextResponse.json({ error: "You need recruiter access." }, { status: 403 })
+  const isAdmin = ctx.has("admin.access")
   const inc = { createdBy: { select: { id: true, name: true } } }
-  // My templates + the shared APPROVED library (approved templates are reusable org-wide).
-  const [mine, library] = await Promise.all([
-    prisma.jobTemplate.findMany({ where: ctx.has("admin.access") ? {} : { createdById: ctx.userId }, include: inc, orderBy: { updatedAt: "desc" }, take: 200 }),
+  // My authored templates + the shared APPROVED library (reusable org-wide) + (for the
+  // approver) others' templates awaiting approval so the approval workflow is reachable.
+  const [mine, library, pending] = await Promise.all([
+    prisma.jobTemplate.findMany({ where: { createdById: ctx.userId }, include: inc, orderBy: { updatedAt: "desc" }, take: 200 }),
     prisma.jobTemplate.findMany({ where: { status: "APPROVED" }, include: inc, orderBy: { updatedAt: "desc" }, take: 200 }),
+    isAdmin
+      ? prisma.jobTemplate.findMany({ where: { status: "PENDING_APPROVAL", createdById: { not: ctx.userId } }, include: inc, orderBy: { updatedAt: "desc" }, take: 200 })
+      : Promise.resolve([] as any[]),
   ])
   const seen = new Set(mine.map(m => m.id))
   return NextResponse.json({
     mine: mine.map(shape),
     library: library.filter(l => !seen.has(l.id)).map(shape),
-    isAdmin: ctx.has("admin.access"),
+    pendingApproval: pending.map(shape),
+    isAdmin,
   })
 }
 

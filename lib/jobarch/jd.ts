@@ -105,14 +105,16 @@ export function generateJD(input: JDInput): JD {
     ...skills.map(s => `Proficiency in ${s}`),
   ])
 
-  // Nice-to-haves: skills implied by (but not identical to) the required ones.
+  // Nice-to-haves: ADVANCED/ADJACENT skills that BUILD ON the required ones — i.e.
+  // skills X whose implication set contains a required skill (React required ⇒ Next.js
+  // / Redux as nice-to-have). IMPLY points a skill → its prerequisites, so we invert it:
+  // never list a required skill's own prerequisites as "optional".
+  const reqLower = new Set(skills.map(s => s.toLowerCase()))
   const implied = new Set<string>()
-  for (const s of skills) {
-    for (const key of Object.keys(IMPLY)) {
-      if ((canonical(key) || key).toLowerCase() === s.toLowerCase()) {
-        for (const im of IMPLY[key]) { const c = canonical(im) || im; if (!skills.some(k => k.toLowerCase() === c.toLowerCase())) implied.add(c) }
-      }
-    }
+  for (const key of Object.keys(IMPLY)) {
+    const canonKey = (canonical(key) || key)
+    if (reqLower.has(canonKey.toLowerCase())) continue
+    if (IMPLY[key].some(im => reqLower.has((canonical(im) || im).toLowerCase()))) implied.add(canonKey)
   }
   const niceToHaves = uniq(Array.from(implied)).slice(0, 6)
 

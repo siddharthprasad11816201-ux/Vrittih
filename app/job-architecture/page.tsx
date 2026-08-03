@@ -14,7 +14,7 @@ const statusLabel = (s: string) => (TEMPLATE_STATUS_LABEL as Record<string, stri
 export default function JobArchitecturePage() {
   const [state, setState] = useState<"loading" | "ok" | "denied">("loading")
   const [data, setData] = useState<any>({ mine: [], library: [], isAdmin: false })
-  const [tab, setTab] = useState<"mine" | "library">("mine")
+  const [tab, setTab] = useState<"mine" | "library" | "pending">("mine")
   const [showNew, setShowNew] = useState(false)
   const [form, setForm] = useState<any>({ title: "", family: "backend", level: "MID", grade: "", skills: "", companyName: "" })
   const [preview, setPreview] = useState<any>(null)
@@ -60,7 +60,7 @@ export default function JobArchitecturePage() {
   if (state === "loading") return <AppShell title="Job architecture"><div style={S.page}><div style={S.empty}><p style={S.sub}>Loading…</p></div></div></AppShell>
   if (state === "denied") return <AppShell title="Job architecture"><div style={S.page}><div style={S.empty}><h1 style={S.h1}>Recruiter access required</h1></div></div></AppShell>
 
-  const list = tab === "mine" ? data.mine : data.library
+  const list = tab === "mine" ? data.mine : tab === "pending" ? (data.pendingApproval || []) : data.library
 
   return (
     <AppShell title="Job architecture">
@@ -100,12 +100,15 @@ export default function JobArchitecturePage() {
         <div style={S.tabs}>
           <button style={{ ...S.tab, ...(tab === "mine" ? S.tabOn : {}) }} onClick={() => setTab("mine")}>My templates ({data.mine.length})</button>
           <button style={{ ...S.tab, ...(tab === "library" ? S.tabOn : {}) }} onClick={() => setTab("library")}>Approved library ({data.library.length})</button>
+          {data.pendingApproval?.length > 0 && <button style={{ ...S.tab, ...(tab === "pending" ? S.tabOn : {}) }} onClick={() => setTab("pending")}>Awaiting approval ({data.pendingApproval.length})</button>}
         </div>
 
         {list.length === 0 ? <div style={S.empty}><p style={S.sub}>{tab === "mine" ? "No templates yet — create one." : "No approved templates yet."}</p></div> : (
           <div style={S.list}>
             {list.map((t: any) => {
-              const acts = tab === "mine" ? managerActions(t.status, { isAdmin: data.isAdmin }) : []
+              const acts = tab === "mine" ? managerActions(t.status, { isAdmin: data.isAdmin })
+                : tab === "pending" ? managerActions(t.status, { isAdmin: true, isApproverDistinct: true })
+                : []
               return (
                 <div key={t.id} style={S.tcard}>
                   <div style={S.tTop}>
