@@ -126,3 +126,11 @@ html, body { max-width: 100%; overflow-x: hidden; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .001ms !important; transition-duration: .001ms !important; }
 }
+
+/* ===================== responsive 2-column collapse ======================= */
+/* Reusable utility: any grid marked .rl-2col collapses to a single column on
+   phones/tablets so fixed-px sidebars stack instead of overlapping the content.
+   Loaded last, so this !important wins over the inline desktop grid template. */
+@media (max-width: 860px) {
+  .rl-2col { grid-template-columns: 1fr !important; }
+}

@@ -109,7 +109,7 @@ export default function ProfessionalPageView() {
             {page.bio && <p style={S.bio}>{page.bio}</p>}
           </div>
 
-          <div style={S.layout}>
+          <div style={S.layout} className="rl-2col">
             {/* Posts */}
             <div style={S.main}>
               {isOwner && (

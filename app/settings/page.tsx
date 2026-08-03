@@ -152,7 +152,7 @@ export default function SettingsPage() {
 
   return (
     <AppShell>
-      <div style={S.page}>
+      <div style={S.page} className="rl-2col">
         <aside style={S.sidebar}>
           <h2 style={S.sideTitle}>Settings</h2>
           {TABS.map(([key,label]) => (

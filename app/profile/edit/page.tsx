@@ -121,8 +121,9 @@ export default function EditProfile() {
 
   return (
     <AppShell>
-      <div style={S.wrap}>
-        <div style={S.sidebar}>
+      <style dangerouslySetInnerHTML={{ __html: PE_CSS }} />
+      <div className="pe-wrap">
+        <div className="pe-sidebar">
           <h2 style={S.sideHead}>Edit profile</h2>
           {TABS.map(([key,label]) => (
             <button key={key} onClick={() => setTab(key)} style={{...S.tabBtn, ...(tab===key?S.tabBtnOn:{})}}>
@@ -252,7 +253,7 @@ export default function EditProfile() {
 
 function fg(label: string, name: string, type: string, value: string, onChange: (e: ChangeEvent<HTMLInputElement>) => void) {
   return (
-    <div style={{flex:1,display:"flex",flexDirection:"column",gap:5}}>
+    <div style={{flex:"1 1 200px",minWidth:180,display:"flex",flexDirection:"column",gap:5}}>
       <label style={{fontSize:12,fontWeight:500,color:"#7B7B8F"}}>{label}</label>
       <input name={name} type={type} value={value} onChange={onChange} style={S.input} />
     </div>
@@ -267,10 +268,21 @@ function fga(label: string, value: string, onChange: (e: ChangeEvent<HTMLTextAre
   )
 }
 
+// Responsive layout (Team G · UX). Two columns on desktop; on phones/tablets the
+// sidebar becomes a horizontal tab strip and the form takes full width — fixing
+// the mobile overlap. Scoped CSS (inline styles can't hold @media).
+const PE_CSS = `
+.pe-wrap { display:grid; grid-template-columns:220px 1fr; gap:1.5rem; padding:1.5rem 2rem; max-width:1000px; margin:0 auto; }
+.pe-sidebar { display:flex; flex-direction:column; gap:4px; height:fit-content; position:sticky; top:72px; }
+@media (max-width: 860px) {
+  .pe-wrap { grid-template-columns:1fr; padding:1rem; gap:1rem; }
+  .pe-sidebar { position:static; top:auto; flex-direction:row; flex-wrap:wrap; align-items:center; gap:6px; }
+  .pe-sidebar h2 { width:100%; }
+}
+`
+
 const S: Record<string,any> = {
-  wrap: { display:"grid", gridTemplateColumns:"220px 1fr", gap:"1.5rem", padding:"1.5rem 2rem", maxWidth:"1000px", margin:"0 auto" },
   loading: { display:"flex", alignItems:"center", justifyContent:"center", minHeight:"60vh", fontSize:14, color:"#9ca3af" },
-  sidebar: { display:"flex", flexDirection:"column", gap:4, height:"fit-content", position:"sticky", top:72 },
   sideHead: { fontSize:16, fontWeight:600, color:"#0A0A0F", marginBottom:8, paddingBottom:10, borderBottom:"0.5px solid rgba(0,0,0,.07)" },
   tabBtn: { background:"none", border:"none", padding:"9px 12px", borderRadius:8, fontSize:13, color:"#7B7B8F", textAlign:"left" as const, cursor:"pointer", transition:"all .15s" },
   tabBtnOn: { background:"#EFF4FF", color:"#6366F1", fontWeight:500 },

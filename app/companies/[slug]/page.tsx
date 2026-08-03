@@ -91,7 +91,7 @@ export default function CompanyPage() {
           </div>
         )}
 
-        <div style={S.cols}>
+        <div style={S.cols} className="rl-2col">
           <div style={S.colMain}>
             <section style={S.card}>
               <h2 style={S.cardHead}>About</h2>

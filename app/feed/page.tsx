@@ -62,7 +62,7 @@ export default function FeedPage() {
 
   return (
     <AppShell title="Feed">
-      <div style={S.wrap}>
+      <div style={S.wrap} className="rl-2col">
         <div style={S.main}>
           {/* Composer */}
           <div style={S.card}>

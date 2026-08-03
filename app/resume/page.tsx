@@ -134,7 +134,7 @@ export default function ResumeBuilder() {
 
   return (
     <AppShell title="Résumé">
-      <div style={S.wrap}>
+      <div style={S.wrap} className="rl-2col">
         {/* controls */}
         <div style={S.panel} className="no-print">
           <div style={S.panelHead}>

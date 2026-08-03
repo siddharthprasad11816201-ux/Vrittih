@@ -117,7 +117,7 @@ export default function SpacePage() {
             </div>
           </div>
 
-          <div style={S.layout}>
+          <div style={S.layout} className="rl-2col">
             <div style={S.main}>
               {isMember && (
                 <div style={S.compose}>
