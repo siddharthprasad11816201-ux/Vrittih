@@ -63,8 +63,8 @@ Legend: ✅ reuse · ◐ extend · ⬜ build · ▶ now.
 |---|---|---|---|
 | 1 | **Enterprise Competency Framework** | ✅ | `Competency` + `UserCompetency` (both DBs) + `lib/learning/competency.ts` (kinds, bands, gap analysis, org heatmap, evidence→proficiency; 15 tests) + curated default library (23 competencies × 8 kinds mapped to the skill graph). `/api/competencies` (library + self-assess + author/seed + target gap), `/api/competencies/heatmap` (exec), `/competencies` UI. |
 | 2 | Learning Intelligence Engine | ◐ | Readiness/velocity/prediction from `CareerSnapshot`+forecast+gap. Batch 3/4. |
-| 3 | Learning Path Engine | ◐ | `buildRoadmap` (gap→phased plan) → competency‑backed, course‑mapped paths. Batch 2. |
-| 4 | Content Platform | ⬜ | Course/Lesson/Enrollment/LessonProgress mapped to competencies + approval + knowledge index. Batch 2. |
+| 3 | Learning Path Engine | ✅ | `lib/learning/course.assemblePath` (greedy gap‑closing course sequence, honest uncovered) + `/api/learning/path` (target skills or a visible JobTemplate's competencies). |
+| 4 | Content Platform | ✅ | `Course`/`Lesson`/`Enrollment`/`LessonProgress` (both DBs) mapped to competencies; `lib/learning/course.ts` (progress/next/duration/coverage; 14 tests); `/api/courses` + `/api/courses/[id]` (author/publish, enroll, complete‑lesson → **cert + competency evidence**); `/academy` UI (browse · my learning · path · author). |
 | 5 | AI Tutor | ⬜ | In‑house, via AIOS `execute()` — teach/QA/plan/quiz from knowledge index + resources + learner gap. Batch 3. |
 | 6 | Assessment Platform | ✅ | `Test`/`TestAttempt` — reused; competency‑linked validation added. |
 | 7 | Project‑Based Learning | ◐ | Reuse `resources.projectIdea` + profile; project→competency evidence. Batch 4. |

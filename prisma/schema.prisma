@@ -106,6 +106,8 @@ model User {
   talentMemberships    TalentPoolMember[]   @relation("TalentPoolMemberUser")
   referralsMade        Referral[]           @relation("ReferralReferrer")
   competencies         UserCompetency[]     @relation("UserCompetencyUser")
+  coursesAuthored      Course[]             @relation("CourseAuthor")
+  enrollments          Enrollment[]         @relation("EnrollmentUser")
 }
 
 // A structured internship engagement (native "InternshipOS"): a weekly milestone
@@ -1341,6 +1343,67 @@ model UserCompetency {
   user          User     @relation("UserCompetencyUser", fields: [userId], references: [id], onDelete: Cascade)
   @@unique([userId, competencyKey])
   @@index([competencyKey])
+}
+
+// ELTOS Modules 3/4 — Content Platform. A Course is a competency-mapped learning
+// experience made of ordered Lessons; completion produces competency evidence + a cert.
+model Course {
+  id           String   @id @default(cuid())
+  slug         String   @unique
+  authorId     String
+  title        String
+  summary      String?
+  level        String   @default("MID")   // lib/jobarch/jd LEVELS
+  category     String?                     // taxonomy Category
+  skills       String?                     // JSON string[] taught
+  competencies String?                     // JSON string[] competency keys this course develops
+  status       String   @default("DRAFT")  // DRAFT | PUBLISHED | ARCHIVED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  author       User     @relation("CourseAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  lessons      Lesson[]
+  enrollments  Enrollment[]
+  @@index([status, category])
+}
+
+model Lesson {
+  id          String   @id @default(cuid())
+  courseId    String
+  order       Int      @default(0)
+  section     String?
+  title       String
+  type        String   @default("reading") // reading|video|exercise|quiz|project
+  contentMd   String?
+  resourceUrl String?
+  durationMin Int      @default(10)
+  skill       String?
+  course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  @@index([courseId, order])
+}
+
+model Enrollment {
+  id              String   @id @default(cuid())
+  userId          String
+  courseId        String
+  status          String   @default("ACTIVE") // ACTIVE | COMPLETED
+  progressPct     Int      @default(0)
+  startedAt       DateTime @default(now())
+  completedAt     DateTime?
+  certificateCode String?                       // set when a completion certificate is issued
+  user            User     @relation("EnrollmentUser", fields: [userId], references: [id], onDelete: Cascade)
+  course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  progress        LessonProgress[]
+  @@unique([userId, courseId])
+  @@index([courseId, status])
+}
+
+model LessonProgress {
+  id           String   @id @default(cuid())
+  enrollmentId String
+  lessonId     String
+  completedAt  DateTime @default(now())
+  enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+  @@unique([enrollmentId, lessonId])
 }
 
 // What a given job requires of an applicant. Employers differ: some want a CV

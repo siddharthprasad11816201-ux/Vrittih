@@ -67,7 +67,8 @@ function buildNav(caps: Set<string>): Section[] {
     sections.push({ title: "Career", items: [
       { href: "/career", label: "Career AI", icon: <IconActivity size={18} /> },
       { href: "/competencies", label: "Competencies", icon: <IconTarget size={18} /> }, // ELTOS competency framework
-      { href: "/learn", label: "Learn", icon: <IconMonitor size={18} /> },      // internships (learn & earn)
+      { href: "/academy", label: "Academy", icon: <IconMonitor size={18} /> },   // ELTOS courses + learning paths
+      { href: "/learn", label: "Learn", icon: <IconBookmark size={18} /> },      // internships (learn & earn)
       { href: "/internship", label: "Internship", icon: <IconCheckCircle size={18} /> }, // active programme + roadmap
       { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> }, // full-time / contract / freelance (earn)
       { href: "/opportunities", label: "Opportunities", icon: <IconLayers size={18} /> }, // ICAE: related role groups + multi-apply
