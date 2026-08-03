@@ -174,12 +174,20 @@ Legend: ✅ shipped · ⬜ planned.
 | 2 | Forecast engine (`forecast.ts`) | ✅ (30 tests) |
 | 3 | Health scoring (`score.ts`) | ✅ (in 30 tests) |
 | 4 | Decision engine framework + generic rules (`decisions.ts`) | ✅ (11 tests) |
-| 5 | Health engine — real metric extraction (`health.ts`) | ⬜ |
-| 6 | Domain-specific decision rules | ⬜ |
-| 7 | Intelligence APIs (overview/health/decisions/forecast) | ⬜ |
-| 8 | `intelligence.view` capability + per-domain gating | ⬜ |
-| 9 | Executive Workspace (`/executive`) | ⬜ |
-| 10 | Adversarial verification of the new code | ⬜ |
+| 5 | Health engine — real metric extraction (`health.ts`) | ✅ (batched, null-safe) |
+| 6 | Domain-specific decision rules | ✅ (dark-domain rule + generic rules) |
+| 7 | Intelligence API (`/api/intelligence/overview`) | ✅ (consolidated feed) |
+| 8 | Capability gating (`ai.ops.view` / `admin.access`) | ✅ (reused existing cap) |
+| 9 | Executive Workspace (`/executive`) | ✅ (health ring, KPIs, decision queue, forecasts) |
+| 10 | Adversarial verification of the new code | ◐ review workflow run; fixes applied |
+
+**Reconciliation note:** the recon recommended reusing AIOS `evaluate()`/`plan()` for
+scoring/decisions. EIDP instead uses the purpose-built, unit-tested `score.ts`/
+`decisions.ts` (richer: per-metric good/bad bands, coverage, DecisionCards with
+alternatives+risks) and gates the read surface on the existing `ai.ops.view` capability
+(so it inherits the AIOS auth model). Cross-card ranking may still defer to
+`recommend.rank` (roadmap). Persisting domain scores as `EvalRun` snapshots on the
+`/api/cron/ai` tick is v1.1 (metrics currently computed on demand).
 
 ---
 
@@ -254,5 +262,14 @@ Postgres prod). Capability additions are code-only (`lib/capability/catalog` + d
 - **2026-08-03** — Spec created. Architecture, decision model, BI catalog, AI/executive/
   operational/predictive intelligence, tracker, dependencies, gaps, DDRs, verification,
   roadmap, migration notes. Engines shipped ahead of the doc: `forecast.ts` (30 tests),
-  `score.ts`, `decisions.ts` (11 tests). Remaining: health extraction, domain rules,
-  APIs, capability, Executive Workspace, adversarial review.
+  `score.ts`, `decisions.ts` (11 tests).
+- **2026-08-03** — v1 shipped (items #5–#9). Data reconnaissance (8-agent workflow)
+  produced the definitive measurable-metric map + 20 documented gaps; the dominant
+  finding is that most operational tables are currently empty, so `health.ts` is
+  null-safe throughout (empty domains report "awaiting data", never a fabricated 0).
+  `health.ts` batches all queries and extracts real metrics for AI, Financial,
+  Identity/Security, Learning, Knowledge, Recruitment (freshness), Workforce, Community;
+  `/api/intelligence/overview` serves the consolidated feed gated on `ai.ops.view`;
+  `/executive` renders the org-health ring, KPIs, per-domain health, ranked decision
+  queue (evidence/alternatives/risks/confidence), and forecast sparklines. Nav entry
+  added. No schema changes. Adversarial review workflow run over the new code.

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { hasFeature } from "@/lib/entitlements"
-import { evaluatePanel, VISIBILITY, ATTENDEE_ROLES, type Attendee } from "@/lib/interview/governance"
+import { evaluatePanel, maySeeConfidential, VISIBILITY, ATTENDEE_ROLES, type Attendee } from "@/lib/interview/governance"
 import crypto from "crypto"
 
 export async function GET(req: NextRequest) {
@@ -24,7 +24,17 @@ export async function GET(req: NextRequest) {
         participants: { include: { user: { select: { id:true,name:true,avatar:true } } } },
       },
     })
-    return NextResponse.json({ interviews })
+    // Apply the SAME confidential redaction as the detail route — the list must not
+    // leak notes/recordingUrl/govJson to observers & candidates of confidential rows.
+    const redacted = (interviews as any[]).map((iv) => {
+      const myRole = iv.hostId === payload.userId
+        ? "HOST"
+        : (iv.participants || []).find((p: any) => p.userId === payload.userId)?.role || "OBSERVER"
+      const out: any = { ...iv, govJson: undefined }
+      if (!maySeeConfidential(myRole, !!iv.confidential)) { out.notes = null; out.recordingUrl = null }
+      return out
+    })
+    return NextResponse.json({ interviews: redacted })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

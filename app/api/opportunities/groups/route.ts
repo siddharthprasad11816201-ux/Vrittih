@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
   const analysis = analyzeCareer(await inputFromUser(p.userId))
   const skills = analysis.skills
 
-  const [jobs, myApps, forms] = await Promise.all([
+  const [jobs, myApps] = await Promise.all([
     prisma.job.findMany({
       where: { active: true },
       select: { id: true, title: true, company: true, description: true, industry: true, type: true, remote: true, createdAt: true, closesAt: true, skills: { include: { skill: true } } },
@@ -37,20 +37,27 @@ export async function GET(req: NextRequest) {
       take: 200,
     }),
     prisma.application.findMany({ where: { userId: p.userId }, select: { jobId: true } }),
-    prisma.applicationForm.findMany({ select: { jobId: true, requireResume: true, coverLetter: true, questions: true, documents: true, testId: true, testRequired: true } }),
   ])
+  // Forms scoped to only the jobs in hand — never load every form on the platform.
+  const forms = await prisma.applicationForm.findMany({
+    where: { jobId: { in: jobs.map(j => j.id) } },
+    select: { jobId: true, requireResume: true, coverLetter: true, questions: true, documents: true, testId: true, testRequired: true },
+  })
 
   const appliedSet = new Set(myApps.map(a => a.jobId))
   const formByJob = new Map(forms.map(f => [f.jobId, f]))
 
-  // Batch-apply eligibility: a job needs the full manual flow when its form requires
-  // documents, screening answers, or an assessment (a generic batch can't satisfy these).
+  // Batch-apply eligibility must match /api/applications/batch EXACTLY: a job needs the
+  // full manual flow when its form requires documents, screening answers, an assessment,
+  // OR a cover letter (a generic batch can't satisfy a required cover letter per job).
+  // Only REQUIRED items count — optional questions/docs don't block one-click apply.
   const applyMode = (jobId: string): "profile" | "manual" => {
     const f = formByJob.get(jobId)
     if (!f) return "profile"
-    const docs = (() => { try { return JSON.parse(f.documents || "[]") } catch { return [] } })()
-    const qs = (() => { try { return JSON.parse(f.questions || "[]") } catch { return [] } })()
-    if ((Array.isArray(docs) && docs.length) || (Array.isArray(qs) && qs.length) || (f.testRequired && f.testId)) return "manual"
+    const parse = (s?: string | null) => { try { const v = JSON.parse(s || "[]"); return Array.isArray(v) ? v : [] } catch { return [] } }
+    const reqDocs = parse(f.documents).some((d: any) => d?.required)
+    const reqQs = parse(f.questions).some((q: any) => q?.required)
+    if (reqDocs || reqQs || (f.testRequired && f.testId) || f.coverLetter === "required") return "manual"
     return "profile"
   }
 

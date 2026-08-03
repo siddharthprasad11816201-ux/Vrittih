@@ -68,10 +68,12 @@ export function buildGroups(jobs: GroupJobInput[], opts?: { minSize?: number }):
     if (gjobs.length < minSize) continue
     const [cluster, seniority] = key.split(":")
 
-    // Shared skills: appear in ≥ half the jobs.
+    // Shared skills: appear in a real majority. For multi-job groups require a skill in
+    // ≥2 jobs (else a 2-job group with disjoint skills would call every skill "shared"
+    // and report cohesion 1.0 — see review finding). Single-job groups keep threshold 1.
     const freq = new Map<string, number>()
     for (const g of gjobs) for (const s of new Set(g.skills)) freq.set(s, (freq.get(s) || 0) + 1)
-    const half = Math.ceil(gjobs.length / 2)
+    const half = gjobs.length > 1 ? Math.max(2, Math.ceil(gjobs.length / 2)) : 1
     const sharedSkills = Array.from(freq.entries())
       .filter(([, n]) => n >= half && n > 0)
       .sort((a, b) => b[1] - a[1])

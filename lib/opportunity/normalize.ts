@@ -121,19 +121,23 @@ export function extractSeniority(title?: string | null, description?: string | n
 export function classifyRole(title?: string | null, description?: string | null): { def: RoleDef; matched: string[]; confidence: number } {
   const t = lc(title)
   const d = lc(description).slice(0, 400)
-  const hay = t + " " + d
+  // Pass 1: ANY title match wins over any description-only match. The title is the
+  // strong signal — a role whose keyword is in the title must beat an earlier, more
+  // specific def that only appears in the description.
   for (const def of ROLE_DEFS) {
     const inTitle = def.keywords.filter(k => t.includes(k))
-    const inDesc = def.keywords.filter(k => !t.includes(k) && hay.includes(k))
     if (inTitle.length) {
-      // strong: matched in the title. Confidence up with specificity + length.
       const specific = def.key !== "swe" && def.keywords[0] !== "developer"
       const conf = Math.min(1, 0.7 + 0.1 * inTitle.length + (specific ? 0.1 : 0) + (def.key !== "swe" ? 0.05 : 0))
       return { def, matched: inTitle, confidence: def.key === "swe" ? Math.min(conf, 0.72) : conf }
     }
-    if (inDesc.length && def.key !== "swe") {
-      return { def, matched: inDesc, confidence: 0.5 }
-    }
+  }
+  // Pass 2: no title match anywhere — fall back to the first specific def matched in
+  // the description (never the generic swe catch-all on description alone).
+  for (const def of ROLE_DEFS) {
+    if (def.key === "swe") continue
+    const inDesc = def.keywords.filter(k => d.includes(k))
+    if (inDesc.length) return { def, matched: inDesc, confidence: 0.5 }
   }
   // Nothing matched: treat as generic software / other with low confidence.
   return { def: ROLE_BY_KEY.swe, matched: [], confidence: 0.3 }

@@ -61,7 +61,7 @@ export async function computeIntelligence(now = Date.now()): Promise<Intelligenc
   const [
     userCount, paidCount, twoFACount, idVerCount, bannedCount, newUsers30d,
     planGroups, passkeyUsers, jobActive, jobFresh90d,
-    appCount, hiredCount, offeredCount, interviewToApp,
+    appCount, appsActiveJobs, reachedOffered, reachedHired, reachedInterview,
     aiTotal, aiOk7d, ai7d, aiConf, aiSubjects,
     recCount, recSubjects, semDocs, memEntries, sem30d, mem30d,
     testCompleted, testPassed, certTotal, certRevoked,
@@ -78,9 +78,12 @@ export async function computeIntelligence(now = Date.now()): Promise<Intelligenc
     prisma.job.count({ where: { active: true } }),
     prisma.job.count({ where: { active: true, createdAt: { gte: d90 } } }),
     prisma.application.count(),
-    prisma.application.count({ where: { status: "HIRED" } }).catch(() => 0),
-    prisma.application.count({ where: { status: "OFFERED" } }).catch(() => 0),
-    prisma.application.count({ where: { status: "INTERVIEW" } }).catch(() => 0),
+    prisma.application.count({ where: { job: { active: true } } }).catch(() => 0),
+    // Funnel from the StatusEvent timeline (cumulative "ever reached"), NOT the current
+    // status snapshot — a HIRED app is no longer OFFERED, so snapshots undercount.
+    prisma.statusEvent.findMany({ where: { status: { in: ["OFFERED", "OFFER", "ACCEPTED"] } }, distinct: ["applicationId"], select: { applicationId: true } }).then(r => r.length).catch(() => 0),
+    prisma.statusEvent.findMany({ where: { status: "HIRED" }, distinct: ["applicationId"], select: { applicationId: true } }).then(r => r.length).catch(() => 0),
+    prisma.statusEvent.findMany({ where: { status: { in: ["INTERVIEW", "INTERVIEWING", "ASSESSMENT", "OFFERED", "HIRED"] } }, distinct: ["applicationId"], select: { applicationId: true } }).then(r => r.length).catch(() => 0),
     prisma.aiRun.count(),
     prisma.aiRun.count({ where: { status: "ok", createdAt: { gte: new Date(now - 7 * DAY) } } }),
     prisma.aiRun.count({ where: { createdAt: { gte: new Date(now - 7 * DAY) } } }),
@@ -96,7 +99,7 @@ export async function computeIntelligence(now = Date.now()): Promise<Intelligenc
     prisma.testAttempt.count({ where: { status: "COMPLETED", passed: true } }).catch(() => 0),
     prisma.certificate.count().catch(() => 0),
     prisma.certificate.count({ where: { revoked: true } }).catch(() => 0),
-    prisma.user.findMany({ select: { createdAt: true }, take: 20000 }),
+    prisma.user.findMany({ where: { createdAt: { gte: d84 } }, select: { createdAt: true }, take: 20000 }),
     prisma.aiRun.findMany({ where: { createdAt: { gte: d84 } }, select: { createdAt: true }, take: 20000 }).catch(() => [] as any[]),
     prisma.application.findMany({ where: { appliedAt: { gte: d84 } }, select: { appliedAt: true }, take: 20000 }).catch(() => [] as any[]),
   ])
@@ -106,12 +109,12 @@ export async function computeIntelligence(now = Date.now()): Promise<Intelligenc
   // ---- domain metric specs (null when the data is absent / too thin) ----
   const recruitment: MetricSpec[] = [
     { key: "role_freshness", label: "Role-catalogue freshness", unit: "%", value: pct(jobFresh90d, jobActive), good: 70, bad: 20, hint: "share of open roles posted in the last 90 days" },
-    { key: "apps_per_opening", label: "Applications per opening", value: jobActive && appCount ? +(appCount / jobActive).toFixed(1) : null, good: 15, bad: 1, hint: "candidate demand per active role" },
-    { key: "offer_acceptance", label: "Offer acceptance (proxy)", unit: "%", value: offeredCount ? pct(hiredCount, offeredCount) : null, good: 80, bad: 40 },
-    { key: "app_to_interview", label: "Application → interview", unit: "%", value: appCount ? pct(interviewToApp, appCount) : null, good: 25, bad: 5 },
+    { key: "apps_per_opening", label: "Applications per opening", value: jobActive && appsActiveJobs ? +(appsActiveJobs / jobActive).toFixed(1) : null, good: 15, bad: 1, hint: "applications to currently-active roles, per active role" },
+    { key: "offer_acceptance", label: "Offer acceptance (proxy)", unit: "%", value: reachedOffered ? Math.min(100, pct(reachedHired, reachedOffered) ?? 0) : null, good: 80, bad: 40, hint: "of apps that ever reached OFFERED, share that reached HIRED" },
+    { key: "app_to_interview", label: "Application → interview", unit: "%", value: appCount ? pct(reachedInterview, appCount) : null, good: 25, bad: 5, hint: "apps that ever reached an interview stage" },
   ]
   const ai: MetricSpec[] = [
-    { key: "ai_success", label: "AI execution success", unit: "%", value: ai7d ? pct(aiOk7d, ai7d) : (aiTotal ? 100 : null), good: 98, bad: 80, weight: 2, hint: "ok runs / total, last 7 days" },
+    { key: "ai_success", label: "AI execution success", unit: "%", value: ai7d ? pct(aiOk7d, ai7d) : null, good: 98, bad: 80, weight: 2, hint: "ok runs / total, last 7 days (null when idle)" },
     { key: "ai_adoption", label: "AI adoption", unit: "%", value: userCount ? pct(aiSubjects, userCount) : null, good: 30, bad: 3, hint: "distinct people who invoked an AI capability" },
     { key: "ai_confidence", label: "Mean inference confidence", unit: "%", value: (aiConf as any)?._avg?.confidence != null ? Math.round((aiConf as any)._avg.confidence * 100) : null, good: 80, bad: 40 },
     { key: "rec_reach", label: "Recommendation reach", unit: "%", value: recCount ? pct(recSubjects, userCount) : null, good: 40, bad: 5 },
