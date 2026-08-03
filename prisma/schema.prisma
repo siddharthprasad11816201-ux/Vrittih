@@ -105,6 +105,7 @@ model User {
   talentPools          TalentPool[]         @relation("TalentPoolOwner")
   talentMemberships    TalentPoolMember[]   @relation("TalentPoolMemberUser")
   referralsMade        Referral[]           @relation("ReferralReferrer")
+  competencies         UserCompetency[]     @relation("UserCompetencyUser")
 }
 
 // A structured internship engagement (native "InternshipOS"): a weekly milestone
@@ -1304,6 +1305,42 @@ model Referral {
   referrer       User     @relation("ReferralReferrer", fields: [referrerId], references: [id], onDelete: Cascade)
   @@index([referrerId])
   @@index([jobId, status])
+}
+
+// ELTOS Module 1 — Enterprise Competency Framework (the spine). A competency is the
+// atomic unit of human capability; it references the SAME skill graph as recruitment
+// (lib/career/taxonomy) and forms a graph via parentId. Everything learned/done produces
+// evidence that rolls up into UserCompetency proficiency.
+model Competency {
+  id          String   @id @default(cuid())
+  key         String   @unique
+  label       String
+  kind        String   @default("technical") // technical|behavioural|leadership|research|teaching|communication|innovation|future
+  description String?
+  category    String?                         // taxonomy Category
+  skills      String?                         // JSON string[] of mapped taxonomy skills
+  parentId    String?                         // competency graph / hierarchy
+  levelBands  String?                         // JSON [{band,descriptor}] (optional)
+  version     Int      @default(1)
+  published   Boolean  @default(true)
+  createdById String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([kind])
+  @@index([published])
+}
+
+model UserCompetency {
+  id            String   @id @default(cuid())
+  userId        String
+  competencyKey String
+  proficiency   Float    @default(0)          // 0..1, evidence-based (lib/learning/competency)
+  source        String?                        // assessment|project|course|endorsement|self
+  evidenceRef   String?
+  assessedAt    DateTime @default(now())
+  user          User     @relation("UserCompetencyUser", fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, competencyKey])
+  @@index([competencyKey])
 }
 
 // What a given job requires of an applicant. Employers differ: some want a CV
