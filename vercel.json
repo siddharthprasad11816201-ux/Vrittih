@@ -5,6 +5,7 @@
     { "path": "/api/cron/ingest", "schedule": "0 4 * * *" },
     { "path": "/api/cron/calibrate", "schedule": "0 5 * * *" },
     { "path": "/api/cron/ai", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/discover", "schedule": "0 7 * * *" }
+    { "path": "/api/cron/discover", "schedule": "0 7 * * *" },
+    { "path": "/api/cron/recruit-automation", "schedule": "0 8 * * *" }
   ]
 }

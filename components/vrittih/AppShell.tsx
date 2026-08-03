@@ -39,6 +39,7 @@ function buildNav(caps: Set<string>): Section[] {
 
   if (emp) {
     const hiring: Item[] = [
+      { href: "/copilot", label: "Copilot", icon: <IconZap size={18} /> },
       { href: "/dashboard/post-job", label: "Post a job", icon: <IconFileText size={18} /> },
       { href: "/job-architecture", label: "Job templates", icon: <IconLayers size={18} /> },
       { href: "/dashboard/recruiter", label: "Candidates", icon: <IconUsers size={18} /> },

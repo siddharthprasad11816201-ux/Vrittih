@@ -10,6 +10,8 @@ import { rankJobs } from "@/lib/career/match"
 import { computeCareerDNA } from "@/lib/career/dna"
 import { computeFrontier } from "@/lib/career/frontier"
 import { inputFromUser } from "@/lib/career/fromUser"
+import { recruitCopilot } from "@/lib/copilot/recruit"
+import { pipelineHealth } from "@/lib/talent/pools"
 
 async function candidate(userId: string) {
   const input = await inputFromUser(userId)
@@ -49,4 +51,44 @@ registerProvider("career.frontier", async (ctx) => {
   const { analysis } = await candidate(ctx.subjectId as string)
   const frontier = computeFrontier(analysis.skills, await activeJobLikes(250))
   return { output: { frontier }, explanation: `Frontier over ${frontier.jobsConsidered} live roles`, modelId: "icire-rank-v1" }
+})
+
+/* Recruiter copilot — reads the recruiter's real operational state and returns
+ * prioritised next-best-actions (lib/copilot/recruit). Runs through the gateway (audited)
+ * like every capability. isAdmin is passed by the calling route via ctx.input. */
+registerProvider("recruit.copilot", async (ctx) => {
+  const uid = ctx.subjectId as string
+  const isAdmin = !!ctx.input?.isAdmin
+  const now = Date.now()
+  const in3d = new Date(now + 3 * 864e5)
+
+  const [myInterviews, myJobs] = await Promise.all([
+    prisma.interview.findMany({ where: { hostId: uid }, select: { id: true, scheduledAt: true } }).catch(() => [] as any[]),
+    prisma.job.findMany({ where: { postedById: uid, active: true }, select: { id: true } }).catch(() => [] as any[]),
+  ])
+  const interviewIds = myInterviews.map((i: any) => i.id)
+  const jobIds = myJobs.map((j: any) => j.id)
+  const pastInterviewIds = myInterviews.filter((i: any) => +new Date(i.scheduledAt) < now).map((i: any) => i.id)
+
+  const [offersToSend, offersExpiringSoon, scorecardInterviews, proctorToReview, pools, templatesPending, appGroups, referralsToTriage] = await Promise.all([
+    prisma.offer.count({ where: { createdById: uid, status: "APPROVED" } }).catch(() => 0),
+    prisma.offer.count({ where: { createdById: uid, status: "SENT", respondedAt: null, expiresAt: { gte: new Date(now), lte: in3d } } }).catch(() => 0),
+    pastInterviewIds.length ? prisma.interviewScorecard.findMany({ where: { interviewId: { in: pastInterviewIds } }, distinct: ["interviewId"], select: { interviewId: true } }).then(r => r.length).catch(() => 0) : Promise.resolve(0),
+    interviewIds.length ? prisma.proctorSession.count({ where: { kind: "interview", refId: { in: interviewIds }, reviewStatus: "PENDING", riskScore: { gte: 30 } } }).catch(() => 0) : Promise.resolve(0),
+    prisma.talentPool.findMany({ where: { ownerId: uid }, select: { members: { select: { stage: true, addedAt: true, lastActivityAt: true } } }, take: 200 }).catch(() => [] as any[]),
+    isAdmin ? prisma.jobTemplate.count({ where: { status: "PENDING_APPROVAL", createdById: { not: uid } } }).catch(() => 0) : Promise.resolve(0),
+    jobIds.length ? prisma.application.groupBy({ by: ["jobId"], where: { jobId: { in: jobIds } }, _count: { _all: true } }).catch(() => [] as any[]) : Promise.resolve([] as any[]),
+    jobIds.length ? prisma.referral.count({ where: { jobId: { in: jobIds }, status: "SUBMITTED" } }).catch(() => 0) : Promise.resolve(0),
+  ])
+
+  const scorecardsPending = Math.max(0, pastInterviewIds.length - (scorecardInterviews as number))
+  const stalePools = (pools as any[]).filter(p => { const h = pipelineHealth(p.members.map((m: any) => ({ stage: m.stage, addedAt: m.addedAt, lastActivityAt: m.lastActivityAt }))); return p.members.length > 0 && (h.band === "cooling" || h.band === "cold") }).length
+  const withEnough = new Set((appGroups as any[]).filter(g => (g._count?._all || 0) >= 3).map(g => g.jobId))
+  const rolesLowFlow = jobIds.filter(id => !withEnough.has(id)).length
+
+  const result = recruitCopilot({
+    offersToSend, offersExpiringSoon, scorecardsPending, proctorToReview,
+    stalePools, templatesPending, rolesLowFlow, referralsToTriage,
+  })
+  return { output: result, explanation: result.summary, modelId: "recruit-copilot-v1" }
 })

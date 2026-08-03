@@ -72,7 +72,8 @@ Legend: ✅ exists & reused · ◐ partial (extend) · ⬜ gap (build) · ▶ bu
 | **AI Recruitment Intelligence** | ◐ | Match/DNA/funnel calibration (`lib/career/*`), EIDP decisions/forecast. GAP: offer-acceptance & hiring-success prediction (this build starts it), bias monitoring. |
 | **Dashboards** | ◐ | Recruiter/pipeline (`/dashboard/*`), Executive (`/executive`). GAP: offer/forecast/assessment/campus workspaces. |
 | **Workflow Automation** | ◐ | Notifications, webhooks, status transitions, cron (ingest/discover). GAP: approvals, SLA monitoring, reminders engine. |
-| **AI Copilots** | ◐ | Career coach (AIOS). GAP: recruiter/hiring-manager/interviewer copilots via `execute()`. |
+| **AI Copilots** | ✅ | Career coach + **Recruiter Copilot** (`lib/copilot/recruit.ts`, 8 tests) — deterministic next-best-actions from real pipeline state, registered as AIOS capability `recruit.copilot` and run through `execute()` (audited via AiRun). `/api/copilot/recruit` + `/copilot` UI. |
+| **Workflow Automation** | ✅ | `/api/cron/recruit-automation` (daily): interview reminders, offer-expiry nudges, stale-pipeline SLA digests via the notification engine. Registered in vercel.json. |
 
 **This build (batch 1): Module 8 — Offer Management, complete.**
 
