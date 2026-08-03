@@ -91,6 +91,8 @@ model User {
   socialLinks          SocialLink[]
   calendarToken        String?              @unique   // secret for the subscribable interview calendar feed
   certificatesEarned   Certificate[]        @relation("CertRecipient")
+  trialStartedAt       DateTime?            // 7-day Basic trial (unlocks Basic features + up to 10 applications)
+  trialEndsAt          DateTime?
 }
 
 // Company profile — a real employer page, not just a string on a job. Jobs link by

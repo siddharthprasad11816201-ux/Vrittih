@@ -15,6 +15,11 @@ export default function AstroJobCard({ paid, birthDate, birthTime, experience = 
   experience?: { title?: string }[]
 }) {
   const a = analyze(birthDate, birthTime)
+  async function startTrial() {
+    const d = await fetch("/api/trial/start", { method: "POST" }).then(r => r.json()).catch(() => null)
+    if (d?.ok) location.reload()
+    else if (d?.used) alert("You've already used your free trial — upgrade to Basic to unlock this.")
+  }
 
   // Locked (not paid) — teaser + unlock. Show the sun sign as a hook, blur the pick.
   if (!paid) {
@@ -29,8 +34,11 @@ export default function AstroJobCard({ paid, birthDate, birthTime, experience = 
           <div style={S.lockOver}>
             <span style={S.lockIc}><IconLock size={18} /></span>
             <div style={S.lockTitle}>{a ? `Your ${a.sign.name} career reading is ready` : "Unlock your best‑fit career reading"}</div>
-            <p style={S.lockSub}>See the roles the stars favour for you — an in‑house Vedic + numerology reading tuned to your experience. Included with <b>Basic</b>.</p>
-            <Link href="/pay" style={S.unlock}>Unlock with Basic <IconArrowRight size={14} /></Link>
+            <p style={S.lockSub}>A precise, in‑house reading of your psychophysical nature, tuned to your experience — the roles that genuinely fit you. Included with <b>Basic</b>.</p>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+              <button onClick={startTrial} style={S.unlock}>Start 7‑day free trial</button>
+              <Link href="/pay" style={S.unlockGhost}>See plans</Link>
+            </div>
           </div>
         </div>
       </section>
@@ -92,7 +100,8 @@ const S: Record<string, any> = {
   roleChip: { display: "inline-flex", alignItems: "center", background: "var(--v-surface)", border: "1px solid var(--v-accent-soft)", color: "var(--v-accent)", padding: "6px 12px", borderRadius: 999, font: "500 12.5px var(--font-sans)", textDecoration: "none" },
   moreLink: { display: "inline-flex", alignItems: "center", gap: 4, font: "500 13px var(--font-sans)", color: "var(--v-accent)", textDecoration: "none", marginTop: 12 },
   empty: { font: "400 13.5px var(--font-sans)", color: "var(--v-ink-2)", lineHeight: 1.6, margin: "0 0 12px" },
-  unlock: { display: "inline-flex", alignItems: "center", gap: 6, background: "var(--v-accent)", color: "#fff", padding: "9px 16px", borderRadius: "var(--r-md)", font: "500 13px var(--font-sans)", textDecoration: "none" },
+  unlock: { display: "inline-flex", alignItems: "center", gap: 6, background: "var(--v-accent)", color: "#fff", padding: "9px 16px", borderRadius: "var(--r-md)", font: "500 13px var(--font-sans)", textDecoration: "none", border: "none", cursor: "pointer" },
+  unlockGhost: { display: "inline-flex", alignItems: "center", gap: 6, background: "var(--v-surface)", color: "var(--v-accent)", border: "1px solid var(--border)", padding: "9px 16px", borderRadius: "var(--r-md)", font: "500 13px var(--font-sans)", textDecoration: "none" },
   lockWrap: { position: "relative", borderRadius: "var(--r-md)", overflow: "hidden" },
   blur: { filter: "blur(6px)", opacity: .5, padding: "6px 2px", userSelect: "none", pointerEvents: "none" },
   blurLine: { height: 12, width: "90%", background: "var(--v-surface-2)", borderRadius: 6, margin: "8px 0" },

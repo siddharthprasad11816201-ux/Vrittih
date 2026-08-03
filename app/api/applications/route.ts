@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { createNotification } from "@/lib/notify"
 import { emit } from "@/lib/webhooks"
+import { isTrialCapped, TRIAL_APPLICATION_CAP } from "@/lib/trial"
 
 export async function GET(req: NextRequest) {
   try {
@@ -63,6 +64,17 @@ export async function POST(req: NextRequest) {
     if (!jobId) return NextResponse.json({ error: "Job ID required" }, { status: 400 })
     const existing = await prisma.application.findFirst({ where:{ userId:payload.userId, jobId } })
     if (existing) return NextResponse.json({ error: "Already applied" }, { status: 409 })
+
+    // 7-day trial cap: active-trial (non-paid) users may apply to up to 10 roles.
+    // Paid and free (non-trial) behaviour is unchanged — this is additive.
+    const appUser = await prisma.user.findUnique({ where: { id: payload.userId }, select: { paid: true, plan: true, trialEndsAt: true } })
+    if (isTrialCapped(appUser)) {
+      const count = await prisma.application.count({ where: { userId: payload.userId } })
+      if (count >= TRIAL_APPLICATION_CAP) {
+        return NextResponse.json({ error: `You've used all ${TRIAL_APPLICATION_CAP} applications in your free trial. Upgrade to Basic to keep applying.`, trialLimit: true }, { status: 402 })
+      }
+    }
+
     const job = await prisma.job.findUnique({ where:{ id:jobId }, include:{ postedBy:{ select:{ id:true,name:true } }, form:true } })
     if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 })
 

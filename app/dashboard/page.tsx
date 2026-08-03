@@ -8,6 +8,7 @@ import PipelineRail from "@/components/vrittih/PipelineRail"
 import PipelineDonut from "@/components/vrittih/PipelineDonut"
 import AstroJobCard from "@/components/vrittih/AstroJobCard"
 import { dailyGuidance } from "@/lib/astrology"
+import { basicActive, trialActive, trialDaysLeft } from "@/lib/trial"
 import {
   IconBriefcase, IconFileText, IconUsers, IconVideo, IconAward, IconCheckCircle,
   IconArrowRight, IconCheck, IconUser, IconShield, IconTarget, IconClipboard,
@@ -58,7 +59,8 @@ export default function Dashboard() {
 
   const isEmployer = ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user?.role)
   const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(user?.role)
-  const paid = !!(user?.paid || (user?.plan && user.plan !== "free"))   // paid for Basic (or higher)
+  const paid = basicActive(user)   // Basic access = paid, on a plan, or active trial
+  const onTrial = trialActive(user)
   // Daily astrological guidance — advanced tiers (Pro / Growth / Scale) + admins.
   const advancedTier = isAdmin || ["pro", "emp_growth", "emp_scale"].includes(user?.plan || "")
   const guidance = advancedTier ? dailyGuidance(profile?.birthDate) : null
@@ -145,6 +147,7 @@ export default function Dashboard() {
             <h1 style={S.h1}>Overview</h1>
             <p style={S.greeting}>Good {partOfDay}, {first}</p>
             {guidance && <p style={S.advice}><span style={S.adviceStar} aria-hidden="true">✦</span> {guidance.line}</p>}
+            {onTrial && !isEmployer && <p style={S.trial}>Free trial · {trialDaysLeft(user)} day{trialDaysLeft(user) === 1 ? "" : "s"} left · {applications.length}/10 applications used · <Link href="/pay" style={{ color: "var(--v-accent)", textDecoration: "none", fontWeight: 500 }}>Upgrade</Link></p>}
           </div>
           <Link href={isEmployer ? "/dashboard/post-job" : "/jobs"} style={S.primary}>
             {isEmployer ? "Post a job" : "Browse jobs"} <IconArrowRight size={15} />
@@ -274,6 +277,7 @@ const S: Record<string, any> = {
   greeting: { font: "400 15px var(--font-sans)", color: "var(--v-ink-2)", marginTop: 4 },
   advice: { font: "400 13px/1.55 var(--font-sans)", color: "var(--v-ink-2)", marginTop: 8, maxWidth: "64ch", display: "flex", gap: 7, alignItems: "baseline" },
   adviceStar: { color: "var(--v-accent)", flex: "none" },
+  trial: { font: "500 12.5px var(--font-sans)", color: "var(--v-accent)", background: "var(--v-accent-soft)", borderRadius: "var(--r-md)", padding: "6px 11px", marginTop: 8, display: "inline-block" },
   primary: { display: "inline-flex", alignItems: "center", gap: 7, background: "var(--v-accent)", color: "#fff", padding: "10px 16px", borderRadius: "var(--r-md)", font: "500 14px var(--font-sans)", textDecoration: "none", flex: "none" },
 
   metrics: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 },

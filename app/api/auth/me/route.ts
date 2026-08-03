@@ -33,6 +33,8 @@ export async function GET() {
         twoFactorEnabled: true,
         banned: true,
         createdAt: true,
+        trialStartedAt: true,
+        trialEndsAt: true,
       },
     })
 
