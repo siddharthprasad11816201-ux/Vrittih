@@ -28,15 +28,25 @@ export async function POST(req: NextRequest) {
       crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(razorpay_signature))
     if (!ok) return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 })
 
-    // Read the plan + any applied coupon from the order server-side (never trust
-    // the client for the tier or the discount).
-    let planId = "", couponId = "", feeCHF = 0
-    try {
-      const order = await getRazorpay().orders.fetch(razorpay_order_id)
-      planId = (order.notes?.planId as string) || ""
-      couponId = (order.notes?.couponId as string) || ""
-      feeCHF = Number(order.notes?.feeCHF) || 0
-    } catch {}
+    // Fetch the order server-side (never trust the client for tier/discount). A
+    // fetch failure is fatal here — we cannot confirm ownership without it, so we
+    // must NOT activate (previously this was swallowed and access still granted).
+    let order: any
+    try { order = await getRazorpay().orders.fetch(razorpay_order_id) }
+    catch { return NextResponse.json({ error: "Could not verify this order. Please contact support." }, { status: 502 }) }
+
+    // Bind the payment to its buyer: create-order stamps notes.userId. A valid
+    // signature only proves the payment is real, NOT that it belongs to the
+    // caller — without this check a captured (order,payment,signature) triple
+    // could activate any/many accounts (paywall bypass).
+    const notes = order?.notes || {}
+    if (!notes.userId || notes.userId !== payload.userId) {
+      return NextResponse.json({ error: "This payment is not associated with your account." }, { status: 403 })
+    }
+    const planId = (notes.planId as string) || ""
+    const couponId = (notes.couponId as string) || ""
+    const feeCHF = Number(notes.feeCHF) || 0
+    const baseCHF = Number(notes.baseCHF) || feeCHF   // pre-discount, for the audit trail
 
     const data: any = { paid: true, paidAt: new Date(), paymentId: razorpay_payment_id }
     if (planId) {
@@ -48,7 +58,7 @@ export async function POST(req: NextRequest) {
     // Consume a partial coupon only now that payment is confirmed (abandoned
     // checkouts never burn a code). Best-effort — must not fail the activation.
     if (couponId) {
-      await recordRedemption(couponId, payload.userId, { planId: planId || null, amountBeforeCHF: feeCHF, amountAfterCHF: feeCHF, waiver: false, orderId: razorpay_order_id }).catch(() => {})
+      await recordRedemption(couponId, payload.userId, { planId: planId || null, amountBeforeCHF: baseCHF, amountAfterCHF: feeCHF, waiver: false, orderId: razorpay_order_id }).catch(() => {})
     }
     return NextResponse.json({ success: true, paymentId: razorpay_payment_id, plan: planId || null })
   } catch (err: any) {

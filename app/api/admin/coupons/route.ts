@@ -26,7 +26,9 @@ function clean(body: any) {
     kind, value, audience,
     planId: body?.planId ? String(body.planId) : null,
     maxRedemptions: num(body?.maxRedemptions),
-    perUserLimit: body?.perUserLimit === undefined ? 1 : (num(body?.perUserLimit) ?? 0),
+    // Single-use per user is enforced by @@unique([couponId,userId]); any other
+    // value is unsatisfiable, so we pin it to 1 rather than accept a misleading cap.
+    perUserLimit: 1,
     active: body?.active === undefined ? true : !!body.active,
     startsAt: date(body?.startsAt),
     expiresAt: date(body?.expiresAt),

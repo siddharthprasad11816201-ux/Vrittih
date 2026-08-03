@@ -53,6 +53,7 @@ export async function recordRedemption(
     const c = await tx.coupon.findUnique({ where: { id: couponId } })
     if (!c || !c.active) throw new Error("coupon_inactive")
     if (c.maxRedemptions != null && c.redeemedCount >= c.maxRedemptions) throw new Error("coupon_exhausted")
+    // Per-user cap via @@unique([couponId,userId]); duplicate create throws.
     await tx.couponRedemption.create({
       data: {
         couponId, userId, planId: data.planId ?? null,
@@ -60,6 +61,12 @@ export async function recordRedemption(
         waiver: data.waiver, orderId: data.orderId ?? null,
       },
     })
-    await tx.coupon.update({ where: { id: couponId }, data: { redeemedCount: { increment: 1 } } })
+    // Global cap: atomic compare-and-swap so concurrent redemptions can't overshoot.
+    if (c.maxRedemptions != null) {
+      const upd = await tx.coupon.updateMany({ where: { id: couponId, redeemedCount: c.redeemedCount }, data: { redeemedCount: { increment: 1 } } })
+      if (upd.count === 0) throw new Error("coupon_exhausted")
+    } else {
+      await tx.coupon.update({ where: { id: couponId }, data: { redeemedCount: { increment: 1 } } })
+    }
   })
 }

@@ -10,6 +10,8 @@ function TwoFAContent() {
   const userId = params.get("uid") || ""
   const mode = params.get("mode") || "login"
   const method = params.get("method") || "email"   // "totp" = in-house authenticator app
+  const nextRaw = params.get("next") || ""
+  const nextPath = /^\/(?!\/)/.test(nextRaw) ? nextRaw : "/dashboard"   // same-origin only
   const [otp, setOtp] = useState(["","","","","",""])
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
@@ -72,7 +74,7 @@ function TwoFAContent() {
     setLoading(false)
     if (data.success) {
       if (data.requiresReenroll) router.push("/verify/face-setup?update=true")
-      else router.push("/dashboard")
+      else router.push(nextPath)
     } else {
       setError(data.error || "Incorrect code")
       setOtp(["","","","","",""])

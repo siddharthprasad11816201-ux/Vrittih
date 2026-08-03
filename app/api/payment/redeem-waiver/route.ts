@@ -23,7 +23,9 @@ export async function POST(req: NextRequest) {
     const plan = planId ? await getEffectivePlan(planId) : null
     if (planId && !plan) return NextResponse.json({ error: "Unknown plan." }, { status: 400 })
     const amountCHF = plan ? plan.priceCHF : JOINING_FEE_CHF
-    const audience = type === "employer" ? "employer" : "individual"
+    // Audience from the actual plan, not the client `type` — otherwise an
+    // individual-scoped waiver could free an employer plan (and vice-versa).
+    const audience = plan ? plan.audience : "individual"
 
     const v = await validateCoupon(String(code || ""), { userId: payload.userId, planId: planId || null, audience, amountCHF })
     if (!v.ok || !v.coupon) return NextResponse.json({ error: v.reason || "This code isn't valid." }, { status: 400 })
@@ -36,11 +38,21 @@ export async function POST(req: NextRequest) {
         const c = await tx.coupon.findUnique({ where: { id: v.coupon.id } })
         if (!c || !c.active) throw new Error("coupon_inactive")
         if (c.maxRedemptions != null && c.redeemedCount >= c.maxRedemptions) throw new Error("coupon_exhausted")
+        // Per-user cap: the @@unique([couponId,userId]) makes this create throw on a
+        // second attempt by the same user.
         await tx.couponRedemption.create({
           data: { couponId: c.id, userId: payload.userId, planId: planId || null, amountBeforeCHF: amountCHF, amountAfterCHF: 0, waiver: true },
         })
-        await tx.coupon.update({ where: { id: c.id }, data: { redeemedCount: { increment: 1 } } })
-        const data: any = { paid: true, paidAt: new Date(), paymentId: `waiver_${c.code}` }
+        // Global cap: atomic compare-and-swap. With a cap, only increment the row
+        // whose redeemedCount still equals what we read; a concurrent grant makes
+        // this match 0 rows (row-locked re-evaluation), so the cap can't be overshot.
+        if (c.maxRedemptions != null) {
+          const upd = await tx.coupon.updateMany({ where: { id: c.id, redeemedCount: c.redeemedCount }, data: { redeemedCount: { increment: 1 } } })
+          if (upd.count === 0) throw new Error("coupon_exhausted")
+        } else {
+          await tx.coupon.update({ where: { id: c.id }, data: { redeemedCount: { increment: 1 } } })
+        }
+        const data: any = { paid: true, paidAt: new Date(), paymentId: `waiver_${c.code}_${payload.userId}` }
         if (planId) { const renews = new Date(); renews.setMonth(renews.getMonth() + 1); data.plan = planId; data.planRenewsAt = renews }
         await tx.user.update({ where: { id: payload.userId }, data })
       })

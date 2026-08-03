@@ -19,7 +19,8 @@ export async function POST(req: NextRequest) {
   const plan = planId ? await getEffectivePlan(planId) : null
   if (planId && !plan) return NextResponse.json({ ok: false, reason: "Unknown plan." }, { status: 400 })
   const amountCHF = plan ? plan.priceCHF : JOINING_FEE_CHF
-  const audience = type === "employer" ? "employer" : "individual"
+  // Audience from the actual plan, not the client `type` (prevents scope bypass).
+  const audience = plan ? plan.audience : "individual"
 
   const r = await validateCoupon(String(code || ""), { userId: payload.userId, planId: planId || null, audience, amountCHF })
   return NextResponse.json({

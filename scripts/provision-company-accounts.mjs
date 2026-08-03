@@ -23,11 +23,21 @@ function genPassword() {
   return `${chunk()}-${chunk()}-${chunk()}${crypto.randomInt(10, 99)}`
 }
 
+// Only jobs currently owned by an import/aggregation/provisioned account are
+// safe to reassign — NEVER a real self-registered employer's postings.
+const SYS_SOURCES = ["edurankai", "catalog", "provisioned", "indeed"]
+const SYS_EMAILS = ["careers@edurankai.in", "careers+edurankai@edurankai.in"]
+const sysUsers = await prisma.user.findMany({
+  where: { OR: [{ source: { in: SYS_SOURCES } }, { email: { in: SYS_EMAILS } }, { email: { endsWith: `@${DOMAIN}` } }] },
+  select: { id: true },
+})
+const sysIds = new Set(sysUsers.map((u) => u.id))
+
 const groups = await prisma.job.groupBy({ by: ["company"], _count: { _all: true } })
 const companies = groups
   .map((g) => ({ company: (g.company || "").trim(), jobs: g._count._all }))
   .filter((g) => g.company)
-  .sort((a, b) => b.jobs - a.jobs)
+  .sort((a, b) => b.jobs - a.jobs || a.company.localeCompare(b.company))   // stable order
 
 console.log(`\nFound ${companies.length} distinct compan${companies.length === 1 ? "y" : "ies"} across jobs.`)
 if (!COMMIT) console.log("DRY RUN — re-run with COMMIT=1 to create accounts + reassign jobs.\n")
@@ -37,7 +47,9 @@ const usedSlugs = new Set()
 
 for (const { company, jobs } of companies) {
   let slug = slugify(company)
-  while (usedSlugs.has(slug)) slug = `${slug}-${crypto.randomInt(2, 99)}`
+  // Deterministic collision suffix (stable across runs) — a short hash of the
+  // exact company string, so the derived email/slug is reproducible = idempotent.
+  if (usedSlugs.has(slug)) slug = `${slug}-${crypto.createHash("sha1").update(company).digest("hex").slice(0, 6)}`
   usedSlugs.add(slug)
   const email = `${slug}@${DOMAIN}`
 
@@ -65,15 +77,21 @@ for (const { company, jobs } of companies) {
     await prisma.user.update({ where: { id: user.id }, data: { role: "EMPLOYER", paid: true, plan: "emp_scale" } })
   }
 
-  // Company hub owned by this recruiter.
+  // Company hub owned by this recruiter — but never seize a hub already owned by
+  // a real (non-system) user.
+  const existingCo = await prisma.company.findUnique({ where: { slug }, select: { ownerId: true } }).catch(() => null)
+  const keepOwner = existingCo && existingCo.ownerId && !sysIds.has(existingCo.ownerId) && existingCo.ownerId !== user.id
   await prisma.company.upsert({
     where: { slug },
-    update: { ownerId: user.id, name: company, verified: true },
+    update: keepOwner ? { name: company, verified: true } : { ownerId: user.id, name: company, verified: true },
     create: { slug, name: company, ownerId: user.id, verified: true },
   }).catch(() => {})
 
-  // Scope applicants: this company's jobs are owned by this recruiter.
-  const reassigned = await prisma.job.updateMany({ where: { company }, data: { postedById: user.id } })
+  // Scope applicants: reassign ONLY jobs currently owned by a system/import
+  // account (or this recruiter, for idempotent re-runs) — a real employer's jobs
+  // are never touched.
+  const reassignable = [...sysIds, user.id]
+  const reassigned = await prisma.job.updateMany({ where: { company, postedById: { in: reassignable } }, data: { postedById: user.id } })
 
   results.push({ company, email, password: password || "(existing — unchanged)", jobs: reassigned.count, status: password ? "created" : "existing" })
   console.log(`  ✓ ${company}  →  ${email}  (${reassigned.count} jobs)  ${password ? "password: " + password : "(existing)"}`)

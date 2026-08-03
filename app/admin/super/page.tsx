@@ -25,6 +25,7 @@ export default function SuperAdmin() {
             <div style={{ color:"#6495ED", display:"flex", justifyContent:"center" }}><IconLock size={28} /></div>
             <h2 style={{ fontSize: 18, fontWeight: 600, margin: "10px 0 4px" }}>Super-admin only</h2>
             <p style={{ fontSize: 13, color: "#6b7280" }}>This control center requires the SUPER_ADMIN role. Your role: {me?.role || "guest"}.</p>
+            <a href="/admin/login" style={{ display: "inline-block", marginTop: 14, background: "#6495ED", color: "#fff", borderRadius: 9, padding: "9px 18px", font: "600 13px sans-serif", textDecoration: "none" }}>Sign in as admin</a>
           </div>
         </div>
       </AdminShell>

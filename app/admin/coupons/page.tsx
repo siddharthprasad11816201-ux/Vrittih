@@ -86,7 +86,6 @@ export default function AdminCouponsPage() {
               </select>
             </Field>
             <Field label="Max total uses"><input type="number" value={form.maxRedemptions} onChange={e => set("maxRedemptions", e.target.value)} style={S.in} placeholder="Unlimited" min={0} /></Field>
-            <Field label="Per-user uses"><input type="number" value={form.perUserLimit} onChange={e => set("perUserLimit", e.target.value)} style={S.in} min={0} /></Field>
             <Field label="Expires (optional)"><input type="date" value={form.expiresAt} onChange={e => set("expiresAt", e.target.value)} style={S.in} /></Field>
           </div>
           <Field label="Description (optional)"><input value={form.description} onChange={e => set("description", e.target.value)} style={S.in} placeholder="Internal note" /></Field>
