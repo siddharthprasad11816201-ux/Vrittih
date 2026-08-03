@@ -3,6 +3,7 @@ import { useEffect, useState, type ChangeEvent } from "react"
 import { useRouter } from "next/navigation"
 import AppShell from "@/components/vrittih/AppShell"
 import { processImage } from "@/lib/clientImage"
+import { PLATFORMS, PLATFORM_LABEL } from "@/lib/social/platforms"
 export default function EditProfile() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
@@ -18,6 +19,10 @@ export default function EditProfile() {
   const [parseBusy, setParseBusy] = useState(false)
   const [parsed, setParsed] = useState<any>(null)
   const [parseMsg, setParseMsg] = useState("")
+  const [links, setLinks] = useState<any[]>([])
+  const [linkForm, setLinkForm] = useState({ platform: "linkedin", url: "" })
+  const [linkBusy, setLinkBusy] = useState("")   // "" | "add" | <linkId being verified>
+  const [linkMsg, setLinkMsg] = useState("")
 
   useEffect(() => {
     fetch("/api/profile").then(r => r.json()).then(d => {
@@ -81,6 +86,23 @@ export default function EditProfile() {
     for (const e of (parsed?.education || [])) await fetch("/api/profile/education", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ school:e.school||"", degree:e.degree||"", field:"", startYear:"", endYear:e.year||"" }) }).catch(()=>{})
     const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user); setParsed((x:any)=> x ? { ...x, education: [] } : x)
   }
+
+  // Professional links (verified).
+  async function loadLinks() { const d = await fetch("/api/profile/links").then(r => r.json()).catch(() => ({})); setLinks(d.links || []) }
+  useEffect(() => { if (tab === "links") loadLinks() }, [tab])
+  async function addLink(e: any) {
+    e.preventDefault(); if (!linkForm.url.trim()) return
+    setLinkBusy("add"); setLinkMsg("")
+    const d = await fetch("/api/profile/links", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(linkForm) }).then(r => r.json()).catch(() => ({ error: "Network error" }))
+    setLinkBusy("")
+    if (d.link) { setLinkForm(f => ({ platform: f.platform, url: "" })); loadLinks() } else setLinkMsg(d.error || "Couldn't add that link.")
+  }
+  async function verifyLink(id: string) {
+    setLinkBusy(id); setLinkMsg("")
+    const d = await fetch("/api/profile/links", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }).then(r => r.json()).catch(() => ({}))
+    setLinkBusy(""); setLinkMsg(d.verified ? "Verified — your link now shows a verified badge." : (d.reason || "Not verified yet.")); loadLinks()
+  }
+  async function delLink(id: string) { await fetch("/api/profile/links", { method: "DELETE", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id }) }).catch(() => {}); loadLinks() }
 
   async function addExp(e: any) {
     e.preventDefault()
@@ -159,7 +181,7 @@ export default function EditProfile() {
 
   if (!user) return <AppShell><div style={S.loading}>Loading...</div></AppShell>
 
-  const TABS = [["basic","Basic info"],["experience","Experience"],["education","Education"],["skills","Skills"],["uploads","Files"]]
+  const TABS = [["basic","Basic info"],["experience","Experience"],["education","Education"],["skills","Skills"],["links","Links"],["uploads","Files"]]
 
   return (
     <AppShell>
@@ -288,6 +310,46 @@ export default function EditProfile() {
                 <input value={skillInput} onChange={e=>setSkillInput(e.target.value)} placeholder="Add a skill (e.g. React, SQL)" style={S.input} />
                 <button type="submit" style={S.saveBtn}>Add</button>
               </form>
+            </div>
+          )}
+
+          {/* Professional links (verified) */}
+          {tab === "links" && (
+            <div style={S.card}>
+              <h3 style={S.cardTitle}>Professional links</h3>
+              <p style={{ fontSize: 13, color: "var(--v-ink-2)", marginBottom: 14, lineHeight: 1.55 }}>
+                Add LinkedIn, GitHub, Linktree, your website and more. Each link is <b>ownership-verified</b>: we give you a token to place on the page (or your bio), then fetch it to confirm it's yours. Verified links show a badge on your profile.
+              </p>
+              <form onSubmit={addLink} style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 12 }}>
+                <select value={linkForm.platform} onChange={e => setLinkForm(f => ({ ...f, platform: e.target.value }))} style={{ ...S.input, maxWidth: 170, width: "auto" }}>
+                  {PLATFORMS.map(p => <option key={p.key} value={p.key}>{p.label}</option>)}
+                </select>
+                <input value={linkForm.url} onChange={e => setLinkForm(f => ({ ...f, url: e.target.value }))} placeholder={PLATFORMS.find(p => p.key === linkForm.platform)?.placeholder} style={{ ...S.input, flex: 1, minWidth: 200, width: "auto" }} />
+                <button type="submit" disabled={linkBusy === "add"} style={S.saveBtn}>{linkBusy === "add" ? "Adding…" : "Add link"}</button>
+              </form>
+              {linkMsg && <div style={{ fontSize: 12.5, color: "var(--v-accent-2)", marginBottom: 12, fontWeight: 500 }}>{linkMsg}</div>}
+              <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {links.length === 0 && <p style={{ fontSize: 13, color: "var(--v-ink-3)" }}>No links added yet.</p>}
+                {links.map(l => (
+                  <div key={l.id} style={{ border: "1px solid var(--v-line-2)", borderRadius: 12, padding: "12px 14px" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+                      <span style={{ fontWeight: 600, fontSize: 13.5, color: "var(--v-ink)" }}>{PLATFORM_LABEL(l.platform)}</span>
+                      {l.verified
+                        ? <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--v-green)", background: "var(--v-green-soft)", borderRadius: 999, padding: "2px 9px" }}>✓ Verified</span>
+                        : <span style={{ fontSize: 11.5, fontWeight: 600, color: "var(--warn)", background: "#FEF3E2", borderRadius: 999, padding: "2px 9px" }}>Unverified</span>}
+                      <a href={l.url} target="_blank" rel="noreferrer" style={{ fontSize: 12.5, color: "var(--v-accent)", textDecoration: "none", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.url}</a>
+                      {!l.verified && <button onClick={() => verifyLink(l.id)} disabled={linkBusy === l.id} style={{ ...S.saveBtn, marginTop: 0, padding: "7px 12px" }}>{linkBusy === l.id ? "Checking…" : "Verify"}</button>}
+                      <button onClick={() => delLink(l.id)} style={{ background: "none", border: "none", color: "#B91C1C", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}>Remove</button>
+                    </div>
+                    {!l.verified && (
+                      <div style={{ marginTop: 10, fontSize: 12, color: "var(--v-ink-2)", background: "var(--v-surface-2)", borderRadius: 8, padding: "9px 11px", lineHeight: 1.5 }}>
+                        Place this token on the page (footer, bio, or a README), then click Verify:
+                        <code style={{ display: "block", marginTop: 5, fontFamily: "var(--font-mono)", fontSize: 12, color: "var(--v-ink)", wordBreak: "break-all", userSelect: "all" }}>{l.verifyToken}</code>
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 

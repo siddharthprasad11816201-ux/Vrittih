@@ -88,6 +88,7 @@ model User {
   media                MediaAsset[]
   companyFollows       CompanyFollow[]
   companiesOwned       Company[]            @relation("CompanyOwner")
+  socialLinks          SocialLink[]
 }
 
 // Company profile — a real employer page, not just a string on a job. Jobs link by
@@ -1614,6 +1615,24 @@ model Coupon {
   updatedAt      DateTime @updatedAt
   redemptions    CouponRedemption[]
   @@index([active])
+}
+
+// Professional links (LinkedIn, GitHub, Linktree, website, portfolio, …) shown on
+// a profile. Each is OWNERSHIP-VERIFIED: we issue a token the user places on the
+// public page, then fetch it and confirm the token is present (SSRF-guarded).
+model SocialLink {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform    String                     // "linkedin" | "github" | "website" | "linktree" | ...
+  url         String
+  verified    Boolean   @default(false)
+  verifyToken String                     // token the user must place on the page
+  verifiedAt  DateTime?
+  lastCheckedAt DateTime?
+  createdAt   DateTime  @default(now())
+  @@unique([userId, platform, url])
+  @@index([userId])
 }
 
 model CouponRedemption {
