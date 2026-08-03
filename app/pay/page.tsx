@@ -25,12 +25,35 @@ const REGION_CCY: Record<string, string> = {
   DE: "EUR", FR: "EUR", IT: "EUR", ES: "EUR", NL: "EUR", IE: "EUR", AT: "EUR", BE: "EUR", PT: "EUR", FI: "EUR",
 }
 
+// IANA timezone → region. Timezone is a far stronger signal than the locale,
+// which is frequently a generic "en-US" even for users outside the US — that
+// mis-detection is exactly why an Indian buyer was shown USD (cards only, no UPI).
+const TZ_REGION: Record<string, string> = {
+  "Asia/Kolkata": "IN", "Asia/Calcutta": "IN",
+  "Europe/Zurich": "CH", "Europe/London": "GB",
+  "Asia/Singapore": "SG", "Asia/Tokyo": "JP",
+  "America/New_York": "US", "America/Chicago": "US", "America/Denver": "US", "America/Los_Angeles": "US", "America/Phoenix": "US",
+  "America/Toronto": "CA", "America/Vancouver": "CA",
+  "Australia/Sydney": "AU", "Australia/Melbourne": "AU", "Australia/Perth": "AU",
+}
+
+function regionToCcy(region: string, supported: string[]): string | null {
+  const g = REGION_CCY[region]
+  return g && supported.includes(g) ? g : null
+}
+
 function detectCurrency(supported: string[]): string {
   try {
-    const loc = Intl.DateTimeFormat().resolvedOptions().locale || navigator.language || ""
+    const opts = Intl.DateTimeFormat().resolvedOptions()
+    const tz = opts.timeZone || ""
+    // 1) explicit timezone → region (most reliable)
+    if (TZ_REGION[tz]) { const c = regionToCcy(TZ_REGION[tz], supported); if (c) return c }
+    // 2) locale region tag
+    const loc = opts.locale || navigator.language || ""
     const region = (loc.split("-")[2] || loc.split("-")[1] || "").toUpperCase()
-    const guess = REGION_CCY[region]
-    if (guess && supported.includes(guess)) return guess
+    const byLoc = regionToCcy(region, supported); if (byLoc) return byLoc
+    // 3) coarse continent fallback for unmapped zones
+    if (tz.startsWith("Europe/") && supported.includes("EUR")) return "EUR"
   } catch { /* fall through */ }
   return supported.includes("CHF") ? "CHF" : supported[0]
 }
@@ -171,13 +194,30 @@ export default function PayPage() {
 
         {error && <div className="err">{error}</div>}
 
+        {rates.length > 0 && (
+          <div className="ccyBar">
+            <label htmlFor="ccyPick">Pay in</label>
+            <select id="ccyPick" value={currency} onChange={e => setCurrency(e.target.value)}>
+              {rates.map(r => <option key={r.code} value={r.code}>{r.code} ({r.symbol})</option>)}
+            </select>
+            <span className="methods">
+              {currency === "INR"
+                ? "UPI · cards · netbanking · wallets"
+                : "International cards"}
+            </span>
+          </div>
+        )}
+        {currency !== "INR" && (
+          <p className="upiHint">Want to pay by UPI? Choose <button type="button" className="linkBtn" onClick={() => setCurrency("INR")}>₹ INR</button> — UPI, netbanking &amp; wallets are available for rupee payments.</p>
+        )}
+
         <button onClick={pay} disabled={busy || !plan || !rate} className={"btn wide" + (busy || !rate ? " off" : "")}>
           <IconLock size={15} />
           {busy ? "Opening secure checkout…" : plan ? `Subscribe — ${money(localAmount)} / month` : "Choose a plan"}
         </button>
 
         <p className="fine">
-          Secure checkout by Razorpay · cards, UPI, netbanking &amp; wallets.
+          Secure checkout by Razorpay · {currency === "INR" ? "UPI, cards, netbanking & wallets" : "international cards"}.
           {" "}
           <button type="button" className="linkBtn" onClick={() => setShowFx(v => !v)}>
             {showFx ? "Hide pricing details" : "How is this priced?"}
@@ -246,6 +286,11 @@ const CSS = `
 .btn.off{opacity:.55;cursor:not-allowed}
 
 .err{margin-top:16px;padding:11px 14px;border-radius:12px;background:#FEF3F2;color:#B42318;font-size:14px;line-height:1.5}
+.ccyBar{display:flex;align-items:center;gap:10px;margin-top:18px;padding:11px 14px;border:1px solid var(--line);border-radius:14px;background:var(--bg);flex-wrap:wrap}
+.ccyBar label{font-size:13px;font-weight:600;color:var(--ink2)}
+.ccyBar select{font:inherit;font-size:13.5px;font-weight:600;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer}
+.ccyBar .methods{margin-left:auto;font-size:12.5px;color:var(--ink3);font-weight:500}
+.upiHint{font-size:12.5px;color:var(--ink2);margin:10px 2px 0;line-height:1.6}
 .fine{font-size:12.5px;color:var(--ink3);text-align:center;margin:12px 0 0;line-height:1.6}
 .linkBtn{background:none;border:none;padding:0;font:inherit;font-size:12.5px;color:var(--g);font-weight:600;cursor:pointer;text-decoration:underline}
 .fx{margin-top:12px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--bg);font-size:13px;line-height:1.6;color:var(--ink2)}
