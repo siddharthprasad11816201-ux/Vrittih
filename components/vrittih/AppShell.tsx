@@ -69,6 +69,8 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/competencies", label: "Competencies", icon: <IconTarget size={18} /> }, // ELTOS competency framework
       { href: "/academy", label: "Academy", icon: <IconMonitor size={18} /> },   // ELTOS courses + learning paths
       { href: "/tutor", label: "AI Tutor", icon: <IconZap size={18} /> },         // ELTOS in-house tutor (AIOS)
+      { href: "/mentoring", label: "Mentoring", icon: <IconUsers size={18} /> },   // ELTOS mentor discovery/matching
+      { href: "/learning-analytics", label: "Growth", icon: <IconTrendingUp size={18} /> }, // ELTOS learning analytics
       { href: "/learn", label: "Learn", icon: <IconBookmark size={18} /> },      // internships (learn & earn)
       { href: "/internship", label: "Internship", icon: <IconCheckCircle size={18} /> }, // active programme + roadmap
       { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> }, // full-time / contract / freelance (earn)

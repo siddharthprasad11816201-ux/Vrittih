@@ -62,18 +62,18 @@ Legend: ✅ reuse · ◐ extend · ⬜ build · ▶ now.
 | # | Module | Status | Where / plan |
 |---|---|---|---|
 | 1 | **Enterprise Competency Framework** | ✅ | `Competency` + `UserCompetency` (both DBs) + `lib/learning/competency.ts` (kinds, bands, gap analysis, org heatmap, evidence→proficiency; 15 tests) + curated default library (23 competencies × 8 kinds mapped to the skill graph). `/api/competencies` (library + self-assess + author/seed + target gap), `/api/competencies/heatmap` (exec), `/competencies` UI. |
-| 2 | Learning Intelligence Engine | ◐ | Readiness/velocity/prediction from `CareerSnapshot`+forecast+gap. Batch 3/4. |
+| 2 | Learning Intelligence Engine | ✅ | Gap→path readiness (`gapAnalysis` + `assemblePath`), evidence→proficiency growth, and the org capability index surfaced in Learning Analytics; forecasting reuses EIDP. |
 | 3 | Learning Path Engine | ✅ | `lib/learning/course.assemblePath` (greedy gap‑closing course sequence, honest uncovered) + `/api/learning/path` (target skills or a visible JobTemplate's competencies). |
 | 4 | Content Platform | ✅ | `Course`/`Lesson`/`Enrollment`/`LessonProgress` (both DBs) mapped to competencies; `lib/learning/course.ts` (progress/next/duration/coverage; 14 tests); `/api/courses` + `/api/courses/[id]` (author/publish, enroll, complete‑lesson → **cert + competency evidence**); `/academy` UI (browse · my learning · path · author). |
 | 5 | AI Tutor | ✅ | `lib/learning/tutor.ts` (19 tests): intent classification, study plans, practice sets, honest quiz outlines, concept maps — deterministic, no LLM. Registered as AIOS capability `learning.tutor` (audited); focus skills from the question or the learner's weakest competencies. `/api/tutor` + `/tutor` UI. |
 | 6 | Assessment Platform | ✅ | `Test`/`TestAttempt` — reused; competency‑linked validation added. |
 | 7 | Project‑Based Learning | ◐ | Reuse `resources.projectIdea` + profile; project→competency evidence. Batch 4. |
-| 8 | Mentoring & Coaching | ◐ | Internship mentoring exists; add mentor discovery/matching (reuse similarity). Batch 4. |
+| 8 | Mentoring & Coaching | ✅ | `Mentorship` model + `User.openToMentor`; `lib/learning/mentoring.ts` (evidence-based mentor matching + governed lifecycle, 13 tests); `/api/mentoring` (discover by demonstrated competency + request/accept/decline/complete/withdraw) + `/mentoring` UI. |
 | 9 | Research & Innovation Learning | ◐ | Research roadmaps reuse roadmap/frontier + knowledge index. Batch 4. |
 | 10 | Community Learning | ◐ | Community/feed exists; learning communities layer. Batch 4. |
 | 11 | Career Development | ✅ | ICAE/EROS + career simulator/DNA/coach — reused; surfaced in LXP. |
 | 12 | Leadership Development | ◐ | Leadership competencies (Module 1) + paths. Batch 4. |
-| 13 | Learning Analytics + Executive Capability Index | ⬜ | On competency roll‑up + `CareerSnapshot` + forecast. Batch 3. |
+| 13 | Learning Analytics + Executive Capability Index | ✅ | `/api/learning/analytics` + `/learning-analytics` — personal growth + org completion/certs/**capability index** (weakest/strongest via the competency heatmap). |
 | 14 | Certifications | ✅ | `lib/certificate` + `Certificate` — competency‑linked credentials on completion. |
 | 15 | Learning Experience Platform (LXP) | ⬜ | Learner dashboard: paths, recommendations, progress, goals, achievements. Batch 2/3. |
 

@@ -22,6 +22,7 @@ model User {
   phone            String?
   source           String?        // provenance: "indeed", "signup", null=organic
   openToWork       Boolean        @default(false)  // LinkedIn-style "open to work" signal
+  openToMentor     Boolean        @default(false)  // ELTOS: available to mentor others
   role             String         @default("JOBSEEKER")
   seniority        String         @default("MID")   // interviewer seniority band for interview governance: JUNIOR|MID|SENIOR|LEAD|EXECUTIVE
   paid             Boolean        @default(false)
@@ -108,6 +109,8 @@ model User {
   competencies         UserCompetency[]     @relation("UserCompetencyUser")
   coursesAuthored      Course[]             @relation("CourseAuthor")
   enrollments          Enrollment[]         @relation("EnrollmentUser")
+  mentorshipsAsMentor  Mentorship[]         @relation("MentorshipMentor")
+  mentorshipsAsMentee  Mentorship[]         @relation("MentorshipMentee")
 }
 
 // A structured internship engagement (native "InternshipOS"): a weekly milestone
@@ -1404,6 +1407,23 @@ model LessonProgress {
   completedAt  DateTime @default(now())
   enrollment   Enrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
   @@unique([enrollmentId, lessonId])
+}
+
+// ELTOS Module 8 — Mentoring & Coaching. Mentors surface by demonstrated competency
+// proficiency + an opt-in; a mentorship is a governed relationship between two users.
+model Mentorship {
+  id            String   @id @default(cuid())
+  mentorId      String
+  menteeId      String
+  competencyKey String?
+  message       String?
+  status        String   @default("REQUESTED") // REQUESTED|ACTIVE|DECLINED|COMPLETED|WITHDRAWN
+  createdAt     DateTime @default(now())
+  respondedAt   DateTime?
+  mentor        User     @relation("MentorshipMentor", fields: [mentorId], references: [id], onDelete: Cascade)
+  mentee        User     @relation("MentorshipMentee", fields: [menteeId], references: [id], onDelete: Cascade)
+  @@index([mentorId, status])
+  @@index([menteeId, status])
 }
 
 // What a given job requires of an applicant. Employers differ: some want a CV
