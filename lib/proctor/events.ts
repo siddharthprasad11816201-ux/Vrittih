@@ -53,6 +53,8 @@ const BY_TYPE: Record<string, EventTypeDef> = Object.fromEntries(EVENT_TYPES.map
 const UNKNOWN: EventTypeDef = { type: "unknown", label: "Unrecognised event", category: "screen", severity: "info", policyRef: "n/a", phase: 1 }
 
 export function classify(type: string): EventTypeDef { return BY_TYPE[type] || { ...UNKNOWN, type } }
+/* Trust-boundary guard: only catalogued event types are accepted for storage. */
+export function isKnownType(type: string): boolean { return !!BY_TYPE[type] }
 
 export const RISK_BAND = (score: number) => score >= 60 ? "high" : score >= 30 ? "elevated" : score >= 10 ? "low" : "clear"
 
@@ -85,8 +87,10 @@ export function sessionRisk(events: { type: string; confidence?: number }[]): Ri
   let raw = 0
   for (const [type, g] of groups) {
     const avgConf = g.conf / g.count
-    // diminishing returns on repeats: weight * sqrt(count) * avgConfidence
-    const points = SEV_WEIGHT[g.def.severity] * Math.sqrt(g.count) * avgConf
+    // diminishing returns on repeats (sqrt), then a HARD per-type cap (2.5× base weight)
+    // so no single noisy/duplicated signal type can alone push the score into "high".
+    const w = SEV_WEIGHT[g.def.severity]
+    const points = Math.min(w * 2.5, w * Math.sqrt(g.count) * avgConf)
     raw += points
     contributors.push({ type, label: g.def.label, count: g.count, severity: g.def.severity, points: +points.toFixed(1) })
   }

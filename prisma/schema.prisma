@@ -101,6 +101,7 @@ model User {
   offersCreated        Offer[]              @relation("OfferCreator")
   scorecardsGiven      InterviewScorecard[] @relation("ScorecardPanelist")
   proctorSessions      ProctorSession[]     @relation("ProctorSubject")
+  jobTemplates         JobTemplate[]        @relation("JobTemplateCreator")
 }
 
 // A structured internship engagement (native "InternshipOS"): a weekly milestone
@@ -1224,6 +1225,34 @@ model OfferEvent {
   createdAt DateTime @default(now())
   offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
   @@index([offerId])
+}
+
+// EROS Module 3 — Job Architecture. A versioned, governed role/requisition template:
+// family + level + grade + competencies + skills + an (in-house generated) JD, moving
+// through a draft→approval lifecycle. Reused to post consistent, approved jobs.
+model JobTemplate {
+  id                    String   @id @default(cuid())
+  createdById           String
+  family                String?                     // lib/career/roles.ts family key
+  level                 String   @default("MID")    // lib/jobarch/jd.ts LEVELS key
+  grade                 String?                      // optional job-grade label
+  title                 String
+  summary               String?
+  descriptionMd         String?                      // JD markdown (generated or edited)
+  requiredSkills        String?                      // JSON string[]
+  preferredSkills       String?                      // JSON string[]
+  requiredCompetencies  String?                      // JSON [{key,label}]
+  preferredCompetencies String?                      // JSON [{key,label}]
+  status                String   @default("DRAFT")   // DRAFT|PENDING_APPROVAL|APPROVED|ARCHIVED
+  version               Int      @default(1)
+  supersededById        String?
+  approvedById          String?
+  approvedAt            DateTime?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  createdBy             User     @relation("JobTemplateCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  @@index([createdById, status])
+  @@index([family, level])
 }
 
 // What a given job requires of an applicant. Employers differ: some want a CV

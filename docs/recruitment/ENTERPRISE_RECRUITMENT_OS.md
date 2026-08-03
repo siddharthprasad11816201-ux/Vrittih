@@ -61,7 +61,7 @@ Legend: ✅ exists & reused · ◐ partial (extend) · ⬜ gap (build) · ▶ bu
 | Module | Status | Where / plan |
 |---|---|---|
 | **1. Strategic Workforce Planning** | ◐ | Forecasting engine exists (`lib/intelligence/forecast.ts`); EIDP series. GAP: a hiring-forecast/demand dashboard + budget/scenario. Plan: `/recruitment/planning` on the forecast engine. |
-| **2. Job Architecture** | ◐ | `lib/career/roles.ts` (families/levels/ladders), `lib/roleCatalog.ts`, `lib/opportunity/normalize.ts`. GAP: `JobTemplate`/requisition, approval workflow, versioning, in-house JD generation. |
+| **2. Job Architecture** | ✅ | Families/levels/ladders (`lib/career/roles.ts`) + **versioned `JobTemplate`** with a governed approval lifecycle (`lib/jobarch/lifecycle.ts`), an **in-house deterministic JD assistant** (`lib/jobarch/jd.ts`, no external LLM — 15 tests) + competency libraries, a **role-similarity engine** (`lib/jobarch/similarity.ts` — comparison/semantic search, 14 tests w/ lifecycle), `/api/job-templates*` and the `/job-architecture` UI (create → JD preview → draft → approve → reusable library). |
 | **3. Talent CRM** | ◐ | `Contact` CRM (stages), `Company`, referrals partial. GAP: `TalentPool`/pools, silver-medalists, alumni, recruiter notes on candidates. |
 | **4. AI Candidate Discovery** | ✅ | ICAE (`lib/opportunity/*`, `/api/opportunities/groups`), `lib/career/match`, semantic index (`lib/knowledge/semindex`), recommendations. Reused. |
 | **5. Application Management** | ✅ | `Application`(+Form/Answer/Document), `StatusEvent` timeline, `/api/applications` (+ `/batch` from ICAE), status workflow. Reused. |
@@ -164,6 +164,16 @@ modules add their models the same way. Local schema provider is always restored 
   deliverable sections, evidence-first & privacy-first). Pre-built
   `lib/interview/scorecard.ts` (competency aggregation + bias signals, 13 tests) toward
   Batch 2.
+- **2026-08-03** — Batch 2 review (13 agents) → **6 confirmed defects fixed**: proctoring
+  auto-triage no longer sticks terminally at CLEARED (atomic, re-escalating, guarded on
+  `reviewedById:null`); risk score has a per-type cap (one noisy signal can't reach
+  "high"); `ProctorCapture` now persists consent across lobby→room and captures during
+  the live interview; proctor ingest validates refId ownership + drops unknown event
+  types + reduces `evidence` to an allow-listed metadata scalar set at the trust
+  boundary; single-panelist consensus no longer inflates to 1.0.
+- **2026-08-03** — Batch 3 shipped: **Module 2/3 Job Architecture** (JobTemplate +
+  versioned approval lifecycle, in-house JD assistant, competency libraries,
+  role-similarity engine, `/api/job-templates*`, `/job-architecture`). Both DBs migrated.
 - **2026-08-03** — Batch 2 shipped: **Module 6 Interview Intelligence + Semantic
   Proctoring (Phase 1)**. InterviewScorecard model + submit/aggregate API +
   `/interviews/[code]/evaluate` (competency ratings → explainable panel decision with

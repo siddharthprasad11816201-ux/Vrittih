@@ -77,8 +77,10 @@ export function aggregatePanel(
   const recVals = cards.map(cd => REC_VALUE[cd.recommendation] ?? 3)
   const overallMean = +mean(recVals).toFixed(2)
   const overallSpread = stdev(recVals)
-  // consensus: 1 when all agree, decaying with spread (max meaningful spread ~1.5)
-  const consensus = +Math.max(0, 1 - overallSpread / 1.5).toFixed(2)
+  // consensus: 1 when all agree, decaying with spread (max meaningful spread ~1.5).
+  // Undefined for a single rater — one opinion is not a consensus (avoids inflating a
+  // solo panel to 1.0 confidence).
+  const consensus = panelSize < 2 ? 0 : +Math.max(0, 1 - overallSpread / 1.5).toFixed(2)
   const recommendation = nearestRec(overallMean)
   const decision: PanelResult["decision"] = overallMean >= 3 ? "advance" : overallMean >= 2.34 ? "hold" : "reject"
 

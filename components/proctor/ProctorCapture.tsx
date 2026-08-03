@@ -12,7 +12,10 @@ import { IconShield } from "@/components/ui/Icons"
 type Ev = { type: string; source?: string; ts?: number; confidence?: number; evidence?: any }
 
 export default function ProctorCapture({ kind, refId }: { kind: "interview" | "assessment"; refId: string }) {
-  const [consent, setConsent] = useState(false)
+  const ckey = `proctor-consent:${kind}:${refId}`
+  // Consent persists across the lobby→room remount (and re-mounts) so monitoring is
+  // continuous once granted, and the candidate doesn't have to re-consent on join.
+  const [consent, setConsent] = useState<boolean>(() => { try { return typeof window !== "undefined" && sessionStorage.getItem(ckey) === "1" } catch { return false } })
   const [status, setStatus] = useState<"idle" | "active" | "off">("idle")
   const buf = useRef<Ev[]>([])
   const lastActivity = useRef<number>(0)
@@ -87,7 +90,9 @@ export default function ProctorCapture({ kind, refId }: { kind: "interview" | "a
     }
   }, [consent, push, flush])
 
+  function grant() { try { sessionStorage.setItem(ckey, "1") } catch {} setConsent(true) }
   function withdraw() {
+    try { sessionStorage.removeItem(ckey) } catch {}
     setConsent(false); setStatus("off")
     flush({ consent: false })   // signals the server to end the session
   }
@@ -102,7 +107,7 @@ export default function ProctorCapture({ kind, refId }: { kind: "interview" | "a
         This session can record <b>observable integrity events</b> (tab switches, focus loss, paste, network) — metadata only,
         never audio, video or what you type. A human reviews any flags; it never decides on its own.
       </span>
-      <button style={S.btn} onClick={() => setConsent(true)}>I consent</button>
+      <button style={S.btn} onClick={grant}>I consent</button>
     </div>
   )
   return (

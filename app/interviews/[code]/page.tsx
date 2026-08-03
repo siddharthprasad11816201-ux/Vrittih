@@ -377,8 +377,12 @@ export default function InterviewRoom() {
   }
 
   /* ─────────────────────────── ROOM ─────────────────────────── */
+  const amCandidateInRoom = !!(me && interview && (interview.participants || []).find((pp: any) => pp.user?.id === me.id)?.role === "CANDIDATE")
   return (
     <div className="mRoot">
+      {/* Integrity monitoring persists through the live interview (consent carries over
+          from the lobby via sessionStorage; candidate can withdraw at any time). */}
+      {amCandidateInRoom && <div style={{ position: "fixed", bottom: 8, left: 8, zIndex: 50, maxWidth: 340 }}><ProctorCapture kind="interview" refId={interview.id} /></div>}
       <header className="mBar">
         <div className="mBarL">
           <span className="mDot" /> <b>{interview.title}</b>
