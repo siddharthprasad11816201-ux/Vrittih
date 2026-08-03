@@ -41,7 +41,8 @@ export async function GET(req: NextRequest) {
       { description: ci(q) },
     ]
     if (industry) where.industry = industry
-    if (type) where.type = type
+    // `type` accepts a single value or a comma list (e.g. Earn = FULLTIME,CONTRACT,…).
+    if (type) where.type = type.includes(",") ? { in: type.split(",").map((t) => t.trim()).filter(Boolean) } : type
     if (remote === "true") where.remote = true
 
     // Never show a listing whose deadline has passed — the core complaint about

@@ -7,7 +7,7 @@ import {
   IconActivity, IconBriefcase, IconTarget, IconFileText, IconUsers, IconTrendingUp,
   IconClipboard, IconMessage, IconMail, IconNetwork, IconUser, IconSearch, IconBell,
   IconShield, IconMenu, IconX, IconHome, IconBookmark, IconGlobe, IconBanknote,
-  IconKey, IconCheckCircle, IconStar, IconAward, IconZap,
+  IconKey, IconCheckCircle, IconStar, IconAward, IconZap, IconMonitor,
 } from "@/components/ui/Icons"
 
 /* Vrittih shell — Architecture A (compact island sidebar), per the redesign brief.
@@ -58,7 +58,8 @@ function buildNav(caps: Set<string>): Section[] {
   } else {
     sections.push({ title: "Career", items: [
       { href: "/career", label: "Career AI", icon: <IconActivity size={18} /> },
-      { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> },
+      { href: "/learn", label: "Learn", icon: <IconMonitor size={18} /> },      // internships (learn & earn)
+      { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> }, // full-time / contract / freelance (earn)
       { href: "/jobs/match", label: "Matched", icon: <IconTarget size={18} /> },
       { href: "/applications", label: "Applications", icon: <IconFileText size={18} /> },
       { href: "/jobs/saved", label: "Saved", icon: <IconBookmark size={18} /> },
