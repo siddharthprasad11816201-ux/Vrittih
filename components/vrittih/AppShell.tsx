@@ -42,6 +42,7 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/dashboard/post-job", label: "Post a job", icon: <IconFileText size={18} /> },
       { href: "/dashboard/recruiter", label: "Candidates", icon: <IconUsers size={18} /> },
       { href: "/dashboard/pipeline", label: "Pipeline", icon: <IconTrendingUp size={18} /> },
+      { href: "/offers", label: "Offers", icon: <IconAward size={18} /> },
       { href: "/internship", label: "Interns", icon: <IconCheckCircle size={18} /> },
       { href: "/jobs", label: "All jobs", icon: <IconBriefcase size={18} /> },
       { href: "/companies", label: "Companies", icon: <IconGlobe size={18} /> },
@@ -65,6 +66,7 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/opportunities", label: "Opportunities", icon: <IconLayers size={18} /> }, // ICAE: related role groups + multi-apply
       { href: "/jobs/match", label: "Matched", icon: <IconTarget size={18} /> },
       { href: "/applications", label: "Applications", icon: <IconFileText size={18} /> },
+      { href: "/offers", label: "Offers", icon: <IconAward size={18} /> },
       { href: "/jobs/saved", label: "Saved", icon: <IconBookmark size={18} /> },
       { href: "/resume", label: "Résumé", icon: <IconClipboard size={18} /> },
     ] })

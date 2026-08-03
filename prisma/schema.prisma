@@ -97,6 +97,8 @@ model User {
   internships          Internship[]         @relation("Intern")
   mentoring            Internship[]         @relation("Mentor")
   evaluationsReceived  Evaluation[]         @relation("EvalSubject")
+  offersReceived       Offer[]              @relation("OfferCandidate")
+  offersCreated        Offer[]              @relation("OfferCreator")
 }
 
 // A structured internship engagement (native "InternshipOS"): a weekly milestone
@@ -1161,8 +1163,65 @@ model Application {
   timeline    StatusEvent[]
   answers     ApplicationAnswer[]
   documents   ApplicationDocument[]
+  offers      Offer[]
   @@index([jobId, status])
   @@index([userId])
+}
+
+// EROS Module 8 — Offer Management. An Offer is a first-class entity, NOT an
+// application status: it carries compensation, an approval + versioning lifecycle,
+// and a digital acceptance that (on accept) drives the application to HIRED and can
+// trigger onboarding. Compensation stores an explicit currency (FX-safe).
+model Offer {
+  id             String   @id @default(cuid())
+  applicationId  String?              // link to the application, if offered from one
+  candidateId    String               // the User being offered
+  jobId          String?
+  createdById    String               // recruiter / hiring manager who drafted it
+  title          String               // role title on the offer
+  companyName    String
+  status         String   @default("DRAFT") // DRAFT|PENDING_APPROVAL|APPROVED|SENT|ACCEPTED|DECLINED|WITHDRAWN|EXPIRED
+  // compensation (currency explicit; never sum across currencies without lib/fx)
+  baseAmount     Float?
+  currency       String   @default("CHF")
+  bonusAmount    Float?
+  equity         String?              // free text, e.g. "0.10%"
+  benefits       String?              // JSON array of strings
+  startDate      DateTime?
+  expiresAt      DateTime?
+  // approval
+  approvedById   String?
+  approvedAt     DateTime?
+  // lifecycle
+  sentAt         DateTime?
+  respondedAt    DateTime?
+  declineReason  String?
+  // versioning — a revision supersedes the prior offer
+  version        Int      @default(1)
+  supersededById String?
+  // prediction snapshot at send time (deterministic, explainable)
+  acceptScore    Float?               // 0..1 predicted acceptance
+  acceptFactors  String?              // JSON factors behind the prediction
+  notes          String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  candidate      User     @relation("OfferCandidate", fields: [candidateId], references: [id], onDelete: Cascade)
+  createdBy      User     @relation("OfferCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  application    Application? @relation(fields: [applicationId], references: [id], onDelete: SetNull)
+  events         OfferEvent[]
+  @@index([candidateId, status])
+  @@index([createdById, status])
+}
+
+model OfferEvent {
+  id        String   @id @default(cuid())
+  offerId   String
+  action    String                    // created|submitted|approved|sent|accepted|declined|withdrawn|revised|expired
+  note      String?
+  actorId   String?
+  createdAt DateTime @default(now())
+  offer     Offer    @relation(fields: [offerId], references: [id], onDelete: Cascade)
+  @@index([offerId])
 }
 
 // What a given job requires of an applicant. Employers differ: some want a CV
