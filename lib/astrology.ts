@@ -248,3 +248,27 @@ export function careerFit(a: NonNullable<AstroAnalysis>, experience: { title?: s
 export const ELEMENT_COLOR: Record<string, string> = {
   Fire: "#C2571F", Earth: "#0B6B45", Air: "#2C7CB8", Water: "#5A4FB0",
 }
+
+/* Daily guidance — a short, deterministic in-house reading for the day. Seeded by
+ * sign + the UTC date, so it's stable within a day and changes each day. No
+ * external service, no randomness (reproducible). "Not a substitute for
+ * professional advice." Shown to advanced tiers + admins on the dashboard. */
+const DAY_THEMES: Record<string, string[]> = {
+  Fire: ["A high-momentum day — your initiative lands.", "Bold moves are favoured today; act while it's hot.", "Energy runs high — pour it into one clear win."],
+  Earth: ["A steady, productive day for building.", "Grounded focus pays off — finish what's half-done.", "Slow and solid wins today; tend the details."],
+  Air: ["A social, idea-rich day — conversations open doors.", "A good day to connect, pitch and learn.", "Your words carry today — share the idea you've been holding."],
+  Water: ["An intuitive day — trust your read on people.", "Reflective and perceptive; listen before you act.", "Currents run deep today — lead with empathy."],
+}
+function hashStr(s: string): number { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619) } return h >>> 0 }
+
+export function dailyGuidance(birthDate?: string | null, date: Date = new Date()) {
+  const a = analyze(birthDate)
+  if (!a) return null
+  const day = `${date.getUTCFullYear()}-${date.getUTCMonth() + 1}-${date.getUTCDate()}`
+  const seed = hashStr(`${a.sign.name}|${day}`)
+  const themes = DAY_THEMES[a.sign.element] || DAY_THEMES.Air
+  const theme = themes[seed % themes.length]
+  const act = a.sign.strengths[seed % a.sign.strengths.length]
+  const avoid = a.sign.growthAreas[(seed >> 5) % a.sign.growthAreas.length]
+  return { sign: a.sign.name, element: a.sign.element, luckyDay: a.sign.luckyDay, theme, act, avoid, line: `${theme} Lean into ${act.toLowerCase()}; ease off ${avoid.toLowerCase()}.` }
+}

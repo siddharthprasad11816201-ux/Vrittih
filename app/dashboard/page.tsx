@@ -6,6 +6,8 @@ import AppShell from "@/components/vrittih/AppShell"
 import EmptyState from "@/components/vrittih/EmptyState"
 import PipelineRail from "@/components/vrittih/PipelineRail"
 import PipelineDonut from "@/components/vrittih/PipelineDonut"
+import AstroJobCard from "@/components/vrittih/AstroJobCard"
+import { dailyGuidance } from "@/lib/astrology"
 import {
   IconBriefcase, IconFileText, IconUsers, IconVideo, IconAward, IconCheckCircle,
   IconArrowRight, IconCheck, IconUser, IconShield, IconTarget, IconClipboard,
@@ -23,6 +25,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<any>(null)
   const [applications, setApplications] = useState<any[]>([])
   const [jobs, setJobs] = useState<any[]>([])
+  const [profile, setProfile] = useState<{ birthDate: string | null; experience: any[] } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -34,6 +37,10 @@ export default function Dashboard() {
 
   async function loadData(u: any) {
     const isEmp = ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(u.role)
+    // Profile (birth details) for everyone — powers the daily astrological guidance
+    // (advanced tiers + admins) and the best-fit card (seekers).
+    const prof = await fetch("/api/profile").then(r => r.json()).catch(() => ({}))
+    setProfile({ birthDate: prof?.user?.profile?.birthDate || null, experience: prof?.user?.experience || [] })
     if (isEmp) {
       const [jobsData, appsData] = await Promise.all([
         fetch("/api/jobs?mine=true").then(r => r.json()),
@@ -50,6 +57,11 @@ export default function Dashboard() {
   if (loading) return <AppShell><div style={S.loading}>Loading your overview…</div></AppShell>
 
   const isEmployer = ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user?.role)
+  const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(user?.role)
+  const paid = !!(user?.paid || (user?.plan && user.plan !== "free"))   // paid for Basic (or higher)
+  // Daily astrological guidance — advanced tiers (Pro / Growth / Scale) + admins.
+  const advancedTier = isAdmin || ["pro", "emp_growth", "emp_scale"].includes(user?.plan || "")
+  const guidance = advancedTier ? dailyGuidance(profile?.birthDate) : null
   const first = (user?.name?.split(" ")[0] || "there").replace(/^Super$/, "Admin")
   const hour = new Date().getHours()
   const partOfDay = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening"
@@ -132,6 +144,7 @@ export default function Dashboard() {
           <div>
             <h1 style={S.h1}>Overview</h1>
             <p style={S.greeting}>Good {partOfDay}, {first}</p>
+            {guidance && <p style={S.advice}><span style={S.adviceStar} aria-hidden="true">✦</span> {guidance.line}</p>}
           </div>
           <Link href={isEmployer ? "/dashboard/post-job" : "/jobs"} style={S.primary}>
             {isEmployer ? "Post a job" : "Browse jobs"} <IconArrowRight size={15} />
@@ -171,6 +184,9 @@ export default function Dashboard() {
                   : <PipelineRail stages={railStages} />}
               </section>
             )}
+
+            {/* Astrological best-fit career — paid (Basic) unlock, applicant home board */}
+            {!isEmployer && <AstroJobCard paid={paid} birthDate={profile?.birthDate} experience={profile?.experience || []} />}
 
             {!empty && setupOpen && <Setup />}
 
@@ -256,6 +272,8 @@ const S: Record<string, any> = {
   head: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap" },
   h1: { font: "500 22px var(--font-display)", color: "var(--v-ink)", letterSpacing: "-.01em", margin: 0 },
   greeting: { font: "400 15px var(--font-sans)", color: "var(--v-ink-2)", marginTop: 4 },
+  advice: { font: "400 13px/1.55 var(--font-sans)", color: "var(--v-ink-2)", marginTop: 8, maxWidth: "64ch", display: "flex", gap: 7, alignItems: "baseline" },
+  adviceStar: { color: "var(--v-accent)", flex: "none" },
   primary: { display: "inline-flex", alignItems: "center", gap: 7, background: "var(--v-accent)", color: "#fff", padding: "10px 16px", borderRadius: "var(--r-md)", font: "500 14px var(--font-sans)", textDecoration: "none", flex: "none" },
 
   metrics: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 },
