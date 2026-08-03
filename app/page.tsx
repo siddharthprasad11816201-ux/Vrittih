@@ -2,6 +2,25 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import { Keystone } from "@/components/vrittih/Logo"
+import PipelineRail from "@/components/vrittih/PipelineRail"
+
+// Plausible real content for the hero preview — actual role titles, Indian
+// companies and cities, each with a concrete next event (not placeholder text).
+const PREVIEW_ROWS = [
+  { role: "Backend Engineer", company: "Razorpay", city: "Bengaluru", stage: "Interview", next: "Thu 3:00pm", bg: "#FEF3E2", fg: "var(--warn)" },
+  { role: "Product Designer", company: "Zomato", city: "Gurugram", stage: "Screening", next: "In review", bg: "var(--v-accent-soft)", fg: "var(--v-accent)" },
+  { role: "Data Analyst", company: "CRED", city: "Bengaluru", stage: "Offer", next: "Respond by Fri", bg: "var(--v-green-soft)", fg: "var(--v-green)" },
+]
+
+const PV: Record<string, any> = {
+  rows: { display: "flex", flexDirection: "column", gap: 8, marginTop: 20 },
+  row: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", padding: "12px 14px", background: "var(--v-surface)", border: "1px solid var(--border)", borderRadius: "var(--r-md)" },
+  main: { flex: 1, minWidth: 0, display: "flex", flexDirection: "column" },
+  role: { font: "500 14px var(--font-sans)", color: "var(--v-ink)" },
+  meta: { font: "400 12.5px var(--font-sans)", color: "var(--v-ink-3)", marginTop: 1 },
+  badge: { font: "500 11.5px var(--font-sans)", padding: "3px 10px", borderRadius: "var(--r-pill)", flex: "none" },
+  next: { font: "400 12.5px var(--font-sans)", color: "var(--v-ink-2)", flex: "none", minWidth: 84, textAlign: "right" },
+}
 
 /* ─────────────────────────────────────────────────────────────────────────────
    Vrittih — homepage, built to the supplied design (redesign2/Vrittih Home.dc.html)
@@ -92,7 +111,8 @@ export default function Home() {
           </div>
         </div>
 
-        {/* product shot — the interface is the hero */}
+        {/* Product preview IS the hero — a real interface, larger than the CTAs:
+            the live stage tracker plus real application rows with a next event. */}
         <div className="wrap">
           <div className="shot">
             <div className="shotBar"><i /><i /><i /><span>vrittih.online/dashboard</span></div>
@@ -100,18 +120,24 @@ export default function Home() {
               <div className="shotHead">
                 <div>
                   <div className="shotTitle">Your pipeline</div>
-                  <div className="shotSub">Every stage visible — to you and to the employer</div>
+                  <div className="shotSub">Every stage visible — to you and to the employer, at the same moment</div>
                 </div>
                 <span className="live"><em />Live</span>
               </div>
-              <div className="kpis">
-                <div className="kpi"><b>{roles}</b><span>Open roles</span></div>
-                <div className="kpi"><b>{companies}</b><span>Companies</span></div>
-                <div className="kpi"><b>7</b><span>Stages, all visible</span></div>
-              </div>
-              <div className="stages">
-                {["Applied", "Screen", "Task", "Interview", "Team", "Offer", "Hired"].map((x, i) => (
-                  <span key={x} className={"stage" + (i < 4 ? " on" : "")}><em />{x}</span>
+              <PipelineRail stages={[
+                { label: "Applied", count: 5 }, { label: "Screening", count: 3 },
+                { label: "Interview", count: 2 }, { label: "Offer", count: 1 }, { label: "Hired", count: 0 },
+              ]} />
+              <div style={PV.rows}>
+                {PREVIEW_ROWS.map(r => (
+                  <div key={r.role} style={PV.row}>
+                    <span style={PV.main}>
+                      <span style={PV.role}>{r.role}</span>
+                      <span style={PV.meta}>{r.company} · {r.city}</span>
+                    </span>
+                    <span style={{ ...PV.badge, background: r.bg, color: r.fg }}>{r.stage}</span>
+                    <span style={PV.next}>{r.next}</span>
+                  </div>
                 ))}
               </div>
             </div>
@@ -239,8 +265,8 @@ const CSS = `
 .wrap{max-width:1160px;margin:0 auto;padding:0 24px}
 .center{text-align:center}
 .eyebrow{font-size:13px;font-weight:600;color:var(--g);letter-spacing:.02em;margin:0 0 10px}
-.h1{margin:26px auto 0;max-width:880px;font-size:clamp(38px,6.4vw,62px);font-weight:600;line-height:1.05;letter-spacing:-.03em;color:var(--ink);text-wrap:balance}
-.h2{font-size:clamp(26px,3.6vw,36px);font-weight:600;letter-spacing:-.025em;line-height:1.15;margin:0 0 12px;text-wrap:balance}
+.h1{margin:26px auto 0;max-width:880px;font-family:var(--font-display);font-size:clamp(38px,6.4vw,62px);font-weight:500;line-height:1.05;letter-spacing:-.03em;color:var(--ink);text-wrap:balance}
+.h2{font-family:var(--font-display);font-size:clamp(26px,3.6vw,36px);font-weight:500;letter-spacing:-.025em;line-height:1.15;margin:0 0 12px;text-wrap:balance}
 .h2.white{color:#fff}
 .lede{margin:22px auto 0;max-width:620px;font-size:clamp(16px,2vw,20px);line-height:1.6;color:var(--ink2)}
 .sub{font-size:17px;line-height:1.6;color:var(--ink2);margin:0 0 32px;max-width:640px}

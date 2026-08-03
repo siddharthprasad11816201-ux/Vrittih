@@ -1,17 +1,27 @@
 import type { Metadata, Viewport } from "next"
-import { Inter } from "next/font/google"
+import { Inter, Bricolage_Grotesque } from "next/font/google"
 import "@/styles/globals.css"
 import "@/styles/vrittih.css"
 // Loaded last so its !important mobile rules win over inline styles.
 import "@/styles/mobile.css"
 
-// The design system specifies Inter 400/500/600/700. next/font downloads it at
-// build time and self-hosts it, so there is no runtime request to Google and the
-// app keeps working offline / behind a strict CSP.
+// Body/UI face — Inter. next/font self-hosts at build time (no runtime Google
+// request, works offline / behind a strict CSP). Two-weight discipline (the
+// redesign uses 400/500) but we keep 600 available for legacy surfaces.
 const inter = Inter({
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
   variable: "--font-inter",
+  display: "swap",
+})
+
+// Display face — Bricolage Grotesque. A single, distinct display family applied
+// to every heading across the app AND marketing (fixes the serif-on-sans split).
+// Deliberately not the Space-Grotesk/AI-default pick. Weights 400/500 only.
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-bricolage",
   display: "swap",
 })
 import PWARegister from "@/components/PWARegister"
@@ -43,7 +53,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${inter.variable} ${bricolage.variable}`}>
       <body>
         {children}
         <PWARegister />

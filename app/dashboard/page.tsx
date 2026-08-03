@@ -4,13 +4,18 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
 import EmptyState from "@/components/vrittih/EmptyState"
-import IllustrationSlot from "@/components/vrittih/IllustrationSlot"
+import PipelineRail from "@/components/vrittih/PipelineRail"
 import PipelineDonut from "@/components/vrittih/PipelineDonut"
 import {
-  IconBriefcase, IconFileText, IconActivity, IconTarget, IconAward, IconCheckCircle,
-  IconUsers, IconVideo, IconNetwork, IconMessage, IconSettings, IconClipboard,
-  IconScan, IconShield, IconTrendingUp, IconArrowRight, IconCheck, IconLock, IconUser,
+  IconBriefcase, IconFileText, IconUsers, IconVideo, IconAward, IconCheckCircle,
+  IconArrowRight, IconCheck, IconUser, IconShield, IconTarget, IconClipboard,
+  IconNetwork, IconSettings,
 } from "@/components/ui/Icons"
+
+/* Overview — rebuilt to the redesign brief. One typeface system (display headings
+ * in Bricolage via --font-display), uniform metric cards (no per-card colour), the
+ * pipeline stage rail as the signature, zero-state that leads with the next action,
+ * and full-width content. Recruiters keep the compact pipeline donut. */
 
 export default function Dashboard() {
   const router = useRouter()
@@ -21,478 +26,264 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/auth/me").then(r=>r.json()).then(d => {
+    fetch("/api/auth/me").then(r => r.json()).then(d => {
       if (!d.user) { router.push("/login"); return }
-      setUser(d.user)
-      loadData(d.user)
+      setUser(d.user); loadData(d.user)
     })
   }, [])
 
   async function loadData(u: any) {
-    if (u.role === "EMPLOYER" || u.role === "ADMIN" || u.role === "SUPER_ADMIN") {
+    const isEmp = ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(u.role)
+    if (isEmp) {
       const [jobsData, appsData] = await Promise.all([
-        fetch("/api/jobs?mine=true").then(r=>r.json()),
-        fetch("/api/applications?employer=true").then(r=>r.json()),
+        fetch("/api/jobs?mine=true").then(r => r.json()),
+        fetch("/api/applications?employer=true").then(r => r.json()),
       ])
-      setJobs(jobsData.jobs || [])
-      setApplications(appsData.applications || [])
-      const j = jobsData.jobs || []
-      const a = appsData.applications || []
-      setStats({
-        totalJobs: j.length, activeJobs: j.filter((x:any)=>x.active).length,
-        totalApplicants: a.length, hired: a.filter((x:any)=>x.status==="HIRED").length,
-        shortlisted: a.filter((x:any)=>x.status==="SHORTLISTED").length,
-        interviews: a.filter((x:any)=>x.status==="INTERVIEW").length,
-      })
+      setJobs(jobsData.jobs || []); setApplications(appsData.applications || [])
     } else {
-      const appsData = await fetch("/api/applications").then(r=>r.json())
-      const a = appsData.applications || []
-      setApplications(a)
-      setStats({
-        total: a.length, active: a.filter((x:any)=>!["HIRED","REJECTED"].includes(x.status)).length,
-        interviews: a.filter((x:any)=>x.status==="INTERVIEW").length,
-        offers: a.filter((x:any)=>x.status==="OFFERED").length,
-        hired: a.filter((x:any)=>x.status==="HIRED").length,
-      })
+      const appsData = await fetch("/api/applications").then(r => r.json())
+      setApplications(appsData.applications || [])
     }
     setLoading(false)
   }
 
-  const STATUS_COLOR: Record<string,{bg:string,color:string}> = {
-    APPLIED:{bg:"#EFF4FF",color:"#1D4ED8"}, REVIEWED:{bg:"#EAF1FE",color:"#6495ED"},
-    SHORTLISTED:{bg:"#ECFDF5",color:"#047857"}, INTERVIEW:{bg:"#FFFBEB",color:"#B45309"},
-    ASSESSMENT:{bg:"#F0FDF4",color:"#16A34A"}, OFFERED:{bg:"#F0FDF4",color:"#059669"},
-    HIRED:{bg:"#ECFDF5",color:"#047857"}, REJECTED:{bg:"#FEF2F2",color:"#B91C1C"},
-  }
-  const timeAgo = (iso: string) => {
-    const d = Math.floor((Date.now()-new Date(iso).getTime())/86400000)
-    return d===0 ? "Today" : d===1 ? "Yesterday" : `${d}d ago`
-  }
+  if (loading) return <AppShell><div style={S.loading}>Loading your overview…</div></AppShell>
 
-  if (loading) return <AppShell title="Overview"><div style={S.loading}>Loading your workspace…</div></AppShell>
-
-  const isEmployer = ["EMPLOYER","ADMIN","SUPER_ADMIN"].includes(user?.role)
+  const isEmployer = ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user?.role)
   const first = (user?.name?.split(" ")[0] || "there").replace(/^Super$/, "Admin")
   const hour = new Date().getHours()
   const partOfDay = hour < 12 ? "morning" : hour < 18 ? "afternoon" : "evening"
-  const today = new Date().toLocaleDateString("en-GB", { weekday: "long", day: "numeric", month: "long" })
+  const count = (fn: (a: any) => boolean) => applications.filter(fn).length
 
-  const steps = isEmployer ? [
+  // Onboarding — the same for both, leads the page while incomplete.
+  const steps = [
     { done: !!(user?.headline && user?.location), title: "Complete your profile", desc: "Add a headline and location", href: "/profile/edit", icon: <IconUser size={16} /> },
-    { done: !!user?.idVerified, title: "Verify your identity", desc: "Unlock full employer access", href: "/verify/doc-verify", icon: <IconShield size={16} /> },
-    { done: jobs.length > 0, title: "Post your first job", desc: "Start receiving applicants", href: "/dashboard/post-job", icon: <IconBriefcase size={16} /> },
-    { done: !!user?.twoFactorEnabled, title: "Turn on 2-factor security", desc: "Protect your account", href: "/settings", icon: <IconLock size={16} /> },
-  ] : [
-    { done: !!(user?.headline && user?.location), title: "Complete your profile", desc: "Add a headline and location", href: "/profile/edit", icon: <IconUser size={16} /> },
-    { done: !!user?.idVerified, title: "Verify your identity", desc: "Stand out to employers", href: "/verify/doc-verify", icon: <IconShield size={16} /> },
-    { done: applications.length > 0, title: "Apply to your first job", desc: "Browse matched roles", href: "/jobs", icon: <IconBriefcase size={16} /> },
-    { done: !!user?.twoFactorEnabled, title: "Turn on 2-factor security", desc: "Protect your account", href: "/settings", icon: <IconLock size={16} /> },
+    { done: !!user?.idVerified, title: "Verify your identity", desc: isEmployer ? "Unlock full employer access" : "Stand out to employers", href: "/verify/doc-verify", icon: <IconShield size={16} /> },
+    isEmployer
+      ? { done: jobs.length > 0, title: "Post your first job", desc: "Start receiving applicants", href: "/dashboard/post-job", icon: <IconBriefcase size={16} /> }
+      : { done: applications.length > 0, title: "Apply to your first job", desc: "Browse roles matched to you", href: "/jobs", icon: <IconBriefcase size={16} /> },
+    { done: !!user?.twoFactorEnabled, title: "Turn on two-factor security", desc: "Protect your account", href: "/account?section=security", icon: <IconCheckCircle size={16} /> },
   ]
   const doneCount = steps.filter(s => s.done).length
   const pct = Math.round((doneCount / steps.length) * 100)
-  const showOnboarding = doneCount < steps.length
+  const setupOpen = doneCount < steps.length
+  const empty = applications.length === 0
 
-  // Real 8-week weekly series from actual dates — flat baseline when empty (honest).
-  const WEEKS = 8
-  const weekly = (items: any[], dateKey: string, pred: (x: any) => boolean = () => true) => {
-    const now = Date.now(), wk = 7 * 86400000, b = Array(WEEKS).fill(0)
-    for (const it of items) {
-      if (!pred(it)) continue
-      const t = new Date(it[dateKey] || 0).getTime()
-      if (!t) continue
-      const idx = WEEKS - 1 - Math.floor((now - t) / wk)
-      if (idx >= 0 && idx < WEEKS) b[idx]++
-    }
-    return b
-  }
-  const seekerStats = [
-    { label:"Applications", val:stats?.total ?? 0, icon:<IconFileText size={16} />, color:"#6495ED", href:"/applications", series:weekly(applications,"appliedAt") },
-    { label:"Interviews", val:stats?.interviews ?? 0, icon:<IconTarget size={16} />, color:"#B45309", href:"/interviews", series:weekly(applications,"appliedAt",(a)=>a.status==="INTERVIEW") },
-    { label:"Offers", val:stats?.offers ?? 0, icon:<IconAward size={16} />, color:"#0891B2", href:"/applications", series:weekly(applications,"appliedAt",(a)=>a.status==="OFFERED") },
-    { label:"Hired", val:stats?.hired ?? 0, icon:<IconCheckCircle size={16} />, color:"#059669", href:"/applications", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
+  const seekerMetrics = [
+    { label: "Applications", value: applications.length, href: "/applications", action: "Browse jobs" },
+    { label: "Interviews", value: count(a => a.status === "INTERVIEW"), href: "/interviews", action: "Prepare" },
+    { label: "Offers", value: count(a => a.status === "OFFERED"), href: "/applications", action: null },
+    { label: "Hired", value: count(a => a.status === "HIRED"), href: "/applications", action: null },
   ]
-  const employerStats = [
-    { label:"Jobs posted", val:stats?.totalJobs ?? 0, icon:<IconBriefcase size={16} />, color:"#6495ED", href:"/dashboard/recruiter", series:weekly(jobs,"createdAt") },
-    { label:"Applicants", val:stats?.totalApplicants ?? 0, icon:<IconUsers size={16} />, color:"#2563EB", href:"/dashboard/pipeline", series:weekly(applications,"appliedAt") },
-    { label:"Shortlisted", val:stats?.shortlisted ?? 0, icon:<IconAward size={16} />, color:"#B45309", href:"/dashboard/pipeline", series:weekly(applications,"appliedAt",(a)=>a.status==="SHORTLISTED") },
-    { label:"Hired", val:stats?.hired ?? 0, icon:<IconTrendingUp size={16} />, color:"#059669", href:"/dashboard/pipeline", series:weekly(applications,"appliedAt",(a)=>a.status==="HIRED") },
+  const railStages = [
+    { label: "Applied", count: count(a => a.status === "APPLIED") },
+    { label: "Screening", count: count(a => ["REVIEWED", "SHORTLISTED", "ASSESSMENT"].includes(a.status)) },
+    { label: "Interview", count: count(a => a.status === "INTERVIEW") },
+    { label: "Offer", count: count(a => a.status === "OFFERED") },
+    { label: "Hired", count: count(a => a.status === "HIRED") },
   ]
-  const tiles = isEmployer ? employerStats : seekerStats
 
-  // Attention-first: real, actionable items. Zeros never lead the page.
-  const nowT = Date.now()
-  const attention: { label: string; href: string; live?: boolean }[] = []
-  if (isEmployer) {
-    const fresh = applications.filter(a => a.status === "APPLIED" && (nowT - new Date(a.appliedAt || a.updatedAt).getTime()) < 7 * 86400000).length
-    if (fresh) attention.push({ label: `${fresh} new applicant${fresh > 1 ? "s" : ""} awaiting your review`, href: "/dashboard/pipeline", live: true })
-    const emptyJobs = jobs.filter(j => (j._count?.applications || 0) === 0 && j.active).length
-    if (emptyJobs) attention.push({ label: `${emptyJobs} active job${emptyJobs > 1 ? "s" : ""} with no applicants yet`, href: "/dashboard/recruiter" })
-    if (!user?.idVerified) attention.push({ label: "Verify your company identity to unlock full access", href: "/verify/doc-verify" })
-  } else {
-    const iv = applications.filter(a => a.status === "INTERVIEW").length
-    if (iv) attention.push({ label: `${iv} interview${iv > 1 ? "s" : ""} in progress`, href: "/interviews", live: true })
-    const off = applications.filter(a => a.status === "OFFERED").length
-    if (off) attention.push({ label: `${off} offer${off > 1 ? "s" : ""} waiting for your response`, href: "/applications", live: true })
-    if (!user?.idVerified) attention.push({ label: "Verify your identity to stand out to employers", href: "/verify/doc-verify" })
+  const STATUS: Record<string, { bg: string; fg: string; label: string }> = {
+    APPLIED: { bg: "var(--v-accent-soft)", fg: "var(--v-accent)", label: "Applied" },
+    REVIEWED: { bg: "var(--v-accent-soft)", fg: "var(--v-accent)", label: "Reviewed" },
+    SHORTLISTED: { bg: "var(--v-green-soft)", fg: "var(--v-green)", label: "Shortlisted" },
+    ASSESSMENT: { bg: "var(--v-green-soft)", fg: "var(--v-green)", label: "Assessment" },
+    INTERVIEW: { bg: "#FEF3E2", fg: "var(--warn)", label: "Interview" },
+    OFFERED: { bg: "var(--v-green-soft)", fg: "var(--v-green)", label: "Offer" },
+    HIRED: { bg: "var(--v-green-soft)", fg: "var(--v-green)", label: "Hired" },
+    REJECTED: { bg: "#FDECEC", fg: "var(--danger)", label: "Closed" },
   }
+  const timeAgo = (iso: string) => { const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000); return d === 0 ? "Today" : d === 1 ? "Yesterday" : `${d}d ago` }
+
+  const Setup = () => (
+    <section style={S.card}>
+      <div style={S.setupHead}>
+        <Ring pct={pct} />
+        <div>
+          <h2 style={S.h2}>{empty ? "Get set up" : "Finish setting up"}</h2>
+          <p style={S.sub}>{doneCount} of {steps.length} done — a complete profile gets {isEmployer ? "better applicants" : "seen by more employers"}.</p>
+        </div>
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        {steps.map(s => (
+          <Link key={s.title} href={s.href} className="d-step" style={S.step}>
+            <span style={{ ...S.stepCheck, ...(s.done ? S.stepDone : {}) }}>{s.done ? <IconCheck size={14} /> : s.icon}</span>
+            <span style={{ flex: 1 }}>
+              <span style={{ ...S.stepTitle, ...(s.done ? { color: "var(--v-ink-3)", textDecoration: "line-through" } : {}) }}>{s.title}</span>
+              <span style={S.stepDesc}>{s.desc}</span>
+            </span>
+            {!s.done && <IconArrowRight size={15} />}
+          </Link>
+        ))}
+      </div>
+    </section>
+  )
 
   return (
-    <AppShell title="Overview">
+    <AppShell>
       <style dangerouslySetInnerHTML={{ __html: `
-        .dtile{transition:box-shadow .18s cubic-bezier(.22,1,.36,1),transform .18s cubic-bezier(.22,1,.36,1),border-color .18s;}
-        .dtile:hover{box-shadow:0 8px 26px rgba(23,18,45,.10);transform:translateY(-3px);border-color:#E5E7EB;}
-        .dstep{transition:border-color .14s,transform .14s,box-shadow .14s;}
-        .dstep:hover{border-color:#6495ED !important;box-shadow:0 4px 14px rgba(15,110,86,.10);}
-        .dquick{transition:background .14s;}
-        .dquick:hover{background:#EAF1FE !important;}
-        .dcard{transition:box-shadow .18s;}
-        @media (max-width: 900px){ .dGrid{ grid-template-columns:1fr !important; } }
-        @media (max-width: 640px){
-          .dPage{ padding:1.1rem .9rem 2.5rem !important; }
-          .dStatRow{ grid-template-columns:repeat(2,1fr) !important; gap:10px !important; }
-          .dHead{ flex-direction:column !important; align-items:flex-start !important; gap:14px !important; }
-          .dOnbHead{ gap:12px !important; }
-          .dOnbHead svg{ width:60px !important; height:60px !important; }
-        }
+        .d-step:hover{ border-color:var(--border-strong) !important; }
+        .d-metric:hover{ border-color:var(--border-strong) !important; }
+        .d-row:hover{ background:var(--v-surface-2); }
+        @media (max-width: 900px){ .d-grid{ grid-template-columns:1fr !important; } .d-metrics{ grid-template-columns:repeat(2,1fr) !important; } }
       ` }} />
-      <div style={S.page} className="dPage">
-        <div style={S.wrap}>
+      <div style={S.wrap}>
+        <header style={S.head}>
+          <div>
+            <h1 style={S.h1}>Overview</h1>
+            <p style={S.greeting}>Good {partOfDay}, {first}</p>
+          </div>
+          <Link href={isEmployer ? "/dashboard/post-job" : "/jobs"} style={S.primary}>
+            {isEmployer ? "Post a job" : "Browse jobs"} <IconArrowRight size={15} />
+          </Link>
+        </header>
 
-          {/* Greeting */}
-          <header style={S.head} className="dHead">
-            <div style={S.heroOrb} />
-            <div style={{ position: "relative" }}>
-              <Link href={isEmployer ? "/dashboard/recruiter" : "/jobs/match"} style={S.aiBadge}>
-                <span style={S.aiDot} className="v-live" />
-                {isEmployer ? "AI-ranked candidates ready" : "AI-matched roles ready for you"}
+        {/* Zero-state leads with setup; otherwise setup sits after the numbers. */}
+        {empty && setupOpen && <Setup />}
+
+        {isEmployer ? (
+          <PipelineDonut title="Hiring pipeline" segments={[
+            { label: "Applications", value: applications.length, color: "#6495ED", icon: <IconFileText size={16} />, href: "/dashboard/pipeline" },
+            { label: "Interviews", value: count(a => a.status === "INTERVIEW"), color: "#F59E0B", icon: <IconVideo size={16} />, href: "/dashboard/pipeline" },
+            { label: "Offers", value: count(a => a.status === "OFFERED"), color: "#0EA5E9", icon: <IconAward size={16} />, href: "/dashboard/pipeline" },
+            { label: "Hired", value: count(a => a.status === "HIRED"), color: "#22C55E", icon: <IconCheckCircle size={16} />, href: "/dashboard/pipeline" },
+          ]} />
+        ) : (
+          <div style={S.metrics} className="d-metrics">
+            {seekerMetrics.map(m => (
+              <Link key={m.label} href={m.href} className="d-metric" style={S.metric}>
+                <span style={S.metricLabel}>{m.label}</span>
+                <span style={S.metricNum}>{m.value}</span>
+                {m.value === 0 && m.action && <span style={S.metricAction}>{m.action} <IconArrowRight size={12} /></span>}
               </Link>
-              <div style={S.kicker}>{today}</div>
-              <h1 style={S.greeting}>Good {partOfDay}, <em style={S.greetingName}>{first}</em></h1>
-              <p style={S.greetingSub}>{isEmployer ? "Here's what's happening with your hiring." : "Here's where your job search stands today."}</p>
-            </div>
-            <div style={S.headActions}>
-              {isEmployer
-                ? <Link href="/dashboard/post-job" style={S.primaryBtn}>Post a job <IconArrowRight size={15} /></Link>
-                : <Link href="/jobs" style={S.primaryBtn}>Browse jobs <IconArrowRight size={15} /></Link>}
-            </div>
-          </header>
+            ))}
+          </div>
+        )}
 
-          {/* Needs your attention — leads only when there's something to act on */}
-          {attention.length > 0 && (
-            <section style={S.attn}>
-              <div style={S.attnHead}>Needs your attention</div>
-              {attention.map((a, i) => (
-                <Link key={i} href={a.href} className="dstep" style={S.attnRow}>
-                  <span style={{ ...S.attnDot, background: a.live ? "var(--brand-400)" : "var(--warn)" }} className={a.live ? "v-live" : ""} />
-                  <span style={S.attnLabel}>{a.label}</span>
-                  <IconArrowRight size={15} />
+        <div style={S.grid} className="d-grid">
+          <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
+            {/* Signature: the pipeline stage rail (seekers). */}
+            {!isEmployer && (
+              <section style={S.card}>
+                <div style={S.cardHead}><h2 style={S.h2}>Your pipeline</h2>{!empty && <Link href="/applications" style={S.link}>All applications <IconArrowRight size={13} /></Link>}</div>
+                {empty
+                  ? <EmptyState title="Nothing in your pipeline yet" reason="Apply to a role and watch it move here in real time — from first click to offer." ctaLabel="Browse jobs" ctaHref="/jobs" />
+                  : <PipelineRail stages={railStages} />}
+              </section>
+            )}
+
+            {!empty && setupOpen && <Setup />}
+
+            {/* Recent activity */}
+            <section style={S.card}>
+              <div style={S.cardHead}>
+                <h2 style={S.h2}>{isEmployer ? "Recent applicants" : "Recent applications"}</h2>
+                <Link href={isEmployer ? "/dashboard/recruiter" : "/applications"} style={S.link}>View all <IconArrowRight size={13} /></Link>
+              </div>
+              {applications.length === 0 ? (
+                <EmptyState
+                  title={isEmployer ? "No applicants yet" : "No applications yet"}
+                  reason={isEmployer ? "Post a job and candidates appear here, ranked by fit." : "Your applications will show here with live status."}
+                  ctaLabel={isEmployer ? "Post a job" : "Browse jobs"}
+                  ctaHref={isEmployer ? "/dashboard/post-job" : "/jobs"}
+                />
+              ) : (
+                <div>
+                  {applications.slice(0, 6).map(a => {
+                    const st = STATUS[a.status] || STATUS.APPLIED
+                    return (
+                      <Link key={a.id} href={isEmployer ? `/jobs/${a.job?.id}` : "/applications"} className="d-row" style={S.appRow}>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={S.appTitle}>{isEmployer ? a.user?.name : a.job?.title}</span>
+                          <span style={S.appSub}>{(isEmployer ? a.job?.title : a.job?.company) || ""} · {timeAgo(a.appliedAt || a.updatedAt)}</span>
+                        </span>
+                        <span style={{ ...S.badge, background: st.bg, color: st.fg }}>{st.label}</span>
+                      </Link>
+                    )
+                  })}
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* Right rail — quick access */}
+          <aside style={S.card}>
+            <div style={S.cardHead}><h2 style={S.h2}>Quick access</h2></div>
+            <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+              {(isEmployer ? [
+                { href: "/dashboard/post-job", icon: <IconFileText size={16} />, t: "Post a job" },
+                { href: "/dashboard/recruiter", icon: <IconUsers size={16} />, t: "Best candidates" },
+                { href: "/interviews/schedule", icon: <IconVideo size={16} />, t: "Schedule interview" },
+                { href: "/tests/create", icon: <IconClipboard size={16} />, t: "Create assessment" },
+                { href: "/account", icon: <IconSettings size={16} />, t: "Account & security" },
+              ] : [
+                { href: "/jobs/match", icon: <IconTarget size={16} />, t: "Matched for you" },
+                { href: "/resume", icon: <IconFileText size={16} />, t: "Build your résumé" },
+                { href: "/interviews", icon: <IconVideo size={16} />, t: "Interviews" },
+                { href: "/network", icon: <IconNetwork size={16} />, t: "Grow your network" },
+                { href: "/account", icon: <IconSettings size={16} />, t: "Account & security" },
+              ]).map(q => (
+                <Link key={q.href} href={q.href} className="d-row" style={S.quick}>
+                  <span style={S.quickIcon}>{q.icon}</span>
+                  <span style={S.quickText}>{q.t}</span>
+                  <IconArrowRight size={14} />
                 </Link>
               ))}
-            </section>
-          )}
-
-          {/* Overview stats. Recruiters get the one-circle pipeline donut (design
-              10a); job-seekers keep the per-metric sparkline tiles. */}
-          {isEmployer ? (
-            <PipelineDonut title="Hiring pipeline" segments={[
-              { label: "Applications", value: stats?.totalApplicants ?? 0, color: "#6495ED", icon: <IconFileText size={16} />, href: "/dashboard/pipeline" },
-              { label: "Interviews", value: applications.filter(a => a.status === "INTERVIEW").length, color: "#F59E0B", icon: <IconVideo size={16} />, href: "/dashboard/pipeline" },
-              { label: "Offers", value: applications.filter(a => a.status === "OFFERED").length, color: "#0EA5E9", icon: <IconAward size={16} />, href: "/dashboard/pipeline" },
-              { label: "Hired", value: applications.filter(a => a.status === "HIRED").length, color: "#22C55E", icon: <IconCheckCircle size={16} />, href: "/dashboard/pipeline" },
-            ]} />
-          ) : (
-          <div style={S.statRow} className="dStatRow">
-            {tiles.map((t: any) => {
-              const s = t.series || []
-              const last = s[s.length - 1] || 0, prev = s[s.length - 2] || 0
-              const delta = last - prev
-              return (
-                <Link key={t.label} href={t.href || "#"} className="dtile" style={S.tile}>
-                  <span style={{ ...S.tileBar, background: t.color }} />
-                  <div style={S.tileTop}>
-                    <span style={{...S.tileIcon, background:`${t.color}14`, color:t.color}}>{t.icon}</span>
-                    <span style={S.tileLabel}>{t.label}</span>
-                  </div>
-                  <div style={S.tileNumRow}>
-                    <span style={S.tileNum}>{t.val}</span>
-                    <span style={{...S.tileDelta, ...(delta > 0 ? S.deltaUp : delta < 0 ? S.deltaDown : S.deltaFlat)}}>
-                      {delta > 0 ? `+${delta}` : delta < 0 ? `${delta}` : "—"}
-                      {delta !== 0 && <span style={S.deltaWk}>/wk</span>}
-                    </span>
-                  </div>
-                  <div style={S.tileSpark}><Spark data={s} color={t.color} /></div>
-                </Link>
-              )
-            })}
-          </div>
-          )}
-
-          <div style={S.grid} className="dGrid">
-            {/* Left column */}
-            <div style={S.col}>
-              {showOnboarding && (
-                <section style={S.onboard}>
-                  <div style={S.onboardHead} className="dOnbHead">
-                    <Ring pct={pct} />
-                    <div>
-                      <h2 style={S.onboardTitle}>{pct === 0 ? "Let's get you set up" : "Finish setting up"}</h2>
-                      <p style={S.onboardSub}>{doneCount} of {steps.length} steps complete — a full profile gets {isEmployer ? "better applicants" : "seen by more employers"}.</p>
-                    </div>
-                  </div>
-                  <div style={S.steps}>
-                    {steps.map(s => (
-                      <Link key={s.title} href={s.href} className="dstep" style={S.step}>
-                        <span style={{...S.stepCheck, ...(s.done ? S.stepCheckDone : {})}}>
-                          {s.done ? <IconCheck size={14} /> : s.icon}
-                        </span>
-                        <div style={{ flex: 1 }}>
-                          <div style={{...S.stepTitle, ...(s.done ? { color: "#94A3B8", textDecoration: "line-through" } : {})}}>{s.title}</div>
-                          <div style={S.stepDesc}>{s.desc}</div>
-                        </div>
-                        {!s.done && <IconArrowRight size={15} />}
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* Pipeline (active seekers) */}
-              {!isEmployer && applications.length > 0 && (
-                <section style={S.card}>
-                  <div style={S.cardHead}>
-                    <h2 style={S.cardTitle}>Application pipeline</h2>
-                    <Link href="/dashboard/applications" style={S.link}>View all <IconArrowRight size={13} /></Link>
-                  </div>
-                  <div style={S.funnel}>
-                    {["APPLIED","REVIEWED","SHORTLISTED","INTERVIEW","OFFERED","HIRED"].map(st => {
-                      const count = applications.filter(a => a.status === st).length
-                      const sc = STATUS_COLOR[st]
-                      const max = Math.max(1, ...["APPLIED","REVIEWED","SHORTLISTED","INTERVIEW","OFFERED","HIRED"].map(x => applications.filter(a=>a.status===x).length))
-                      return (
-                        <div key={st} style={S.funnelRow}>
-                          <span style={S.funnelLabel}>{st.charAt(0)+st.slice(1).toLowerCase()}</span>
-                          <div style={S.funnelTrack}>
-                            <div style={{...S.funnelFill, width:`${(count/max)*100}%`, background:sc.color, opacity: count?1:0}} />
-                          </div>
-                          <span style={{...S.funnelCount, color: count ? sc.color : "#CBD5E1"}}>{count}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* Recent activity */}
-              <section style={S.card}>
-                <div style={S.cardHead}>
-                  <h2 style={S.cardTitle}>{isEmployer ? "Recent applicants" : "Recent applications"}</h2>
-                  <Link href={isEmployer?"/dashboard/recruiter":"/dashboard/applications"} style={S.link}>View all <IconArrowRight size={13} /></Link>
-                </div>
-                {applications.length === 0 ? (
-                  <EmptyState
-                    title={isEmployer ? "No applicants yet" : "No applications yet"}
-                    reason={isEmployer ? "Post a job and candidates will appear here, ranked by fit." : "Apply to a role and track it here in real time — from first click to offer."}
-                    ctaLabel={isEmployer ? "Post a job" : "Browse jobs"}
-                    ctaHref={isEmployer ? "/dashboard/post-job" : "/jobs"}
-                    aiTip={isEmployer ? "Roles with a clear salary and 5–8 must-have skills get 3× more qualified applicants." : "Complete your skills and location — matching recalculates instantly and surfaces roles that fit."}
-                  />
-                ) : (
-                  <div>
-                    {applications.slice(0,6).map(a => {
-                      const sc = STATUS_COLOR[a.status] || STATUS_COLOR.APPLIED
-                      return (
-                        <div key={a.id} style={S.appRow}>
-                          <div style={{...S.appDot, background:sc.color}} />
-                          <div style={{ flex: 1, minWidth: 0 }}>
-                            <div style={S.appTitle}>{isEmployer ? a.user?.name : a.job?.title}</div>
-                            <div style={S.appSub}>{(isEmployer ? a.job?.title : a.job?.company) || ""} · {timeAgo(a.appliedAt || a.updatedAt)}</div>
-                          </div>
-                          <span style={{...S.pill, background:sc.bg, color:sc.color}}>{a.status.charAt(0)+a.status.slice(1).toLowerCase()}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                )}
-              </section>
-
-              {isEmployer && jobs.length > 0 && (
-                <section style={S.card}>
-                  <div style={S.cardHead}>
-                    <h2 style={S.cardTitle}>Your job posts</h2>
-                    <Link href="/dashboard/post-job" style={S.link}>New job <IconArrowRight size={13} /></Link>
-                  </div>
-                  {jobs.slice(0,5).map(j => (
-                    <div key={j.id} style={S.appRow}>
-                      <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={S.appTitle}>{j.title}</div>
-                        <div style={S.appSub}>{j.company} · {j.location} · {j._count?.applications||0} applicants</div>
-                      </div>
-                      <span style={{...S.pill, background:j.active?"#ECFDF5":"#F3F4F6", color:j.active?"#047857":"#6b7280"}}>{j.active?"Active":"Inactive"}</span>
-                      <Link href={`/jobs/${j.id}`} style={S.link}>View</Link>
-                    </div>
-                  ))}
-                </section>
-              )}
             </div>
-
-            {/* Right column */}
-            <div style={S.rightCol}>
-            <IllustrationSlot ratio="16 / 10" />
-            <aside style={S.card}>
-              <div style={S.cardHead}><h2 style={S.cardTitle}>Quick access</h2></div>
-              <div style={S.quick}>
-                {(isEmployer ? [
-                  { href:"/dashboard/post-job", icon:<IconFileText size={16} />, title:"Post a job", desc:"Create a listing" },
-                  { href:"/dashboard/recruiter", icon:<IconUsers size={16} />, title:"Best candidates", desc:"AI-ranked applicants" },
-                  { href:"/interviews/schedule", icon:<IconVideo size={16} />, title:"Schedule interview", desc:"Video, panel or group" },
-                  { href:"/tests/create", icon:<IconClipboard size={16} />, title:"Create assessment", desc:"Skill & aptitude tests" },
-                  { href:"/contacts", icon:<IconUsers size={16} />, title:"CRM", desc:"Contacts & pipeline" },
-                  { href:"/settings", icon:<IconSettings size={16} />, title:"Settings", desc:"Security & billing" },
-                ] : [
-                  { href:"/jobs", icon:<IconBriefcase size={16} />, title:"Find jobs", desc:"Ranked by your fit" },
-                  { href:"/jobs/match", icon:<IconTarget size={16} />, title:"Matched for you", desc:"Best-fit roles" },
-                  { href:"/interviews", icon:<IconVideo size={16} />, title:"Interviews", desc:"Your scheduled calls" },
-                  { href:"/tests", icon:<IconClipboard size={16} />, title:"Assessments", desc:"Prove your skills" },
-                  { href:"/network", icon:<IconNetwork size={16} />, title:"Network", desc:"Connect & grow" },
-                  { href:"/resume", icon:<IconFileText size={16} />, title:"Résumé", desc:"Build & export" },
-                ]).map(item => (
-                  <Link key={item.href} href={item.href} className="dquick" style={S.quickRow}>
-                    <span style={S.quickIcon}>{item.icon}</span>
-                    <div style={{ flex: 1 }}>
-                      <div style={S.quickTitle}>{item.title}</div>
-                      <div style={S.quickDesc}>{item.desc}</div>
-                    </div>
-                    <IconArrowRight size={14} />
-                  </Link>
-                ))}
-              </div>
-            </aside>
-            </div>
-          </div>
+          </aside>
         </div>
       </div>
     </AppShell>
   )
 }
 
-// In-house SVG sparkline — single series, non-scaling stroke, honest flat baseline when empty.
-function Spark({ data, color }: { data: number[]; color: string }) {
-  const W = 100, H = 40, pad = 4
-  const n = data.length || 1
-  const max = Math.max(1, ...data)
-  const hasData = data.some(v => v > 0)
-  const x = (i: number) => pad + (i / Math.max(1, n - 1)) * (W - 2 * pad)
-  const y = (v: number) => hasData ? (H - pad - (v / max) * (H - 2 * pad)) : H * 0.66
-  const pts = data.map((v, i) => `${x(i).toFixed(1)} ${y(v).toFixed(1)}`)
-  const line = pts.length ? "M" + pts.join(" L") : ""
-  const area = pts.length ? `M${x(0).toFixed(1)} ${H - pad} L${pts.join(" L")} L${x(n - 1).toFixed(1)} ${H - pad} Z` : ""
-  const gid = "sp" + color.replace("#", "")
-  return (
-    <svg width="100%" height={H} viewBox={`0 0 ${W} ${H}`} preserveAspectRatio="none" style={{ display: "block" }} aria-hidden="true">
-      <defs>
-        <linearGradient id={gid} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor={color} stopOpacity={hasData ? 0.20 : 0.05} />
-          <stop offset="1" stopColor={color} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-      {area && <path d={area} fill={`url(#${gid})`} />}
-      {line && <path d={line} fill="none" stroke={color} strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
-        vectorEffect="non-scaling-stroke" opacity={hasData ? 1 : 0.3} />}
-    </svg>
-  )
-}
-
 function Ring({ pct }: { pct: number }) {
-  const size = 78, sw = 8, r = (size - sw) / 2, c = 2 * Math.PI * r
+  const size = 56, sw = 6, r = (size - sw) / 2, c = 2 * Math.PI * r
   return (
-    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }}>
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#E9EDF2" strokeWidth={sw} />
-      <circle cx={size/2} cy={size/2} r={r} fill="none" stroke="#6495ED" strokeWidth={sw} strokeLinecap="round"
-        strokeDasharray={c} strokeDashoffset={c * (1 - pct/100)} transform={`rotate(-90 ${size/2} ${size/2})`} style={{ transition: "stroke-dashoffset .6s ease" }} />
-      <text x="var(--font-display)">{pct}%</text>
+    <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ flexShrink: 0 }} aria-hidden="true">
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--v-surface-2)" strokeWidth={sw} />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--v-accent)" strokeWidth={sw} strokeLinecap="round"
+        strokeDasharray={c} strokeDashoffset={c * (1 - pct / 100)} transform={`rotate(-90 ${size / 2} ${size / 2})`} />
+      <text x="50%" y="52%" dominantBaseline="middle" textAnchor="middle" style={{ font: "500 14px var(--font-sans)", fill: "var(--v-ink)" }}>{pct}%</text>
     </svg>
   )
 }
 
-const SERIF = "var(--font-display)"
-const S: Record<string,any> = {
-  page:{ background:"#F7F9FC", minHeight:"calc(100vh - 60px)", padding:"2.25rem 2rem 3rem" },
-  wrap:{ maxWidth:1140, margin:"0 auto", display:"flex", flexDirection:"column" as const, gap:"1.5rem" },
-  loading:{ display:"flex", alignItems:"center", justifyContent:"center", minHeight:"60vh", fontSize:14, color:"#94A3B8" },
+const S: Record<string, any> = {
+  wrap: { maxWidth: 1120, margin: "0 auto", display: "flex", flexDirection: "column", gap: 16 },
+  loading: { display: "flex", alignItems: "center", justifyContent: "center", minHeight: "60vh", font: "400 14px var(--font-sans)", color: "var(--v-ink-3)" },
 
-  head:{ position:"relative" as const, overflow:"hidden", display:"flex", justifyContent:"space-between", alignItems:"flex-end", flexWrap:"wrap" as const, gap:14, background:"linear-gradient(115deg,#E9F1FE,#EFF5FF 46%,#F8FBFF)", border:"1px solid #E7EEF8", borderRadius:22, padding:"26px 30px" },
-  heroOrb:{ position:"absolute" as const, top:-70, right:120, width:260, height:260, borderRadius:"50%", background:"radial-gradient(circle,#8ECDF8 0%,rgba(142,205,248,0) 70%)", opacity:.5, pointerEvents:"none" as const },
-  aiBadge:{ display:"inline-flex", alignItems:"center", gap:7, background:"rgba(255,255,255,.72)", border:"1px solid rgba(255,255,255,.9)", borderRadius:20, padding:"5px 12px", marginBottom:14, fontSize:12, fontWeight:600, color:"#334EAC", textDecoration:"none" },
-  aiDot:{ width:7, height:7, borderRadius:"50%", background:"#22C55E", flexShrink:0 },
-  kicker:{ fontSize:12, fontWeight:600, color:"#94A3B8", textTransform:"uppercase" as const, letterSpacing:".08em", marginBottom:8 },
-  greeting:{ fontFamily:SERIF, fontSize:32, fontWeight:600, color:"#1F2937", letterSpacing:"-.02em", lineHeight:1.1 },
-  greetingName:{ fontStyle:"italic", color:"#334EAC" },
-  greetingSub:{ fontSize:15, color:"#475569", marginTop:7 },
-  headActions:{ display:"flex", gap:10 },
-  primaryBtn:{ display:"inline-flex", alignItems:"center", gap:8, background:"#6495ED", color:"#fff", padding:"12px 20px", borderRadius:12, fontSize:14, fontWeight:600, textDecoration:"none", boxShadow:"0 12px 24px -10px rgba(100,149,237,.8)" },
+  head: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", gap: 12, flexWrap: "wrap" },
+  h1: { font: "500 22px var(--font-display)", color: "var(--v-ink)", letterSpacing: "-.01em", margin: 0 },
+  greeting: { font: "400 15px var(--font-sans)", color: "var(--v-ink-2)", marginTop: 4 },
+  primary: { display: "inline-flex", alignItems: "center", gap: 7, background: "var(--v-accent)", color: "#fff", padding: "10px 16px", borderRadius: "var(--r-md)", font: "500 14px var(--font-sans)", textDecoration: "none", flex: "none" },
 
-  attn:{ background:"var(--v-surface)", border:"1px solid var(--v-line)", borderLeft:"3px solid var(--brand-500, #6495ED)", borderRadius:14, padding:"14px 16px", boxShadow:"var(--v-shadow-sm)" },
-  attnHead:{ fontSize:12, fontWeight:700, textTransform:"uppercase" as const, letterSpacing:".05em", color:"var(--v-ink-3)", marginBottom:8 },
-  attnRow:{ display:"flex", alignItems:"center", gap:11, padding:"11px 12px", borderRadius:11, textDecoration:"none", color:"var(--v-ink)", border:"1px solid transparent" },
-  attnDot:{ width:9, height:9, borderRadius:"50%", flexShrink:0 },
-  attnLabel:{ flex:1, fontSize:14, fontWeight:550, color:"var(--v-ink)" },
-  statRow:{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14 },
-  tile:{ position:"relative" as const, background:"#fff", border:"1px solid #E5E7EB", borderRadius:16, padding:"16px 18px 0 20px", display:"flex", flexDirection:"column" as const, gap:9, boxShadow:"0 1px 2px rgba(16,24,40,.04)", overflow:"hidden", textDecoration:"none", color:"inherit" },
-  tileBar:{ position:"absolute" as const, left:0, top:14, bottom:14, width:3, borderRadius:"0 3px 3px 0" },
-  tileTop:{ display:"flex", alignItems:"center", gap:9 },
-  tileIcon:{ width:30, height:30, borderRadius:8, display:"grid", placeItems:"center", flexShrink:0 },
-  tileLabel:{ fontSize:11.5, fontWeight:600, color:"#94A3B8", textTransform:"uppercase" as const, letterSpacing:".03em" },
-  tileNumRow:{ display:"flex", alignItems:"baseline", gap:8 },
-  tileNum:{ fontFamily:SERIF, fontSize:34, fontWeight:600, color:"#1F2937", letterSpacing:"-.02em", lineHeight:1, fontVariantNumeric:"tabular-nums" as const },
-  tileDelta:{ display:"inline-flex", alignItems:"baseline", gap:1, fontSize:12, fontWeight:700, fontVariantNumeric:"tabular-nums" as const },
-  deltaUp:{ color:"#0E9F6E" },
-  deltaDown:{ color:"#DC2626" },
-  deltaFlat:{ color:"#CBD5E1", fontWeight:600 },
-  deltaWk:{ fontSize:10, fontWeight:600, opacity:.7 },
-  tileSpark:{ margin:"6px -18px 0", height:40 },
+  metrics: { display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 12 },
+  metric: { display: "flex", flexDirection: "column", gap: 6, background: "var(--v-surface)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: "16px 18px", textDecoration: "none", minHeight: 92 },
+  metricLabel: { font: "400 12px var(--font-sans)", color: "var(--v-ink-3)" },
+  metricNum: { font: "500 24px var(--font-display)", color: "var(--v-ink)", letterSpacing: "-.01em", fontVariantNumeric: "tabular-nums", lineHeight: 1 },
+  metricAction: { display: "inline-flex", alignItems: "center", gap: 3, font: "500 12px var(--font-sans)", color: "var(--v-accent)", marginTop: "auto" },
 
-  grid:{ display:"grid", gridTemplateColumns:"1fr 340px", gap:"1.5rem", alignItems:"start" },
-  col:{ display:"flex", flexDirection:"column" as const, gap:"1.5rem" },
-  rightCol:{ display:"flex", flexDirection:"column" as const, gap:"1.5rem" },
+  grid: { display: "grid", gridTemplateColumns: "1fr 320px", gap: 16, alignItems: "start" },
+  card: { background: "var(--v-surface)", border: "1px solid var(--border)", borderRadius: "var(--r-lg)", padding: 20 },
+  cardHead: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14 },
+  h2: { font: "500 16px var(--font-display)", color: "var(--v-ink)", letterSpacing: "-.01em", margin: 0 },
+  sub: { font: "400 13px var(--font-sans)", color: "var(--v-ink-2)", marginTop: 3, maxWidth: "42ch" },
+  link: { display: "inline-flex", alignItems: "center", gap: 4, font: "500 13px var(--font-sans)", color: "var(--v-accent)", textDecoration: "none" },
 
-  onboard:{ background:"linear-gradient(135deg,#FCFBF6,#EAF1FE)", border:"1px solid #CFE9DF", borderRadius:16, padding:"1.5rem" },
-  onboardHead:{ display:"flex", alignItems:"center", gap:18, marginBottom:18 },
-  onboardTitle:{ fontFamily:SERIF, fontSize:21, fontWeight:600, color:"#1F2937", letterSpacing:"-.01em" },
-  onboardSub:{ fontSize:13.5, color:"#475569", marginTop:4, maxWidth:"40ch" },
-  steps:{ display:"flex", flexDirection:"column" as const, gap:8 },
-  step:{ display:"flex", alignItems:"center", gap:13, background:"#fff", border:"1px solid #E5E7EB", borderRadius:11, padding:"12px 14px", textDecoration:"none", transition:"border-color .12s, transform .12s" },
-  stepCheck:{ width:32, height:32, borderRadius:9, background:"#EAF1FE", color:"#6495ED", display:"grid", placeItems:"center", flexShrink:0 },
-  stepCheckDone:{ background:"#059669", color:"#fff" },
-  stepTitle:{ fontSize:14, fontWeight:600, color:"#1F2937" },
-  stepDesc:{ fontSize:12.5, color:"#94A3B8", marginTop:1 },
+  setupHead: { display: "flex", alignItems: "center", gap: 14, marginBottom: 14 },
+  step: { display: "flex", alignItems: "center", gap: 12, background: "var(--v-surface)", border: "1px solid var(--border)", borderRadius: "var(--r-md)", padding: "11px 13px", textDecoration: "none" },
+  stepCheck: { width: 30, height: 30, borderRadius: "var(--r-md)", background: "var(--v-accent-soft)", color: "var(--v-accent)", display: "grid", placeItems: "center", flexShrink: 0 },
+  stepDone: { background: "var(--v-green)", color: "#fff" },
+  stepTitle: { display: "block", font: "500 14px var(--font-sans)", color: "var(--v-ink)" },
+  stepDesc: { display: "block", font: "400 12.5px var(--font-sans)", color: "var(--v-ink-3)", marginTop: 1 },
 
-  card:{ background:"#fff", border:"1px solid #E5E7EB", borderRadius:16, padding:"1.35rem 1.5rem", boxShadow:"0 1px 2px rgba(23,18,45,.04)" },
-  cardHead:{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:16 },
-  cardTitle:{ fontSize:16, fontWeight:650, color:"#1F2937", letterSpacing:"-.01em" },
-  link:{ display:"inline-flex", alignItems:"center", gap:4, fontSize:13, color:"#334EAC", textDecoration:"none", fontWeight:600 },
+  appRow: { display: "flex", alignItems: "center", gap: 12, padding: "11px 8px", borderTop: "1px solid var(--border)", textDecoration: "none", borderRadius: 6 },
+  appTitle: { display: "block", font: "500 14px var(--font-sans)", color: "var(--v-ink)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  appSub: { display: "block", font: "400 12.5px var(--font-sans)", color: "var(--v-ink-3)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+  badge: { font: "500 11.5px var(--font-sans)", padding: "3px 10px", borderRadius: "var(--r-pill)", flex: "none" },
 
-  funnel:{ display:"flex", flexDirection:"column" as const, gap:11 },
-  funnelRow:{ display:"flex", alignItems:"center", gap:12 },
-  funnelLabel:{ fontSize:12.5, color:"#475569", width:82, flexShrink:0 },
-  funnelTrack:{ flex:1, height:9, background:"#F1F5F9", borderRadius:5, overflow:"hidden" },
-  funnelFill:{ height:9, borderRadius:5, transition:"width .5s ease" },
-  funnelCount:{ fontSize:13, fontWeight:700, width:24, textAlign:"right" as const, fontVariantNumeric:"tabular-nums" as const },
-
-  empty:{ textAlign:"center" as const, padding:"1.5rem 0 0.5rem" },
-  emptyIcon:{ display:"grid", placeItems:"center", width:52, height:52, borderRadius:14, background:"#EAF1FE", color:"#6495ED", margin:"0 auto 12px" },
-  emptyTitle:{ fontSize:15, fontWeight:650, color:"#1F2937" },
-  emptySub:{ fontSize:13, color:"#94A3B8", marginTop:4, maxWidth:"34ch", marginLeft:"auto", marginRight:"auto" },
-  emptyBtn:{ display:"inline-block", marginTop:14, background:"#6495ED", color:"#fff", padding:"9px 18px", borderRadius:10, fontSize:13, fontWeight:600, textDecoration:"none", boxShadow:"0 12px 24px -10px rgba(100,149,237,.8)" },
-
-  appRow:{ display:"flex", alignItems:"center", gap:12, padding:"11px 0", borderTop:"1px solid #F1F5F9" },
-  appDot:{ width:8, height:8, borderRadius:"50%", flexShrink:0 },
-  appTitle:{ fontSize:14, fontWeight:600, color:"#1F2937", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const },
-  appSub:{ fontSize:12.5, color:"#94A3B8", marginTop:2, overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" as const },
-  pill:{ fontSize:11.5, fontWeight:600, padding:"4px 11px", borderRadius:999, flexShrink:0 },
-
-  quick:{ display:"flex", flexDirection:"column" as const, gap:6 },
-  quickRow:{ display:"flex", alignItems:"center", gap:12, padding:"11px 12px", borderRadius:11, textDecoration:"none", color:"#94A3B8", transition:"background .12s" },
-  quickIcon:{ width:34, height:34, borderRadius:9, background:"#EAF1FE", color:"#334EAC", display:"grid", placeItems:"center", flexShrink:0 },
-  quickTitle:{ fontSize:13.5, fontWeight:600, color:"#1F2937" },
-  quickDesc:{ fontSize:12, color:"#94A3B8", marginTop:1 },
+  quick: { display: "flex", alignItems: "center", gap: 11, padding: "10px 10px", borderRadius: "var(--r-md)", textDecoration: "none", color: "var(--v-ink-2)" },
+  quickIcon: { width: 30, height: 30, borderRadius: "var(--r-md)", background: "var(--v-surface-2)", color: "var(--v-accent)", display: "grid", placeItems: "center", flexShrink: 0 },
+  quickText: { flex: 1, font: "500 13.5px var(--font-sans)", color: "var(--v-ink)" },
 }

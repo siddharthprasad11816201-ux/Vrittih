@@ -34,10 +34,11 @@
   --v-line:   #E5E7EB;
   --v-line-2: #E9EDF2;
 
-  /* ---- accent (aliases → cornflower so every var-driven surface flips) ---- */
-  --v-accent:      #6495ED;
+  /* ---- accent — deepened cornflower-indigo so text AND white-on-accent fills
+     both pass WCAG AA (the old #6495ED failed at ~2.6:1). Brand-continuous. ---- */
+  --v-accent:      #4F63D2;
   --v-accent-2:    #334EAC;
-  --v-accent-soft: #EAF1FE;
+  --v-accent-soft: #ECEFFC;
   --v-accent-ink:  #FFFFFF;
 
   /* ---- semantic (status only, never decoration) ---- */
@@ -61,12 +62,22 @@
   --v-ease: cubic-bezier(.22,1,.36,1);
   --v-spring: cubic-bezier(.34,1.56,.64,1);
 
-  /* ---- type ---- */
-  --font-display: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  /* ---- type: ONE system — Inter (body/UI) + Bricolage Grotesque (display,
+     every heading, app + marketing). next/font variables set on <html>. ---- */
+  --font-display: var(--font-bricolage), var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   --v-serif: var(--font-display);
   --v-sans:  var(--font-sans);
+
+  /* ---- redesign tokens (Vrittih redesign brief) ---------------------------
+     Spacing: 4px base scale only. Radius: sm6/md8/lg12. One hairline + one
+     strong border. Text de-emphasis via distinct colours, never opacity. ---- */
+  --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-6:24px; --sp-8:32px; --sp-12:48px; --sp-16:64px;
+  --r-sm:6px; --r-md:8px; --r-lg:12px; --r-pill:999px;
+  --border:        #E6E8EC;   /* default hairline */
+  --border-strong: #D6DAE0;   /* hover / emphasis */
+  --ink-disabled:  #B4BCC7;   /* fourth text step (never opacity) */
 
   /* ---- fluid type scale ---- */
   --fs-display: clamp(2.5rem, 6vw + 1rem, 5.5rem);
@@ -104,6 +115,9 @@
     --v-accent-soft:rgba(100,149,237,.16); --v-green-soft:rgba(34,197,94,.16);
   }
 }
+/* redesign tokens flip for dark */
+:root[data-theme="dark"], .v-dark { --border:rgba(255,255,255,.12); --border-strong:rgba(255,255,255,.20); --ink-disabled:rgba(255,255,255,.34); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --border:rgba(255,255,255,.12); --border-strong:rgba(255,255,255,.20); --ink-disabled:rgba(255,255,255,.34); } }
 
 /* ---- app reset ---- */
 .v-app { font-family: var(--font-sans); color: var(--v-ink); }
