@@ -90,6 +90,7 @@ model User {
   companiesOwned       Company[]            @relation("CompanyOwner")
   socialLinks          SocialLink[]
   calendarToken        String?              @unique   // secret for the subscribable interview calendar feed
+  certificatesEarned   Certificate[]        @relation("CertRecipient")
 }
 
 // Company profile — a real employer page, not just a string on a job. Jobs link by
@@ -1633,6 +1634,28 @@ model SocialLink {
   lastCheckedAt DateTime?
   createdAt   DateTime  @default(now())
   @@unique([userId, platform, url])
+  @@index([userId])
+}
+
+// Verifiable certificates (internship completion, course, assessment, achievement).
+// Publicly verifiable at /verify/cert/[verificationCode]; revocable; never deleted.
+model Certificate {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation("CertRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  issuedById       String?
+  title            String
+  kind             String    @default("internship")   // internship | course | assessment | achievement
+  serial           String    @unique                   // human-readable, e.g. VRT-2026-XXXXXX
+  verificationCode String    @unique                   // opaque public verify code
+  issuerName       String
+  skills           String?                              // comma-separated
+  note             String?
+  revoked          Boolean   @default(false)
+  revokedReason    String?
+  verifyCount      Int       @default(0)
+  issuedAt         DateTime  @default(now())
+  expiresAt        DateTime?
   @@index([userId])
 }
 
