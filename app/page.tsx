@@ -40,8 +40,6 @@ const PLATFORM = [
   { t: "Hiring, end to end", d: "Interviews, assessments, offers, onboarding, HRMS and payroll in one workspace." },
 ]
 
-const ENGINE = ["Profile", "Skills", "Matching", "Ranking", "Shortlist", "Offer"]
-
 const TRUST = [
   { t: "Encrypted biometrics", d: "Face vectors are AES-encrypted; raw images are never stored." },
   { t: "Verified employers", d: "Companies are identity-checked before a role goes live." },
@@ -164,25 +162,6 @@ export default function Home() {
                 <p className="cardD">{x.d}</p>
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ENGINE */}
-      <section className="sec">
-        <div className="wrap">
-          <p className="eyebrow">The matching engine</p>
-          <h2 className="h2">Matching you can actually explain.</h2>
-          <p className="sub">Your profile becomes structured skills, skills are scored against every role, and each recommendation carries the reason it surfaced.</p>
-          <div className="flow">
-            {ENGINE.map((x, i) => (
-              <span key={x} className="node">{x}{i < ENGINE.length - 1 && <em className="arrow">→</em>}</span>
-            ))}
-          </div>
-          <div className="assure">
-            <span>Scored on skills, industry, seniority and location</span>
-            <span>The reason for every match is shown, never hidden</span>
-            <span>You can always disagree and apply anyway</span>
           </div>
         </div>
       </section>
