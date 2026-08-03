@@ -12,6 +12,7 @@ import { parseChfSalary } from "@/lib/career/salary"
 import { momentum, diffVectors, type SeriesPoint, type SkillVector } from "@/lib/career/progress"
 import { inputFromUser, resumeFromUser } from "@/lib/career/fromUser"
 import { classifyIntent, FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
+import { writeAiRun, inputsHash } from "@/lib/aios/audit"
 
 export const dynamic = "force-dynamic"
 
@@ -28,6 +29,8 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}))
     const message = String(body?.message || "").slice(0, 500)
     const intent = classifyIntent(message)
+    // AIOS §4 governance: audit every coach invocation as a registered-agent run.
+    writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: "intent-classify-v1", inputsHash: inputsHash(message), outputs: { intent }, status: "ok", explanation: `Coach intent: ${intent}` }).catch(() => {})
 
     if (intent === "help") {
       return reply(intent, "I'm your in-house career coach. I read your real profile and live job listings — no guesswork — to help you decide what to do next. Ask me things like:", [

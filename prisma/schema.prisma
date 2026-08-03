@@ -581,6 +581,283 @@ model MatchCalibration {
   @@index([cohort])
 }
 
+// ============================================================================
+// AIOS — Self-Evolving Intelligence Platform (docs/ai/SELF_EVOLVING_INTELLIGENCE_ARCHITECTURE.md)
+// All additive, both-DB safe (JSON as String), userId/ownerId scalar (no User
+// back-relation), history never overwritten (revision tables). Foundation models
+// are in-house deterministic providers — never auto-modified.
+// ============================================================================
+
+// §5 Model Registry — governs every inference provider (in-house today).
+model ModelRegistry {
+  id             String   @id @default(cuid())
+  modelId        String   @unique              // e.g. tfidf-embed-v1
+  provider       String   @default("in-house")
+  version        String   @default("1")
+  task           String                        // embedding|ranking|classification|prediction|extraction|...
+  capabilities   String   @default("[]")       // JSON string[]
+  maxContext     Int      @default(0)
+  latencyMs      Int      @default(0)
+  cost           Float    @default(0)           // in-house = 0
+  securityClass  String   @default("internal")
+  deploymentStatus String @default("active")    // active|shadow|deprecated|disabled
+  health         String   @default("healthy")
+  evalScores     String   @default("{}")        // JSON
+  rollbackOf     String?
+  enabled        Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// §9 Capability — the unit authorization/resolution derives from (never role).
+model Capability {
+  id           String   @id @default(cuid())
+  capId        String   @unique               // e.g. career.coach.answer
+  name         String
+  description  String?
+  provider     String                          // lib module / registered handler key
+  inputs       String   @default("{}")         // JSON schema
+  outputs      String   @default("{}")         // JSON schema
+  permissions  String   @default("[]")         // JSON: required capability/entitlement keys
+  safetyClass  String   @default("standard")   // standard|sensitive|forbidden-auto
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// §7 Agent registry — every AI capability is a registered agent.
+model AgentDef {
+  id             String   @id @default(cuid())
+  agentId        String   @unique              // e.g. agent:career-coach
+  name           String
+  owner          String   @default("edurankai")
+  purpose        String?
+  capabilities   String   @default("[]")       // JSON capId[]
+  permissions    String   @default("[]")       // JSON capability keys
+  knowledgeSources String @default("[]")       // JSON
+  memoryScope    String   @default("user")     // user|org|agent|session|none
+  tools          String   @default("[]")       // JSON toolId[]
+  dependencies   String   @default("[]")       // JSON agentId[]
+  version        String   @default("1")
+  lifecycle      String   @default("active")    // active|deprecated|retired
+  status         String   @default("healthy")
+  health         String   @default("{}")        // JSON
+  evalScores     String   @default("{}")        // JSON
+  auditRequirements String @default("standard")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// §21 Prompt/answer-template registry — governed assets, never scattered in code.
+model PromptTemplate {
+  id           String   @id @default(cuid())
+  promptId     String                          // logical id (versioned by row)
+  version      Int      @default(1)
+  owner        String   @default("edurankai")
+  description  String?
+  template     String                          // the template text
+  variables    String   @default("[]")         // JSON
+  agents       String   @default("[]")         // JSON agentId[]
+  safetyRules  String   @default("[]")         // JSON
+  evalHistory  String   @default("[]")         // JSON
+  approvedBy   String?
+  rollbackOf   String?
+  active       Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  @@unique([promptId, version])
+}
+
+// §22 Tool registry.
+model ToolDef {
+  id           String   @id @default(cuid())
+  toolId       String   @unique
+  purpose      String?
+  inputsSchema String   @default("{}")
+  outputsSchema String  @default("{}")
+  permissions  String   @default("[]")
+  dependencies String   @default("[]")
+  failureModes String   @default("[]")
+  retryPolicy  String   @default("{}")
+  timeoutMs    Int      @default(15000)
+  audit        Boolean  @default(true)
+  health       String   @default("healthy")
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+// §4/§32 Execution audit — one immutable row per AIOS.execute() call.
+model AiRun {
+  id           String   @id @default(cuid())
+  subjectId    String?                          // acting user (null = system)
+  agentId      String?                          // resolved agent, if any
+  capId        String                           // capability executed
+  modelId      String?                          // model selected
+  inputsHash   String                           // sha256 of inputs (no PII stored)
+  outputs      String   @default("{}")          // JSON (or ref)
+  status       String   @default("ok")          // ok|denied|error|blocked
+  latencyMs    Int      @default(0)
+  cost         Float    @default(0)
+  confidence   Float?                           // 0..1 when applicable
+  explanation  String?                          // user-appropriate reason summary (§26)
+  steps        String   @default("[]")          // JSON orchestration trace (§8)
+  error        String?
+  createdAt    DateTime @default(now())
+  @@index([capId, createdAt])
+  @@index([subjectId, createdAt])
+  @@index([agentId, createdAt])
+}
+
+// §13/§14 Knowledge Layer — versioned, classified, governed.
+model KnowledgeItem {
+  id            String   @id @default(cuid())
+  kind          String                          // policy|doc|career|research|hr|company|project|learning|community|structured|external
+  title         String
+  body          String   @default("")
+  contentHash   String                          // dedupe (§13)
+  status        String   @default("pending_review") // verified|unverified|pending_review|experimental|deprecated|rejected
+  confidence    Float    @default(0)
+  owner         String?
+  provenance    String   @default("{}")         // JSON source/lineage
+  securityClass String   @default("internal")
+  reviewDate    DateTime?
+  supersededById String?
+  version       Int      @default(1)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([kind, status])
+  @@index([contentHash])
+  @@index([status])
+}
+
+// §13 Immutable revision history — never overwrite knowledge.
+model KnowledgeRevision {
+  id           String   @id @default(cuid())
+  itemId       String
+  version      Int
+  status       String
+  title        String
+  body         String   @default("")
+  changedBy    String?
+  reason       String?
+  createdAt    DateTime @default(now())
+  @@index([itemId, version])
+}
+
+// §16 In-house semantic index — sparse TF-IDF vectors + inverted postings.
+model SemanticDoc {
+  id           String   @id @default(cuid())
+  refType      String                           // job|document|policy|course|research|skill|person|community|knowledge
+  refId        String
+  index        String   @default("default")     // which named index (§16)
+  vector       String   @default("{}")          // JSON { term: weight } sparse
+  norm         Float    @default(0)             // precomputed vector norm for cosine
+  terms        Int      @default(0)
+  contentHash  String
+  updatedAt    DateTime @updatedAt
+  createdAt    DateTime @default(now())
+  @@unique([refType, refId, index])
+  @@index([index])
+}
+
+// §16 Inverted index posting (term -> doc) for candidate retrieval.
+model SemanticPosting {
+  id        String @id @default(cuid())
+  index     String @default("default")
+  term      String
+  docId     String                              // SemanticDoc.id
+  weight    Float  @default(0)
+  @@index([index, term])
+  @@index([docId])
+}
+
+// §17 Enterprise memory — hierarchical, structured (never weights).
+model MemoryEntry {
+  id          String   @id @default(cuid())
+  scope       String                            // working|session|conversation|agent|user|org|knowledge|collective|archive
+  ownerId     String                            // user id, org id, or agent id per scope
+  kind        String                            // goal|preference|skill|strength|weakness|style|achievement|interview|application|project|feedback|note
+  key         String
+  valueJson   String   @default("{}")
+  confidence  Float    @default(0.5)
+  source      String   @default("system")
+  verified    Boolean  @default(false)
+  expiresAt   DateTime?
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@unique([scope, ownerId, kind, key])
+  @@index([ownerId, scope])
+}
+
+// §23 Event-driven learning — platform events, replayable, never overwritten.
+model PlatformEvent {
+  id          String   @id @default(cuid())
+  type        String                            // job.created|application.submitted|...
+  actorId     String?
+  subjectId   String?                           // primary entity the event is about
+  payload     String   @default("{}")           // JSON
+  processed   Boolean  @default(false)
+  handlers    String   @default("[]")           // JSON handler run log
+  createdAt   DateTime @default(now())
+  processedAt DateTime?
+  @@index([type, createdAt])
+  @@index([processed])
+}
+
+// §25/§29 Self-evaluation runs + metrics (trends over time).
+model EvalRun {
+  id         String   @id @default(cuid())
+  metric     String                             // recommendation_accuracy|retrieval_accuracy|knowledge_freshness|...
+  scope      String   @default("global")
+  value      Float
+  sampleSize Int      @default(0)
+  detail     String   @default("{}")            // JSON
+  createdAt  DateTime @default(now())
+  @@index([metric, createdAt])
+}
+
+// §27/§28 Human-review change proposals — AI proposes, humans approve. Never self-approved.
+model ChangeProposal {
+  id          String   @id @default(cuid())
+  kind        String                            // policy|compliance|hiring|legal|org|prompt|knowledge|maintenance|governance
+  title       String
+  rationale   String   @default("")
+  payload     String   @default("{}")           // JSON proposed change
+  status      String   @default("pending")      // pending|approved|rejected|applied
+  proposedBy  String   @default("aios")
+  reviewedBy  String?
+  reviewedAt  DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([status, kind])
+}
+
+// §18 Adaptive recommendations + feedback (generalizes §21 calibration).
+model Recommendation {
+  id          String   @id @default(cuid())
+  subjectId   String                            // user recommended to
+  domain      String                            // job|skill|course|path|action|...
+  itemRef     String                            // what was recommended (id or key)
+  context     String   @default("{}")           // JSON
+  score       Float    @default(0)
+  modelId     String?
+  agentId     String?
+  createdAt   DateTime @default(now())
+  @@index([subjectId, domain, createdAt])
+}
+
+model RecommendationFeedback {
+  id      String   @id @default(cuid())
+  recId   String
+  subjectId String
+  signal  String                                // helpful|not_helpful|accepted|ignored|completed|failed|successful|rejected
+  detail  String   @default("{}")
+  createdAt DateTime @default(now())
+  @@index([recId])
+  @@index([signal, createdAt])
+}
+
 // ---- HRMS ----
 model Employee {
   id             String    @id @default(cuid())
