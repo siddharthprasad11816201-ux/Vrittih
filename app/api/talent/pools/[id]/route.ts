@@ -31,7 +31,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     health: pipelineHealth(members.map(m => ({ stage: m.stage, addedAt: m.addedAt, lastActivityAt: m.lastActivityAt }))),
     members: members.map(m => ({
       id: m.id, stage: m.stage, note: m.note, source: m.source, addedAt: m.addedAt, lastActivityAt: m.lastActivityAt,
-      name: m.member?.name || m.name, email: m.member?.email || m.email, headline: m.member?.headline || null, userId: m.userId,
+      name: m.member?.name || m.name,
+      // Only ever surface the email the recruiter THEMSELVES supplied — never the
+      // platform account email (which discover deliberately withholds). Prevents the
+      // add-by-id → GET flow from becoming an email-harvest oracle.
+      email: m.email || null,
+      headline: m.member?.headline || null, userId: m.userId,
     })),
   })
 }
@@ -52,7 +57,14 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!email && !b.userId) return NextResponse.json({ error: "An email or user is required." }, { status: 400 })
     let userId: string | null = b.userId || null
     let name = b.name ? String(b.name).slice(0, 160) : null
-    if (!userId && email) {
+    // Adding by a raw id must NOT become a way to read a withheld field (email). Only
+    // job-seekers may be linked by id, and the pool GET never discloses their platform
+    // email (see below) — so add-by-id can't be used as an email-harvest oracle.
+    if (userId) {
+      const u = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, name: true, role: true } })
+      if (!u || u.role !== "JOBSEEKER") return NextResponse.json({ error: "Only job-seekers can be added by id." }, { status: 400 })
+      name = name || u.name
+    } else if (email) {
       const u = await prisma.user.findUnique({ where: { email }, select: { id: true, name: true } })
       if (u) { userId = u.id; name = name || u.name }
     }

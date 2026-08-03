@@ -56,7 +56,10 @@ export function pipelineHealth(members: PoolMember[], now = Date.now()): Pipelin
   const warm = members.filter(m => WARM.includes(m.stage as MemberStage)).length
   const converted = members.filter(m => m.stage === "CONVERTED").length
   const fresh = members.filter(m => {
-    const t = m.lastActivityAt ? ms(m.lastActivityAt) : ms(m.addedAt)
+    // resolve by VALIDITY not truthiness — an unparseable lastActivityAt falls back to
+    // addedAt rather than being wrongly counted stale.
+    const la = ms(m.lastActivityAt)
+    const t = la > 0 ? la : ms(m.addedAt)
     return t > 0 && now - t <= 30 * DAY
   }).length
   const warmRate = warm / size

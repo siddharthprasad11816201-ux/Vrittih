@@ -34,7 +34,13 @@ export default function TalentPage() {
   async function loadRefs() { try { setRefs(await fetch("/api/referrals").then(r => r.json())) } catch {} }
   useEffect(() => { loadPools(); loadRefs() }, [])
 
-  async function openPool(id: string) { setSel(null); try { setSel(await fetch(`/api/talent/pools/${id}`).then(r => r.json())) } catch {} }
+  async function openPool(id: string) {
+    setSel(null)
+    try {
+      const r = await fetch(`/api/talent/pools/${id}`); const d = await r.json()
+      if (r.ok && d?.pool) setSel(d); else { setErr(d?.error || "Could not open that pool."); await loadPools() }
+    } catch { setErr("Could not open that pool.") }
+  }
   async function createPool() {
     if (!np.name.trim()) { setErr("Pool name required."); return }
     setBusy("pool"); setErr("")
