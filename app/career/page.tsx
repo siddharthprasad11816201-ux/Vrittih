@@ -48,6 +48,7 @@ export default function CareerPage() {
         <div style={S.header}>
           <h1 style={S.h1}>Career Intelligence</h1>
           <p style={S.lede}>Your professional profile, understood — and turned into a plan. All in-house, explainable, and based only on your real evidence.</p>
+          <Link href="/career/coach" style={S.coachCta}>Ask the AI coach →</Link>
           <div style={S.statRow}>
             <Stat n={d.stats.total} label="skills mapped" />
             <Stat n={d.stats.demonstrated} label="demonstrated" />
@@ -118,6 +119,7 @@ const S: Record<string, any> = {
   header: { marginBottom: 22 },
   h1: { font: "700 26px var(--font-sans)", color: "#1F2937", letterSpacing: "-.02em", margin: 0 },
   lede: { font: "400 14px/1.6 var(--font-sans)", color: "#64748B", margin: "8px 0 0", maxWidth: 620 },
+  coachCta: { display: "inline-block", marginTop: 14, font: "600 13.5px var(--font-sans)", color: "#fff", background: "linear-gradient(135deg,#6495ED,#334EAC)", border: "none", borderRadius: 11, padding: "10px 18px", textDecoration: "none", boxShadow: "0 14px 30px -16px rgba(51,78,172,.7)" },
   muted: { font: "400 14px/1.6 var(--font-sans)", color: "#64748B", margin: "10px 0 18px" },
   cta: { display: "inline-block", background: "#6495ED", color: "#fff", borderRadius: 11, padding: "10px 18px", font: "600 13.5px var(--font-sans)", textDecoration: "none" },
   card: { background: "#fff", border: "1px solid #E5E7EB", borderRadius: 16, padding: "28px 26px", maxWidth: 560, margin: "20px auto" },
