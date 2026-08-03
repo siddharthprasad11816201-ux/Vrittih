@@ -4,6 +4,7 @@ import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
 import { IconCalendar, IconClock, IconUsers, IconKey, IconVideo } from "@/components/ui/Icons"
 import FeatureGate from "@/components/vrittih/FeatureGate"
+import { googleCalUrl, outlookCalUrl, interviewToEvent } from "@/lib/ical"
 
 export default function InterviewsPage() {
   return <FeatureGate feature="interviews" title="Interviews"><InterviewsInner /></FeatureGate>
@@ -13,6 +14,9 @@ function InterviewsInner() {
   const [interviews, setInterviews] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [me, setMe] = useState<any>(null)
+  const [feed, setFeed] = useState<{ feedUrl: string; webcalUrl: string } | null>(null)
+  const [copied, setCopied] = useState(false)
+  async function syncCalendar() { const d = await fetch("/api/me/calendar").then(r => r.json()).catch(() => null); if (d?.feedUrl) setFeed(d) }
 
   useEffect(() => {
     Promise.all([
@@ -60,6 +64,17 @@ function InterviewsInner() {
           <Link href={`/interviews/${interview.roomCode}`} style={{...S.joinBtn,...(!isNow&&interview.status==="COMPLETED"?S.joinBtnDisabled:{})}}>
             {interview.status==="COMPLETED"?"View room":"Join room"}
           </Link>
+          {interview.status !== "COMPLETED" && interview.status !== "CANCELLED" && (() => {
+            const ev = interviewToEvent(interview, typeof window !== "undefined" ? window.location.origin : "")
+            return (
+              <span style={S.calGroup}>
+                <span style={S.calLabel}>Add to calendar</span>
+                <a href={googleCalUrl(ev)} target="_blank" rel="noreferrer" style={S.calBtn}>Google</a>
+                <a href={outlookCalUrl(ev)} target="_blank" rel="noreferrer" style={S.calBtn}>Outlook</a>
+                <a href={`/api/interviews/${interview.id}/ics`} style={S.calBtn}>.ics</a>
+              </span>
+            )
+          })()}
         </div>
       </div>
     )
@@ -71,8 +86,22 @@ function InterviewsInner() {
         <div style={S.wrap}>
           <div style={S.header}>
             <div><h1 style={S.title}>Interviews</h1><p style={S.sub}>Your scheduled and past interview sessions</p></div>
-            <Link href="/interviews/schedule" style={S.scheduleBtn}>+ Schedule interview</Link>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              <button onClick={syncCalendar} style={S.syncBtn}>Sync to your calendar</button>
+              <Link href="/interviews/schedule" style={S.scheduleBtn}>+ Schedule interview</Link>
+            </div>
           </div>
+          {feed && (
+            <div style={S.feedPanel}>
+              <div style={{ fontWeight: 600, fontSize: 13, color: "#0A0A0F", marginBottom: 5 }}>Subscribe once — interviews stay in sync</div>
+              <div style={{ fontSize: 12.5, color: "#7B7B8F", marginBottom: 9 }}>Add this URL in Google/Outlook/Apple Calendar (Add calendar → From URL). It's private to you — treat it like a key.</div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                <code style={S.feedUrl}>{feed.feedUrl}</code>
+                <button onClick={() => { navigator.clipboard?.writeText(feed.feedUrl); setCopied(true); setTimeout(() => setCopied(false), 1500) }} style={S.calBtn}>{copied ? "Copied" : "Copy"}</button>
+                <a href={feed.webcalUrl} style={S.calBtn}>Subscribe</a>
+              </div>
+            </div>
+          )}
 
           {loading ? <div style={S.empty}><p style={{color:"#9ca3af"}}>Loading...</p></div> : (
             <>
@@ -121,8 +150,14 @@ const S: Record<string,any> = {
   pill:{fontSize:11,fontWeight:500,padding:"3px 10px",borderRadius:999},
   cardInfo:{display:"flex",gap:14,flexWrap:"wrap" as const,marginBottom:12},
   infoItem:{fontSize:12,color:"#9ca3af",display:"inline-flex",alignItems:"center",gap:5},
-  cardActions:{display:"flex",gap:8},
+  cardActions:{display:"flex",gap:8,flexWrap:"wrap" as const,alignItems:"center"},
   joinBtn:{background:"#6495ED",color:"#fff",padding:"8px 18px",borderRadius:8,fontSize:13,fontWeight:500,textDecoration:"none"},
   joinBtnDisabled:{background:"#9ca3af"},
+  calGroup:{display:"inline-flex",gap:6,alignItems:"center",flexWrap:"wrap" as const},
+  calLabel:{fontSize:11.5,color:"#9ca3af",fontWeight:500},
+  calBtn:{border:"1px solid #D8DEE7",background:"#fff",color:"#334EAC",borderRadius:8,padding:"7px 12px",fontSize:12.5,fontWeight:600,textDecoration:"none",cursor:"pointer"},
+  syncBtn:{border:"1px solid #D8DEE7",background:"#fff",color:"#334EAC",borderRadius:9,padding:"9px 16px",fontSize:13,fontWeight:600,cursor:"pointer"},
+  feedPanel:{background:"#fff",border:"1px solid #E5E7EB",borderRadius:12,padding:"14px 16px",marginBottom:"1.25rem"},
+  feedUrl:{flex:1,minWidth:200,fontFamily:"var(--font-mono,monospace)",fontSize:12,color:"#334EAC",background:"#F7F9FC",border:"1px solid #E5E7EB",borderRadius:8,padding:"8px 10px",overflow:"hidden",textOverflow:"ellipsis",whiteSpace:"nowrap" as const},
   empty:{display:"flex",flexDirection:"column" as const,alignItems:"center",justifyContent:"center",padding:"4rem",background:"#fff",borderRadius:14,border:"0.5px solid rgba(0,0,0,.07)",textAlign:"center" as const},
 }
