@@ -97,4 +97,10 @@ Per batch: unit‑test pure engines; `npm run build`; dual‑DB migration; adver
 ## 7. Changelog
 
 - **2026-08-04** — Spec created (competency/knowledge‑graph‑connected, 15‑module map,
-  DDRs, roadmap). Batch 1 begins now.
+  DDRs, roadmap).
+- **2026-08-04** — **ERIP shipped** (single build): research lifecycle + publications +
+  peer review + citation intelligence + grants + innovation challenges + research AI
+  assistant + research analytics; groups/communities/patents/experiments mapped to reused
+  systems. Adversarial review run. **Production readiness: GO** —
+  see `docs/research/ERIP_COMPLETION_REPORT.md`. Next: Phase 4 (Enterprise HRMS &
+  Workforce Lifecycle).
