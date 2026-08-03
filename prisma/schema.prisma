@@ -99,6 +99,8 @@ model User {
   evaluationsReceived  Evaluation[]         @relation("EvalSubject")
   offersReceived       Offer[]              @relation("OfferCandidate")
   offersCreated        Offer[]              @relation("OfferCreator")
+  scorecardsGiven      InterviewScorecard[] @relation("ScorecardPanelist")
+  proctorSessions      ProctorSession[]     @relation("ProctorSubject")
 }
 
 // A structured internship engagement (native "InternshipOS"): a weekly milestone
@@ -1530,6 +1532,67 @@ model InterviewParticipant {
   interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([interviewId, userId])
+}
+
+// EROS Module 6 — structured, competency-based interview evaluation. One scorecard per
+// panelist per interview; aggregated (lib/interview/scorecard.ts) into a panel result
+// with explainable bias/process signals. Evidence-based, human-authored.
+model InterviewScorecard {
+  id             String   @id @default(cuid())
+  interviewId    String?
+  applicationId  String?
+  panelistId     String
+  competencySet  String   @default("default")
+  ratingsJson    String                        // { competencyKey: 1..4 }
+  recommendation String                        // STRONG_NO | NO | YES | STRONG_YES
+  notes          String?
+  submittedAt    DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  panelist       User     @relation("ScorecardPanelist", fields: [panelistId], references: [id], onDelete: Cascade)
+  @@unique([interviewId, panelistId])
+  @@index([applicationId])
+}
+
+// EROS Module 6/7 — Semantic Proctoring (Phase 1). A session groups typed, consented
+// integrity EVENTS for one candidate in one interview/assessment. NO raw media, NO
+// character/emotion inference — observable events only, and a HUMAN makes the call.
+model ProctorSession {
+  id           String   @id @default(cuid())
+  kind         String                          // interview | assessment
+  refId        String                          // interviewId or testAttemptId
+  subjectId    String                          // the candidate being observed
+  consent      Boolean  @default(false)        // explicit, revocable candidate consent
+  consentAt    DateTime?
+  status       String   @default("ACTIVE")     // ACTIVE | ENDED
+  riskScore    Float    @default(0)            // 0..100 deterministic aggregate (lib/proctor)
+  reviewStatus String   @default("PENDING")    // PENDING | CLEARED | FLAGGED (human-set)
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNote   String?
+  startedAt    DateTime @default(now())
+  endedAt      DateTime?
+  subject      User     @relation("ProctorSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  events       ProctorEvent[]
+  @@index([kind, refId])
+  @@index([reviewStatus])
+  @@index([subjectId])
+}
+
+model ProctorEvent {
+  id           String   @id @default(cuid())
+  sessionId    String
+  type         String                          // face.absent | window.blur | clipboard.paste | ...
+  source       String   @default("browser")    // browser | device | network (phase2: vision, on-device)
+  ts           DateTime @default(now())
+  confidence   Float    @default(1)
+  severity     String   @default("info")       // info | low | medium | high (classified in-house)
+  evidence     String?                         // JSON metadata only — NEVER raw media
+  policyRef    String?
+  linkedIds    String?                         // JSON array of linked event ids
+  reviewStatus String   @default("NONE")       // NONE | CONFIRMED | DISMISSED (human)
+  session      ProctorSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  @@index([sessionId])
+  @@index([type])
 }
 
 

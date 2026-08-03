@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { io, Socket } from "socket.io-client"
 import { IconMic, IconMicOff, IconCamera, IconCameraOff, IconMonitor, IconHand, IconMessage, IconVideo, IconUser, IconUsers, IconShield, IconX, IconPhoneOff, IconCheck } from "@/components/ui/Icons"
+import ProctorCapture from "@/components/proctor/ProctorCapture"
 
 // Production sets NEXT_PUBLIC_SIGNAL_URL to an https:// endpoint; dev falls back to localhost.
 const SIGNAL_URL = process.env.NEXT_PUBLIC_SIGNAL_URL
@@ -324,6 +325,9 @@ export default function InterviewRoom() {
           <div><dt>Duration</dt><dd>{interview.duration} min</dd></div>
         </dl>
         {interview.notes && <p className="mLobbyNotes">{interview.notes}</p>}
+        {me && interview && (interview.participants || []).find((pp: any) => pp.user?.id === me.id)?.role === "CANDIDATE" && (
+          <ProctorCapture kind="interview" refId={interview.id} />
+        )}
         {canJoin
           ? <button onClick={joinRoom} className="mJoin">Join now</button>
           : <p className="mLobbyNotes" style={{ color: "#FEC84B", display: "flex", gap: 8, alignItems: "center" }}><IconShield size={14} /> {joinReason || "You're not permitted to join this interview."}</p>}

@@ -43,6 +43,7 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/dashboard/recruiter", label: "Candidates", icon: <IconUsers size={18} /> },
       { href: "/dashboard/pipeline", label: "Pipeline", icon: <IconTrendingUp size={18} /> },
       { href: "/offers", label: "Offers", icon: <IconAward size={18} /> },
+      { href: "/proctoring", label: "Integrity", icon: <IconShield size={18} /> },
       { href: "/internship", label: "Interns", icon: <IconCheckCircle size={18} /> },
       { href: "/jobs", label: "All jobs", icon: <IconBriefcase size={18} /> },
       { href: "/companies", label: "Companies", icon: <IconGlobe size={18} /> },

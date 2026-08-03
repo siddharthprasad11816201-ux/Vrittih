@@ -65,7 +65,7 @@ Legend: ✅ exists & reused · ◐ partial (extend) · ⬜ gap (build) · ▶ bu
 | **3. Talent CRM** | ◐ | `Contact` CRM (stages), `Company`, referrals partial. GAP: `TalentPool`/pools, silver-medalists, alumni, recruiter notes on candidates. |
 | **4. AI Candidate Discovery** | ✅ | ICAE (`lib/opportunity/*`, `/api/opportunities/groups`), `lib/career/match`, semantic index (`lib/knowledge/semindex`), recommendations. Reused. |
 | **5. Application Management** | ✅ | `Application`(+Form/Answer/Document), `StatusEvent` timeline, `/api/applications` (+ `/batch` from ICAE), status workflow. Reused. |
-| **6. Interview Intelligence** | ◐ | Scheduling + who-may-attend governance + panels (`lib/interview/governance`, `/api/interviews`, `/interviews/*`) + `lib/interview/scorecard.ts` (competency aggregation + bias signals, pre-built, 13 tests). Full architecture: `docs/interview/MULTIMODAL_INTERVIEW_PROCTORING_PLATFORM.md`. GAP (batch 2): scorecard model + API + UI, proctoring semantic-event engine, interview analytics. |
+| **6. Interview Intelligence** | ✅ | Scheduling + governance + panels; **scorecards** (`InterviewScorecard`, `/api/interviews/[id]/scorecard`, `/interviews/[code]/evaluate`) with competency aggregation, panel consensus + bias signals (`lib/interview/scorecard.ts`, 13 tests); **semantic proctoring Phase 1** (`ProctorSession`/`ProctorEvent`, `lib/proctor/events.ts` 14 tests, `/api/proctor/*`, consent-gated on-device `ProctorCapture`, human-authoritative reviewer console `/proctoring`). Architecture: `docs/interview/MULTIMODAL_INTERVIEW_PROCTORING_PLATFORM.md`. Follow-ups: room/test-attempt capture mounts, interview analytics dashboard, Phase-2 on-device CV. |
 | **7. Assessment Platform** | ✅ | `Test`/`TestAttempt`/`Question`/`Answer` (APTITUDE/TECHNICAL/PSYCHOMETRIC/CODING, proctoring signals). Reused; integrity checks present. Intelligent-proctoring architecture in `docs/interview/MULTIMODAL_INTERVIEW_PROCTORING_PLATFORM.md` (semantic-event, consent-first, on-device, human-reviewed). |
 | **8. Offer Management** | ▶ | **GAP — no `Offer` model.** THE keystone. Building now: `Offer`/`OfferEvent`, lifecycle state machine, compensation (FX-aware), approval, versioning, digital acceptance → HIRED + onboarding trigger, acceptance prediction, dashboards. |
 | **9. Onboarding** | ◐ | Internship OS (`/internship`), `Employee.onboarding`, identity verification, mentor/buddy (internship). GAP: unify a general new-hire onboarding triggered by offer acceptance. |
@@ -164,3 +164,12 @@ modules add their models the same way. Local schema provider is always restored 
   deliverable sections, evidence-first & privacy-first). Pre-built
   `lib/interview/scorecard.ts` (competency aggregation + bias signals, 13 tests) toward
   Batch 2.
+- **2026-08-03** — Batch 2 shipped: **Module 6 Interview Intelligence + Semantic
+  Proctoring (Phase 1)**. InterviewScorecard model + submit/aggregate API +
+  `/interviews/[code]/evaluate` (competency ratings → explainable panel decision with
+  consensus + bias signals). ProctorSession/ProctorEvent models + `lib/proctor/events.ts`
+  (taxonomy, severity, deterministic risk, 14 tests) + consent-gated on-device
+  `ProctorCapture` (browser signals, metadata only, mounted in the interview lobby for
+  candidates) + `/api/proctor/*` + human-authoritative reviewer console `/proctoring`
+  (risk triage → human CLEARED/FLAGGED, never auto-guilt). Nav: Integrity. Migrated both
+  DBs. Build green. Adversarial review next.
