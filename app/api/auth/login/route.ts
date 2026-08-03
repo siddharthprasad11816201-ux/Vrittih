@@ -5,6 +5,7 @@ import { signToken } from "@/lib/jwt"
 import { setAuthCookie } from "@/lib/cookies"
 import { track } from "@/lib/analytics"
 import { checkRateLimit, resetRateLimit } from "@/lib/ratelimit"
+import { recordLoginAttempt } from "@/lib/account/loginHistory"
 
 export async function POST(req: NextRequest) {
   try {
@@ -27,7 +28,10 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
     if (user.banned) return NextResponse.json({ error: "Account suspended. Contact support." }, { status: 403 })
     const valid = await verifyPassword(password, user.password)
-    if (!valid) return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
+    if (!valid) {
+      await recordLoginAttempt(user.id, user.email, req, false)
+      return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
+    }
     // Correct password — clear the throttle so genuine users aren't locked out.
     resetRateLimit(`login:email:${em}`)
 
@@ -47,6 +51,7 @@ export async function POST(req: NextRequest) {
     const token = signToken({ userId: user.id, email: user.email, role: user.role, paid: user.paid })
     const res = NextResponse.json({ success: true, user: { id:user.id,name:user.name,role:user.role,paid:user.paid } })
     await setAuthCookie(token)
+    await recordLoginAttempt(user.id, user.email, req, true)
     await track("signin.succeeded", { method: "password", role: user.role }, user.id)
     return res
   } catch (err: any) {

@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/jwt"
 import { decryptVector, euclideanDistance, MATCH_THRESHOLD, UNCERTAIN_THRESHOLD } from "@/lib/faceVector"
 import { signToken } from "@/lib/jwt"
 import { setAuthCookie } from "@/lib/cookies"
+import { recordLoginAttempt } from "@/lib/account/loginHistory"
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,6 +39,7 @@ export async function POST(req: NextRequest) {
       const token = signToken({ userId: user.id, email: user.email, role: user.role, paid: user.paid })
       const res = NextResponse.json({ success: true, match: true, distance, confidence: "HIGH" })
       await setAuthCookie(token)
+      await recordLoginAttempt(user.id, user.email, req, true)
       return res
     }
 

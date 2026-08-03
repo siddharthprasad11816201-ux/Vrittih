@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { verifyTOTP } from "@/lib/totp"
 import { signToken } from "@/lib/jwt"
 import { setAuthCookie } from "@/lib/cookies"
+import { recordLoginAttempt } from "@/lib/account/loginHistory"
 
 export const dynamic = "force-dynamic"
 
@@ -31,6 +32,7 @@ export async function POST(req: NextRequest) {
     const token = signToken({ userId: user.id, email: user.email, role: user.role, paid: user.paid })
     const res = NextResponse.json({ success: true, userId: user.id })
     await setAuthCookie(token)
+    await recordLoginAttempt(user.id, user.email, req, true)
     return res
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

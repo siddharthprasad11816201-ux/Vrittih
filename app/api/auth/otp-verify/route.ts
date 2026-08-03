@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { otpStore } from "@/lib/otpStore"
 import { signToken } from "@/lib/jwt"
 import { setAuthCookie } from "@/lib/cookies"
+import { recordLoginAttempt } from "@/lib/account/loginHistory"
 
 export async function POST(req: NextRequest) {
   try {
@@ -32,6 +33,7 @@ export async function POST(req: NextRequest) {
       userId: user.id
     })
     await setAuthCookie(token)
+    await recordLoginAttempt(user.id, user.email, req, true)
     return res
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

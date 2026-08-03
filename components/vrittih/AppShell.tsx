@@ -6,7 +6,7 @@ import CommandPalette from "@/components/vrittih/CommandPalette"
 import {
   IconActivity, IconBriefcase, IconTarget, IconFileText, IconUsers, IconTrendingUp,
   IconClipboard, IconMessage, IconMail, IconVideo, IconNetwork, IconUser, IconSettings,
-  IconSearch, IconBell, IconShield, IconScan, IconMenu, IconX, IconHome, IconBookmark, IconGlobe,
+  IconSearch, IconBell, IconShield, IconMenu, IconX, IconHome, IconBookmark, IconGlobe,
   IconBanknote, IconKey, IconCheckCircle,
 } from "@/components/ui/Icons"
 
@@ -90,7 +90,10 @@ function buildNav(caps: Set<string>): Section[] {
     { href: "/tools", label: "Tools", icon: <IconTarget size={19} /> },
   ]
   if (can("api.keys")) resources.push({ href: "/developers", label: "Developers", icon: <IconKey size={19} /> })
-  resources.push({ href: "/verify/face-setup", label: "Security", icon: <IconScan size={19} /> })
+  // Account & security is the identity hub (Module 5). Face enrollment lives INSIDE
+  // it (Account → Security → Biometric), so the shell never dives straight into the
+  // face wizard — it opens the Account Center instead.
+  resources.push({ href: "/account", label: "Account & security", icon: <IconShield size={19} /> })
   if (isAdmin) resources.push({ href: "/admin", label: "Admin panel", icon: <IconShield size={19} /> })
   sections.push({ title: "RESOURCES", items: resources })
 
@@ -229,7 +232,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
             {!isMobile && <span style={{ lineHeight: 1.15 }}><span style={S.pName}>Sign in</span><span style={S.pRole}>Signed out</span></span>}
           </Link>
         ) : (
-          <Link href="/settings" style={S.profileChip}>
+          <Link href="/account" style={S.profileChip}>
             <span style={S.avatar}>{initials}</span>
             {!isMobile && <span style={{ lineHeight: 1.15 }}><span style={S.pName}>{user?.name || "Account"}</span><span style={S.pRole}>{isEmployer ? "Employer" : "Job seeker"}</span></span>}
           </Link>

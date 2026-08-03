@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { verifyTOTP } from "@/lib/totp"
+import { logAction } from "@/lib/admin"
 
 export const dynamic = "force-dynamic"
 
@@ -27,6 +28,7 @@ export async function POST(req: NextRequest) {
     }
 
     await prisma.user.update({ where: { id: payload.userId }, data: { twoFactorEnabled: true } })
+    await logAction(payload.userId, "2fa.enabled", { method: "authenticator" }, req)
     return NextResponse.json({ success: true })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

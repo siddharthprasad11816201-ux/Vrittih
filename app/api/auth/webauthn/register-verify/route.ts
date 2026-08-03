@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { consumeChallenge, verifyRegistration, rpFromRequest } from "@/lib/webauthn"
+import { logAction } from "@/lib/admin"
 
 export const dynamic = "force-dynamic"
 
@@ -43,6 +44,7 @@ export async function POST(req: NextRequest) {
       },
       select: { id: true, name: true, createdAt: true },
     })
+    await logAction(payload.userId, "passkey.added", { name: cred.name }, req)
 
     return NextResponse.json({ success: true, credential: cred })
   } catch (err: any) {

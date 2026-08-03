@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { logAction } from "@/lib/admin"
 
 export const dynamic = "force-dynamic"
 
@@ -37,6 +38,7 @@ export async function DELETE(req: NextRequest) {
       return NextResponse.json({ error: "Passkey not found" }, { status: 404 })
     }
     await prisma.webAuthnCredential.delete({ where: { id } })
+    await logAction(payload.userId, "passkey.removed", { name: cred.name }, req)
     return NextResponse.json({ success: true })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
