@@ -205,6 +205,21 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ASTRO — career clarity (a genuine differentiator, tastefully framed) */}
+      <section className="sec">
+        <div className="wrap">
+          <p className="eyebrow">Career clarity</p>
+          <h2 className="h2">Know what fits — before you choose.</h2>
+          <p className="sub">Beyond skills and experience, Vrittih offers an in‑house Vedic &amp; numerology reading from your birth details — pointing to the career directions that suit you best. Guidance to decide with, never a gate.</p>
+          <div className="grid2">
+            <div className="card"><div className="cardT">Best‑fit career direction</div><p className="cardD">Your chart and your experience, blended into clear, best‑fit roles — with the reasoning shown.</p></div>
+            <div className="card"><div className="cardT">A reading for your day</div><p className="cardD">Advanced members get a short daily guidance line — what to lean into, what to ease off.</p></div>
+            <div className="card"><div className="cardT">Entirely in‑house &amp; private</div><p className="cardD">Computed on our own engine from your date of birth — no third‑party service ever sees it.</p></div>
+            <div className="card"><div className="cardT">Yours to weigh</div><p className="cardD">It informs your choice; you always decide. Add your date of birth to unlock it.</p></div>
+          </div>
+        </div>
+      </section>
+
       {/* NUMBERS — only what is real */}
       <section className="sec alt">
         <div className="wrap">
