@@ -97,20 +97,36 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       where: { enrollmentId_lessonId: { enrollmentId: enrollment.id, lessonId } },
       create: { enrollmentId: enrollment.id, lessonId }, update: {},
     })
+    const total = course.lessons.length
     const doneCount = await prisma.lessonProgress.count({ where: { enrollmentId: enrollment.id } })
-    const pct = courseProgressPct(course.lessons.length, doneCount)
-    const complete = pct >= 100 && course.lessons.length > 0
+    const pct = courseProgressPct(total, doneCount)
+    // Completion is COUNT-based (every lesson done) — never a rounding artefact.
+    const complete = total > 0 && doneCount >= total
 
-    let certificateCode = enrollment.certificateCode
-    if (complete && enrollment.status !== "COMPLETED") {
-      // Issue a completion certificate (once) + write competency evidence.
-      certificateCode = newVerificationCode()
-      const me = await prisma.user.findUnique({ where: { id: ctx.userId }, select: { name: true } })
+    // Already completed: refresh progress only. NEVER downgrade a completed enrollment or
+    // re-issue a certificate (adding a lesson later can't revoke a past completion).
+    if (enrollment.status === "COMPLETED") {
+      await prisma.enrollment.update({ where: { id: enrollment.id }, data: { progressPct: pct } }).catch(() => {})
+      return NextResponse.json({ success: true, progressPct: pct, complete: true, certificateCode: enrollment.certificateCode })
+    }
+
+    if (complete) {
+      // Atomically CLAIM completion — only the first request that flips ACTIVE→COMPLETED
+      // issues the certificate + evidence (fixes replay/concurrency double-issuance).
+      const code = newVerificationCode()
+      const claimed = await prisma.enrollment.updateMany({
+        where: { id: enrollment.id, status: { not: "COMPLETED" } },
+        data: { status: "COMPLETED", completedAt: new Date(), progressPct: 100, certificateCode: code },
+      })
+      if (claimed.count !== 1) {
+        const cur = await prisma.enrollment.findUnique({ where: { id: enrollment.id }, select: { certificateCode: true } })
+        return NextResponse.json({ success: true, progressPct: 100, complete: true, certificateCode: cur?.certificateCode })
+      }
       await prisma.certificate.create({
         data: {
           userId: ctx.userId, issuedById: course.authorId, title: `Completed: ${course.title}`, kind: "course",
-          serial: newSerial(), verificationCode: certificateCode, issuerName: course.author?.name || "Vrittih Academy",
-          skills: jarr(course.skills).join(", ") || null, note: `Course completion`,
+          serial: newSerial(), verificationCode: code, issuerName: course.author?.name || "Vrittih Academy",
+          skills: jarr(course.skills).join(", ") || null, note: "Course completion",
         },
       }).catch(() => {})
       // Competency evidence: course completion is a real (mid-strength) signal.
@@ -124,9 +140,12 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           update: { proficiency: next, source: "course", evidenceRef: course.id, assessedAt: new Date() },
         }).catch(() => {})
       }
+      return NextResponse.json({ success: true, progressPct: 100, complete: true, certificateCode: code })
     }
-    await prisma.enrollment.update({ where: { id: enrollment.id }, data: { progressPct: pct, status: complete ? "COMPLETED" : "ACTIVE", completedAt: complete ? new Date() : null, certificateCode } })
-    return NextResponse.json({ success: true, progressPct: pct, complete, certificateCode })
+
+    // Not complete: advance progress only, keep ACTIVE (never set completedAt).
+    await prisma.enrollment.update({ where: { id: enrollment.id }, data: { progressPct: pct } }).catch(() => {})
+    return NextResponse.json({ success: true, progressPct: pct, complete: false })
   }
 
   return NextResponse.json({ error: "Unknown action." }, { status: 400 })

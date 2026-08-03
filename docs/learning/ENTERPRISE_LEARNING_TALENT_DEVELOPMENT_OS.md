@@ -65,7 +65,7 @@ Legend: ✅ reuse · ◐ extend · ⬜ build · ▶ now.
 | 2 | Learning Intelligence Engine | ◐ | Readiness/velocity/prediction from `CareerSnapshot`+forecast+gap. Batch 3/4. |
 | 3 | Learning Path Engine | ✅ | `lib/learning/course.assemblePath` (greedy gap‑closing course sequence, honest uncovered) + `/api/learning/path` (target skills or a visible JobTemplate's competencies). |
 | 4 | Content Platform | ✅ | `Course`/`Lesson`/`Enrollment`/`LessonProgress` (both DBs) mapped to competencies; `lib/learning/course.ts` (progress/next/duration/coverage; 14 tests); `/api/courses` + `/api/courses/[id]` (author/publish, enroll, complete‑lesson → **cert + competency evidence**); `/academy` UI (browse · my learning · path · author). |
-| 5 | AI Tutor | ⬜ | In‑house, via AIOS `execute()` — teach/QA/plan/quiz from knowledge index + resources + learner gap. Batch 3. |
+| 5 | AI Tutor | ✅ | `lib/learning/tutor.ts` (19 tests): intent classification, study plans, practice sets, honest quiz outlines, concept maps — deterministic, no LLM. Registered as AIOS capability `learning.tutor` (audited); focus skills from the question or the learner's weakest competencies. `/api/tutor` + `/tutor` UI. |
 | 6 | Assessment Platform | ✅ | `Test`/`TestAttempt` — reused; competency‑linked validation added. |
 | 7 | Project‑Based Learning | ◐ | Reuse `resources.projectIdea` + profile; project→competency evidence. Batch 4. |
 | 8 | Mentoring & Coaching | ◐ | Internship mentoring exists; add mentor discovery/matching (reuse similarity). Batch 4. |

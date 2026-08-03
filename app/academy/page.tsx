@@ -20,10 +20,21 @@ export default function AcademyPage() {
     try { const r = await fetch("/api/courses"); if (r.status === 401) { setState("denied"); return } setData(await r.json()); setState("ok") } catch { setState("denied") }
   }
   useEffect(() => { load() }, [])
-  async function openCourse(idOrSlug: string) { setOpen(null); try { setOpen(await fetch(`/api/courses/${idOrSlug}`).then(r => r.json())) } catch {} }
+  async function openCourse(idOrSlug: string) {
+    setOpen(null); setErr("")
+    try {
+      const r = await fetch(`/api/courses/${idOrSlug}`); const d = await r.json().catch(() => null)
+      if (r.ok && d?.course) setOpen(d); else setErr(d?.error || "Couldn't open that course.")
+    } catch { setErr("Couldn't open that course.") }
+  }
   async function courseAction(courseId: string, body: any, reopen = true) {
     setBusy("act"); setErr("")
-    try { const d = await fetch(`/api/courses/${courseId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (d.error) setErr(d.error); if (reopen && open) await openCourse(open.course.id); await load() } finally { setBusy(null) }
+    try {
+      const r = await fetch(`/api/courses/${courseId}`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      const d = await r.json().catch(() => null)
+      if (!r.ok || d?.error) setErr(d?.error || "That action didn't go through.")
+      if (reopen && open?.course) await openCourse(open.course.id); await load()
+    } catch { setErr("Network error.") } finally { setBusy(null) }
   }
   async function createCourse() {
     if (!nc.title.trim()) { setErr("Course title required."); return }
@@ -144,6 +155,7 @@ export default function AcademyPage() {
                   ? <span style={S.pctTag}>{open.enrollment.progressPct}%</span>
                   : <button style={S.cta} onClick={() => courseAction(open.course.id, { action: "enroll" })} disabled={busy === "act"}>Enroll</button>}
             </div>
+            {err && <div style={S.err}>{err}</div>}
             {open.course.summary && <p style={S.sub}>{open.course.summary}</p>}
             {open.enrollment?.certificateCode && <a href={`/verify/cert/${open.enrollment.certificateCode}`} style={S.certLink}><IconAward size={13} /> View certificate</a>}
             <div style={S.lessons}>

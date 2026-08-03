@@ -12,7 +12,9 @@ export type LessonType = (typeof LESSON_TYPES)[number]
 
 export function courseProgressPct(totalLessons: number, doneLessons: number): number {
   if (totalLessons <= 0) return 0
-  return Math.max(0, Math.min(100, Math.round((doneLessons / totalLessons) * 100)))
+  if (doneLessons >= totalLessons) return 100
+  // Never round an INCOMPLETE course up to 100 (199/200 must not read as done).
+  return Math.max(0, Math.min(99, Math.floor((doneLessons / totalLessons) * 100)))
 }
 
 export interface LessonLike { id: string; order?: number }
@@ -34,11 +36,11 @@ function norm(s?: string[]): string[] {
 }
 
 export interface CourseLike { id: string; title?: string; skills?: string[]; level?: string }
-export interface CourseRecommendation<T> { course: T; covers: string[]; coverage: number; newSkillCount: number }
+export interface CourseRecommendation<T> { course: T; covers: string[]; coverage: number; newSkillCount: number; breadth: number }
 
 /* Rank courses by how much of a target skill set (a gap) they teach. Coverage = share of
- * target skills the course covers; ties broken by breadth. Only courses that cover at
- * least one target skill are returned. */
+ * target skills the course covers; ties broken by the course's overall breadth (total
+ * taught skills). Only courses that cover at least one target skill are returned. */
 export function coursesForGap<T extends CourseLike>(targetSkills: string[], courses: T[]): CourseRecommendation<T>[] {
   const target = norm(targetSkills)
   const tset = new Set(target)
@@ -47,10 +49,10 @@ export function coursesForGap<T extends CourseLike>(targetSkills: string[], cour
     .map(c => {
       const cs = norm(c.skills)
       const covers = cs.filter(s => tset.has(s))
-      return { course: c, covers, coverage: +(covers.length / target.length).toFixed(2), newSkillCount: covers.length }
+      return { course: c, covers, coverage: +(covers.length / target.length).toFixed(2), newSkillCount: covers.length, breadth: cs.length }
     })
     .filter(r => r.covers.length > 0)
-    .sort((a, b) => b.coverage - a.coverage || b.newSkillCount - a.newSkillCount)
+    .sort((a, b) => b.coverage - a.coverage || b.breadth - a.breadth)
 }
 
 /* Assemble an ordered learning path over a target gap: greedily pick the course that

@@ -33,6 +33,7 @@ export const CAPABILITIES: CapabilitySeed[] = [
   { capId: "career.dna", name: "Compute Career DNA", provider: "career.dna", modelId: "career-dna-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "career.frontier", name: "Market skill frontier", provider: "career.frontier", modelId: "icire-rank-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "recruit.copilot", name: "Recruiter copilot — next best actions", provider: "recruit.copilot", modelId: "recruit-copilot-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "learning.tutor", name: "In-house AI Tutor", provider: "learning.tutor", modelId: "tutor-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "career.coach.answer", name: "AI Career Coach answer", provider: "career.coach.answer", modelId: "intent-classify-v1", safetyClass: "standard", permissions: ["auth"] },
   // §10/§11/§19/§25/§18 — cognitive engines, gateway-executable + audited.
   { capId: "reasoning.infer", name: "Reasoning (argumentation + inference)", provider: "reasoning.infer", modelId: "reason-engine-v1", safetyClass: "standard", permissions: ["auth"] },

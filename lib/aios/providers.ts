@@ -12,6 +12,8 @@ import { computeFrontier } from "@/lib/career/frontier"
 import { inputFromUser } from "@/lib/career/fromUser"
 import { recruitCopilot } from "@/lib/copilot/recruit"
 import { pipelineHealth } from "@/lib/talent/pools"
+import { tutorRespond } from "@/lib/learning/tutor"
+import { allAliases } from "@/lib/career/taxonomy"
 
 async function candidate(userId: string) {
   const input = await inputFromUser(userId)
@@ -91,4 +93,30 @@ registerProvider("recruit.copilot", async (ctx) => {
     stalePools, templatesPending, rolesLowFlow, referralsToTriage,
   })
   return { output: result, explanation: result.summary, modelId: "recruit-copilot-v1" }
+})
+
+/* In-house AI Tutor — deterministic pedagogy via lib/learning/tutor. Focus skills come
+ * from skills named in the question, else the learner's weakest competencies' skills.
+ * Runs through the gateway (audited). */
+registerProvider("learning.tutor", async (ctx) => {
+  const q = String(ctx.input?.question || "")
+  const uid = ctx.subjectId as string | undefined
+  const ql = q.toLowerCase()
+  // 1) skills explicitly named in the question (canonicalised).
+  const named = new Set<string>()
+  for (const { alias, canon } of allAliases()) { if (alias.length >= 3 && ql.includes(alias)) named.add(canon) }
+  let focus = Array.from(named).slice(0, 4)
+  // 2) else fall back to the learner's weakest competencies' skills.
+  if (!focus.length && uid) {
+    const weak = await prisma.userCompetency.findMany({ where: { userId: uid }, orderBy: { proficiency: "asc" }, take: 3, select: { competencyKey: true } }).catch(() => [] as any[])
+    if (weak.length) {
+      const comps = await prisma.competency.findMany({ where: { key: { in: weak.map((w: any) => w.competencyKey) } }, select: { skills: true, label: true } })
+      const s = new Set<string>()
+      for (const c of comps) { try { for (const x of JSON.parse(c.skills || "[]")) s.add(String(x)) } catch {} }
+      focus = s.size ? Array.from(s).slice(0, 4) : comps.map(c => c.label)
+    }
+  }
+  const days = Number(ctx.input?.days) || 14
+  const res = tutorRespond(q, { focusSkills: focus, days })
+  return { output: res, explanation: res.explanation, modelId: "tutor-v1" }
 })
