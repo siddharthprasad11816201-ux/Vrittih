@@ -306,7 +306,8 @@ Legend: ✅ shipped · 🟡 partial (exists in domain form, not yet generalized/
 | Coach → AIOS audit | 4,7 | ✅ | `app/api/career/coach` writes `AiRun` as `agent:career-coach` |
 | KnowledgeItem + governance | 13,14 | 🟡 | schema (`KnowledgeItem`,`KnowledgeRevision`) shipped; pipeline/classify libs pending |
 | Recommendation/Feedback | 18 | 🟡 | schema (`Recommendation`,`RecommendationFeedback`) shipped; `OutcomeSignal` + adaptive lib pending |
-| Self-evaluation + AI-Ops | 25,29 | 🟡 | `app/api/ai-ops` (real counts) + `EvalRun` schema shipped; eval jobs + dashboard UI pending |
+| Self-evaluation + AI-Ops | 25,29 | 🟡 | `app/api/ai-ops` (real counts) + `lib/aios/eval.ts` (`runSelfEval` → `EvalRun`) + `app/api/cron/ai`; dashboard UI pending |
+| Background-learning cron (event drain + eval) | 23,25 | ✅ | `app/api/cron/ai` (drains events + self-eval), `vercel.json` daily 06:00 |
 | Continuous knowledge pipeline | 13 | ⬜ | `lib/knowledge/pipeline.ts`,`classify.ts` (pending) |
 | Knowledge graph tables | 15 | ⬜ | `KnowledgeNode`/`KnowledgeEdge` + `lib/knowledge/graph.ts` (pending) |
 | Reasoning + Planning stacks | 10,11 | ⬜ | `lib/aios/{reason,plan}/*` (pending) |
@@ -314,7 +315,6 @@ Legend: ✅ shipped · 🟡 partial (exists in domain form, not yet generalized/
 | Experimentation framework | 20 | ⬜ | (pending) |
 | Digital twin (generalized) | 24 | ⬜ | `lib/twin/*` (pending; career sim exists) |
 | Autonomous maintenance | 28 | ⬜ | `lib/knowledge/maintain.ts` (pending) |
-| Event-bus cron drain + eval jobs | 23,25 | ⬜ | `app/api/cron/ai-*` (pending) |
 
 ## 35. Design Decision Records (DDRs)
 
@@ -340,7 +340,8 @@ Runtime: Next.js 14.2.29 (App Router), Prisma (SQLite dev / Supabase Postgres pr
 2. Knowledge governance/pipeline, semantic index and knowledge-graph tables pending.
 3. Hierarchical memory, general recommendation/feedback, reasoning/planning stacks, reflection, experimentation, event bus, digital-twin generalization, self-eval, AI-Ops dashboard, ChangeProposal review, autonomous maintenance all pending.
 4. Enforcement that "nothing bypasses `AIOS.execute()`" is currently by convention + review; a lint rule is planned.
-5. Two design passes (`SEI_SPEC.md`, `SEI_SPEC_AIOS.md`) are still finalizing; their grounded schema field-lists will be merged into §30 and any deltas recorded in §41.
+5. **Design passes complete; this document is the single master** (the scratch `SEI_SPEC*.md` are superseded and not part of the repo). The completed AIOS design validated the shipped foundation and surfaced these **queued runtime enhancements** (next cycles): (a) circuit-breaker + health computed from `AiRun` stats with automatic half-open/close; (b) model **version-pin rollback** at run time (no deploy); (c) **PII redaction** of audited inputs/outputs for `pii`/`sensitive` data-class capabilities (audit already stores only `inputsHash` + outputs, never raw prompts — redaction extends this to outputs); (d) **fallback capabilities** on provider failure; (e) `deriveFlags()` evidence/context capability-flags helper bridging `lib/entitlements`, so `execute()` authorization is driven by held flags, never role. None are blockers; the current gateway is fail-closed and audited.
+6. Foundation-phase remaining (⬜ in §34): continuous knowledge pipeline + classifier, knowledge-graph tables, reasoning/planning stacks, reflection, experimentation framework, generalized digital twin, autonomous maintenance, AI-Ops dashboard UI.
 
 ## 39. Migration Notes
 
@@ -383,6 +384,7 @@ flowchart LR
 
 ## 41. Changelog
 
+- **v0.3 (2026-08-03)** — **Background learning + self-evaluation.** `lib/aios/eval.ts` `runSelfEval()` computes real metrics (execution success rate, semantic index size, memory entries, knowledge verified-ratio & freshness, recommendation feedback coverage) from the audit/index/knowledge stores → `EvalRun` trend rows. `app/api/cron/ai` (cron-auth) drains the event bus + records the self-eval snapshot; wired into `vercel.json` (daily 06:00). Also: the standalone AIOS enterprise design pass completed and **validated the shipped foundation** (execute gateway, `AiModel`/`Capability`/`AiRun`, in-house providers, fail-safe, flags-not-roles); enhancements queued in §38 (circuit-breaker/health, version-pin rollback, PII redaction, fallback capabilities, deriveFlags). Build green; tracker updated.
 - **v0.2 (2026-08-03)** — **AIOS foundation implemented & deployed.** Added 16 additive Prisma models (`ModelRegistry`, `Capability`, `AgentDef`, `PromptTemplate`, `ToolDef`, `AiRun`, `KnowledgeItem`, `KnowledgeRevision`, `SemanticDoc`, `SemanticPosting`, `MemoryEntry`, `PlatformEvent`, `EvalRun`, `ChangeProposal`, `Recommendation`, `RecommendationFeedback`) — pushed to SQLite + Postgres. Built: `lib/aios/{registry,execute,audit,events,providers,index}.ts` (execution gateway + registries + audit + event bus + built-in capability providers), `lib/knowledge/semindex.ts` (in-house TF-IDF semantic index; pure core unit-tested — correct rankings, stopwords, cosine), `lib/memory/store.ts` (hierarchical memory). APIs: `POST /api/aios/execute` (gateway), `GET /api/ai-ops` (unified observability, admin), `GET|PATCH /api/admin/ai/change-proposals` (human review). The Career Coach now writes an `AiRun` per call as `agent:career-coach`. Full build green. Tracker §34 updated. *Reviews applied:* architecture (reuse over rebuild; providers wrap shared libs — no parallel logic), security (execute() fail-closed + auth + forbidden-auto gate; admin/AI routes gated), data (additive, indexed, both-DB), QA (build + semindex unit test).
 - **v0.1 (2026-08-03)** — Master specification created and established as the single source of truth. Consolidates the mission, principles, AIOS runtime + execution pipeline, multi-model registry, six layers, agent platform + orchestration, capability graph, reasoning/planning stacks, knowledge pipeline + governance + verified learning, knowledge graph, in-house semantic index, enterprise memory, adaptive recommendations + feedback, reflection/self-improvement, experimentation, prompt/tool registries, event-driven learning, digital twin, self-evaluation, explainability, safety/governance + safe-evolution, autonomous maintenance, observability, consolidated data model, module map, implementation strategy, tracker, DDRs, dependencies, known gaps, migration notes, diagrams and roadmap. Mapped existing shipped ICIRE/coach/calibration components onto the layers. Implementation of the AIOS foundation to follow, updating §34/§41 per component.
 
