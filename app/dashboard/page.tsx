@@ -5,6 +5,7 @@ import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
 import EmptyState from "@/components/vrittih/EmptyState"
 import IllustrationSlot from "@/components/vrittih/IllustrationSlot"
+import PipelineDonut from "@/components/vrittih/PipelineDonut"
 import {
   IconBriefcase, IconFileText, IconActivity, IconTarget, IconAward, IconCheckCircle,
   IconUsers, IconVideo, IconNetwork, IconMessage, IconSettings, IconClipboard,
@@ -190,7 +191,16 @@ export default function Dashboard() {
             </section>
           )}
 
-          {/* Stat tiles */}
+          {/* Overview stats. Recruiters get the one-circle pipeline donut (design
+              10a); job-seekers keep the per-metric sparkline tiles. */}
+          {isEmployer ? (
+            <PipelineDonut title="Hiring pipeline" segments={[
+              { label: "Applications", value: stats?.totalApplicants ?? 0, color: "#6495ED", icon: <IconFileText size={16} />, href: "/dashboard/pipeline" },
+              { label: "Interviews", value: applications.filter(a => a.status === "INTERVIEW").length, color: "#F59E0B", icon: <IconVideo size={16} />, href: "/dashboard/pipeline" },
+              { label: "Offers", value: applications.filter(a => a.status === "OFFERED").length, color: "#0EA5E9", icon: <IconAward size={16} />, href: "/dashboard/pipeline" },
+              { label: "Hired", value: applications.filter(a => a.status === "HIRED").length, color: "#22C55E", icon: <IconCheckCircle size={16} />, href: "/dashboard/pipeline" },
+            ]} />
+          ) : (
           <div style={S.statRow} className="dStatRow">
             {tiles.map((t: any) => {
               const s = t.series || []
@@ -215,6 +225,7 @@ export default function Dashboard() {
               )
             })}
           </div>
+          )}
 
           <div style={S.grid} className="dGrid">
             {/* Left column */}
