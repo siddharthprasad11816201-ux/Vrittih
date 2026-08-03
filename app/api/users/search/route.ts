@@ -17,9 +17,9 @@ export async function GET(req: NextRequest) {
     if (q) where.OR = [{ name:ci(q) },{ email:ci(q) }]
     if (!email && !q) return NextResponse.json({ users: [] })
     const user = email
-      ? await prisma.user.findUnique({ where:{ email }, select:{ id:true,name:true,email:true,avatar:true,headline:true } })
+      ? await prisma.user.findUnique({ where:{ email }, select:{ id:true,name:true,email:true,avatar:true,headline:true,seniority:true } })
       : null
-    const users = !email ? await prisma.user.findMany({ where, select:{ id:true,name:true,email:true,avatar:true,headline:true }, take:10 }) : []
+    const users = !email ? await prisma.user.findMany({ where, select:{ id:true,name:true,email:true,avatar:true,headline:true,seniority:true }, take:10 }) : []
     return NextResponse.json({ user, users })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

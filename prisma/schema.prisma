@@ -23,6 +23,7 @@ model User {
   source           String?        // provenance: "indeed", "signup", null=organic
   openToWork       Boolean        @default(false)  // LinkedIn-style "open to work" signal
   role             String         @default("JOBSEEKER")
+  seniority        String         @default("MID")   // interviewer seniority band for interview governance: JUNIOR|MID|SENIOR|LEAD|EXECUTIVE
   paid             Boolean        @default(false)
   paidAt           DateTime?
   paymentId        String?
@@ -1450,6 +1451,11 @@ model Interview {
   roomCode      String    @unique
   recordingUrl  String?
   notes         String?
+  // Who-may-attend governance
+  visibility    String    @default("PARTICIPANTS") // PARTICIPANTS | COMPANY | LINK — who may view/join
+  roleLevel     String?   // seniority band of the position: IC | SENIOR | LEAD | EXECUTIVE
+  confidential  Boolean   @default(false)          // hides notes/recording from OBSERVER-role attendees
+  govJson       String?   // snapshot of the governance evaluation at schedule time (violations/warnings/overrides)
   createdAt     DateTime  @default(now())
   host          User      @relation("InterviewHost", fields: [hostId], references: [id])
   participants  InterviewParticipant[]

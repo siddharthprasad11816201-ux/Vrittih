@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { mayView, mayJoin, maySeeConfidential } from "@/lib/interview/governance"
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -18,12 +19,43 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       },
     })
     if (!interview) return NextResponse.json({ error: "Interview not found" }, { status: 404 })
-    // Only the host or an invited participant may see it — notes, recordingUrl and
-    // the roomCode (the join credential) must not leak to anyone with the id/code.
-    const isMember = interview.hostId === payload.userId || (interview.participants || []).some((pp: any) => pp.userId === payload.userId)
+
     const isAdmin = payload.role === "ADMIN" || payload.role === "SUPER_ADMIN"
-    if (!isMember && !isAdmin) return NextResponse.json({ error: "Interview not found" }, { status: 404 })
-    return NextResponse.json({ interview })
+    const attendeeIds: string[] = (interview.participants || []).map((pp: any) => pp.userId)
+
+    // COMPANY visibility: resolve which host ids share a company with the viewer.
+    let viewerCompanyHostIds: string[] = []
+    if ((interview.visibility || "").toUpperCase() === "COMPANY" && !isAdmin) {
+      const myCos = await prisma.company.findMany({ where: { ownerId: payload.userId }, select: { name: true } })
+      const names = myCos.map(c => c.name)
+      if (names.length) {
+        const peers = await prisma.company.findMany({ where: { name: { in: names } }, select: { ownerId: true } })
+        viewerCompanyHostIds = peers.map(p => p.ownerId).filter(Boolean) as string[]
+      }
+    }
+
+    // Governance: who may VIEW at all. Notes, recordingUrl and the roomCode (the
+    // join credential) must not leak to anyone the visibility rule excludes.
+    const canView = mayView({
+      viewerId: payload.userId, isAdmin, hostId: interview.hostId,
+      visibility: interview.visibility, attendeeIds, viewerCompanyHostIds,
+    })
+    if (!canView) return NextResponse.json({ error: "Interview not found" }, { status: 404 })
+
+    // The viewer's role in this interview drives confidential material access.
+    const myRole = interview.hostId === payload.userId ? "HOST"
+      : (interview.participants || []).find((pp: any) => pp.userId === payload.userId)?.role || (isAdmin ? "HOST" : "OBSERVER")
+    const join = mayJoin({ viewerId: payload.userId, isAdmin, hostId: interview.hostId, visibility: interview.visibility, attendeeIds })
+
+    // Redact confidential notes/recording from observers & candidates.
+    if (!maySeeConfidential(myRole, !!interview.confidential)) {
+      interview.notes = null
+      interview.recordingUrl = null
+    }
+    let governance: any = null
+    try { governance = interview.govJson ? JSON.parse(interview.govJson) : null } catch {}
+
+    return NextResponse.json({ interview: { ...interview, govJson: undefined }, myRole, canJoin: join.allowed, joinReason: join.reason, governance })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

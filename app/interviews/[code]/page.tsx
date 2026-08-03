@@ -30,6 +30,8 @@ export default function InterviewRoom() {
   const router = useRouter()
   const code = params.code as string
   const [interview, setInterview] = useState<any>(null)
+  const [canJoin, setCanJoin] = useState(true)
+  const [joinReason, setJoinReason] = useState("")
   const [me, setMe] = useState<any>(null)
   const [peers, setPeers] = useState<Peer[]>([])
   const [localStream, setLocalStream] = useState<MediaStream|null>(null)
@@ -62,6 +64,8 @@ export default function InterviewRoom() {
     ]).then(([meData, intData]) => {
       setMe(meData.user)
       setInterview(intData.interview)
+      setCanJoin(intData.canJoin !== false)
+      setJoinReason(intData.joinReason || "")
     })
     return () => {
       leaveRoom()
@@ -320,7 +324,9 @@ export default function InterviewRoom() {
           <div><dt>Duration</dt><dd>{interview.duration} min</dd></div>
         </dl>
         {interview.notes && <p className="mLobbyNotes">{interview.notes}</p>}
-        <button onClick={joinRoom} className="mJoin">Join now</button>
+        {canJoin
+          ? <button onClick={joinRoom} className="mJoin">Join now</button>
+          : <p className="mLobbyNotes" style={{ color: "#FEC84B", display: "flex", gap: 8, alignItems: "center" }}><IconShield size={14} /> {joinReason || "You're not permitted to join this interview."}</p>}
         <button onClick={() => router.push("/interviews")} className="mBack">Back to interviews</button>
         <p className="mLobbyFine"><IconShield size={12} /> Peer-to-peer and encrypted in transit. Your camera starts only after you join.</p>
       </div>

@@ -73,6 +73,8 @@ export default function PayPage() {
   const [couponCode, setCouponCode] = useState("")
   const [coupon, setCoupon] = useState<any>(null)   // /api/payment/apply-coupon result
   const [couponBusy, setCouponBusy] = useState(false)
+  const [autoRenew, setAutoRenew] = useState(false) // recurring auto-pay opt-in (UPI AutoPay / card)
+  const [subMsg, setSubMsg] = useState("")          // note shown when auto-renew isn't enabled yet
   // Live catalogue (admin prices applied). Falls back to the shipped defaults so
   // the page still renders if the endpoint is briefly unavailable.
   const [catalogue, setCatalogue] = useState<Plan[]>(DEFAULT_PLANS)
@@ -150,6 +152,33 @@ export default function PayPage() {
       setError("Network error. Please try again.")
       setBusy(false)
     }
+  }
+
+  // Recurring auto-pay: create a Razorpay subscription and open Checkout in
+  // subscription mode. The subscription.charged webhook activates the plan
+  // server-side, so the client just confirms. Env-gated — if the owner hasn't
+  // enabled Subscriptions yet, we show a note and leave one-time pay available.
+  async function startSubscription() {
+    if (!plan) return
+    setBusy(true); setError(""); setSubMsg("")
+    try {
+      const d = await fetch("/api/payment/subscribe", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ planId: plan.id }),
+      }).then(r => r.json())
+      if (!d.enabled || !d.subscriptionId) { setSubMsg(d.error || "Auto-renew isn't available yet."); setBusy(false); return }
+      if (!window.Razorpay) { setError("The payment window didn't load — check your connection and retry."); setBusy(false); return }
+      const rzp = new window.Razorpay({
+        key: d.keyId, subscription_id: d.subscriptionId,
+        name: "Vrittih", description: `${plan.name} · auto-renew`,
+        prefill: { email: me?.email, name: me?.name },
+        theme: { color: "#6495ED" },
+        handler: () => { setSuccess(true); setTimeout(() => router.push("/dashboard"), 1800) },
+        modal: { ondismiss: () => setBusy(false) },
+      })
+      rzp.on("payment.failed", (r: any) => { setError(r.error?.description || "The payment didn't go through. Please try again."); setBusy(false) })
+      rzp.open()
+    } catch { setError("Network error. Please try again."); setBusy(false) }
   }
 
   async function applyCoupon() {
@@ -259,15 +288,26 @@ export default function PayPage() {
           ? <p className="couponOk">{coupon.waiver ? "This code covers the full amount — activate for free below." : `Code applied — you save ${money(rate ? rate.amount * coupon.discountCHF : null)}/month.`}</p>
           : <p className="couponErr">{coupon.reason || "That code isn't valid."}</p>)}
 
+        {!isWaiver && (
+          <label className="autopay">
+            <input type="checkbox" checked={autoRenew} onChange={e => { setAutoRenew(e.target.checked); setSubMsg("") }} />
+            <span>
+              <b>Auto-renew each month</b>
+              <em>{currency === "INR" ? "UPI AutoPay, card or netbanking — never miss a renewal." : "Card on file — never miss a renewal."} Cancel any time.</em>
+            </span>
+          </label>
+        )}
+        {subMsg && <p className="upiHint" style={{ color: "var(--ink2)" }}>{subMsg}</p>}
+
         {isWaiver ? (
           <button onClick={activateWaiver} disabled={busy || !plan} className={"btn wide" + (busy ? " off" : "")}>
             <IconLock size={15} />
             {busy ? "Activating…" : "Activate free"}
           </button>
         ) : (
-          <button onClick={pay} disabled={busy || !plan || !rate} className={"btn wide" + (busy || !rate ? " off" : "")}>
+          <button onClick={autoRenew ? startSubscription : pay} disabled={busy || !plan || (!autoRenew && !rate)} className={"btn wide" + (busy || (!autoRenew && !rate) ? " off" : "")}>
             <IconLock size={15} />
-            {busy ? "Opening secure checkout…" : plan ? `Subscribe — ${money(localEffective)} / month` : "Choose a plan"}
+            {busy ? "Opening secure checkout…" : plan ? (autoRenew ? `Set up auto-renew — ${money(localEffective)} / month` : `Subscribe — ${money(localEffective)} / month`) : "Choose a plan"}
           </button>
         )}
 
@@ -351,6 +391,11 @@ const CSS = `
 .couponIn:focus{border-color:var(--g)}
 .couponBtn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:0 18px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 .couponBtn:disabled{opacity:.5;cursor:not-allowed}
+.autopay{display:flex;gap:11px;align-items:flex-start;margin-top:18px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--bg);cursor:pointer}
+.autopay input{margin-top:2px;width:17px;height:17px;accent-color:var(--g);cursor:pointer;flex-shrink:0}
+.autopay span{display:flex;flex-direction:column;gap:2px}
+.autopay b{font-size:14px;font-weight:600;color:var(--ink)}
+.autopay em{font-style:normal;font-size:12.5px;color:var(--ink2);line-height:1.5}
 .couponOk{font-size:12.5px;color:var(--gh);margin:8px 2px 0;font-weight:600;line-height:1.5}
 .couponErr{font-size:12.5px;color:#B42318;margin:8px 2px 0;font-weight:500;line-height:1.5}
 .fine{font-size:12.5px;color:var(--ink3);text-align:center;margin:12px 0 0;line-height:1.6}
