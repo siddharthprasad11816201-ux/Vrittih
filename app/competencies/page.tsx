@@ -7,9 +7,10 @@ const KIND_LABEL: Record<string, string> = {
   technical: "Technical", behavioural: "Behavioural", leadership: "Leadership", research: "Research",
   teaching: "Teaching", communication: "Communication", innovation: "Innovation", future: "Future skills",
 }
+// Self-assessment can indicate up to "Proficient" only — Advanced/Expert require
+// verified evidence (assessments/projects), enforced server-side (0.5 cap).
 const BAND_LEVELS = [
-  { v: 0, label: "—" }, { v: 0.1, label: "Novice" }, { v: 0.3, label: "Developing" },
-  { v: 0.5, label: "Proficient" }, { v: 0.7, label: "Advanced" }, { v: 0.9, label: "Expert" },
+  { v: 0, label: "—" }, { v: 0.1, label: "Novice" }, { v: 0.3, label: "Developing" }, { v: 0.5, label: "Proficient" },
 ]
 const bandColor = (b: string) => b === "Expert" ? "var(--v-green)" : b === "Advanced" ? "var(--v-accent)" : b === "Proficient" ? "var(--v-blue)" : b === "Developing" ? "var(--v-amber)" : "var(--v-ink-3)"
 
@@ -75,7 +76,7 @@ export default function CompetenciesPage() {
                       <div key={c.key} style={S.card}>
                         <div style={S.cardTop}>
                           <span style={S.cLabel}>{c.label}</span>
-                          <span style={{ ...S.band, color: bandColor(c.band) }}>{c.band}</span>
+                          <span style={{ ...S.band, color: c.myProficiency > 0 ? bandColor(c.band) : "var(--v-ink-3)" }}>{c.myProficiency > 0 ? c.band : "Not set"}</span>
                         </div>
                         <div style={S.bar}><div style={{ ...S.barFill, width: `${Math.round((c.myProficiency || 0) * 100)}%`, background: bandColor(c.band) }} /></div>
                         {c.skills?.length > 0 && <div style={S.skills}>{c.skills.slice(0, 4).map((s: string) => <span key={s} style={S.skill}>{s}</span>)}</div>}

@@ -88,7 +88,9 @@ export function orgHeatmap(rows: { competencyKey: string; proficiency: number }[
     agg.set(r.competencyKey, g)
   }
   const cells: HeatCell[] = []
-  for (const [key, g] of agg) { const avg = g.sum / g.n; cells.push({ key, avg: +avg.toFixed(2), band: proficiencyBand(avg), count: g.n }) }
+  // Band from the SAME rounded value that is reported, so avg and band never contradict
+  // at a boundary.
+  for (const [key, g] of agg) { const avg = +(g.sum / g.n).toFixed(2); cells.push({ key, avg, band: proficiencyBand(avg), count: g.n }) }
   cells.sort((a, b) => a.avg - b.avg)
   return cells
 }

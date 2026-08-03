@@ -27,8 +27,11 @@ export async function GET(req: NextRequest) {
   let gap: any = null
   const target = new URL(req.url).searchParams.get("target")
   if (target) {
-    const tpl = await prisma.jobTemplate.findUnique({ where: { id: target }, select: { title: true, requiredCompetencies: true } }).catch(() => null)
-    if (tpl) {
+    const tpl = await prisma.jobTemplate.findUnique({ where: { id: target }, select: { title: true, requiredCompetencies: true, createdById: true, status: true } }).catch(() => null)
+    // Mirror the canonical /api/job-templates/[id] visibility: only APPROVED (shared)
+    // templates, or your own, or admin — never disclose another user's DRAFT title/needs.
+    const visible = tpl && (tpl.status === "APPROVED" || tpl.createdById === ctx.userId || ctx.has("admin.access"))
+    if (tpl && visible) {
       const reqs = (() => { try { return JSON.parse(tpl.requiredCompetencies || "[]") } catch { return [] } })()
       const targets = reqs.map((r: any) => ({ key: r.key, required: 0.6 }))
       gap = { title: tpl.title, ...gapAnalysis(targets, myMap) }
@@ -47,7 +50,10 @@ export async function POST(req: NextRequest) {
   // Learner self-assessment — recorded honestly with source "self" (a weak signal).
   if (action === "self") {
     const key = String(b.competencyKey || "")
-    const proficiency = Math.max(0, Math.min(1, Number(b.proficiency)))
+    // Self-assessment is a WEAK signal: it can indicate up to "Proficient" (0.5), but
+    // Advanced/Expert must come from verified evidence (assessment/project) — so a
+    // self-report can never equal verified evidence or inflate a band/heatmap to Expert.
+    const proficiency = Math.max(0, Math.min(0.5, Number(b.proficiency)))
     if (!key || !Number.isFinite(proficiency)) return NextResponse.json({ error: "competencyKey + proficiency required" }, { status: 400 })
     const exists = await prisma.competency.findUnique({ where: { key }, select: { id: true } })
     if (!exists) return NextResponse.json({ error: "Unknown competency" }, { status: 404 })
