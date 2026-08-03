@@ -147,11 +147,18 @@ export default function ApplyPage() {
         mediaId: f.mediaId, filename: f.filename, size: f.size,
       })),
     }
-    const r = await fetch("/api/applications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
-    const d = await r.json()
-    setBusy(false)
-    if (!r.ok) { setError(d.error || "Could not submit. Please try again."); return }
-    setDone(true)
+    try {
+      const r = await fetch("/api/applications", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+      const d = await r.json().catch(() => ({}))
+      if (!r.ok) { setError(d.error || "Could not submit. Please try again."); return }
+      setDone(true)
+    } catch {
+      setError("Network error — please try again.")
+    } finally {
+      // Always re-enable the button, even on a transient network / gateway error,
+      // so the applicant is never stuck on "Submitting…".
+      setBusy(false)
+    }
   }
 
   const field = (label: string, key: string, type = "text") => (

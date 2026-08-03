@@ -9,6 +9,7 @@ import { interviewPrep } from "@/lib/career/interview"
 import { computeFrontier } from "@/lib/career/frontier"
 import { simulateCareer } from "@/lib/career/simulator"
 import { parseChfSalary } from "@/lib/career/salary"
+import { momentum, diffVectors, type SeriesPoint, type SkillVector } from "@/lib/career/progress"
 import { inputFromUser, resumeFromUser } from "@/lib/career/fromUser"
 import { classifyIntent, FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
 
@@ -64,7 +65,13 @@ export async function POST(req: NextRequest) {
         const f = computeFrontier(candidate, jobLikes)
         if (!f.learnNext.length) return reply(intent, "You already cover the core skills across the live roles I can see — focus on a strong application and interview prep rather than new skills.", [])
         const top3 = f.learnNext.slice(0, 3)
-        return reply(intent, `Across ${f.jobsConsidered} live roles, the highest-leverage skills to learn next are ${list(top3.map((s) => s.skill))}. Learning ${top3[0].skill} alone would bring ${top3[0].jobsUnlocked || top3[0].nearMissJobs} more roles within reach.`, [
+        const lead = top3[0]
+        // Honesty: only claim "within reach" for roles the frontier actually
+        // computed as unlockable; otherwise report the near-miss relevance count.
+        const leadLine = lead.jobsUnlocked > 0
+          ? `Learning ${lead.skill} alone would bring ${lead.jobsUnlocked} more role${lead.jobsUnlocked === 1 ? "" : "s"} within reach.`
+          : `${lead.skill} is the most common gap across roles you're already close on (${lead.nearMissJobs} near-miss role${lead.nearMissJobs === 1 ? "" : "s"}).`
+        return reply(intent, `Across ${f.jobsConsidered} live roles, the highest-leverage skills to learn next are ${list(top3.map((s) => s.skill))}. ${leadLine}`, [
           { kind: "chips", title: "Learn next", items: f.learnNext.slice(0, 8).map((s) => `${s.skill} · ${s.difficulty} · ~${s.prepDays}d`) },
         ], { label: "See your learning plan", href: top ? `/jobs/${top.job.id}` : "/career" })
       }
@@ -126,6 +133,22 @@ export async function POST(req: NextRequest) {
           { kind: "jobs", items: withChf.map((x) => ({ id: x.r.job.id, title: x.r.job.title, subtitle: `${(x.r.job as any).company} · ${x.chf!.display}`, score: x.r.match.overall })) },
         ])
       }
+      case "progress": {
+        const snaps = await prisma.careerSnapshot.findMany({
+          where: { userId: p.userId }, orderBy: { createdAt: "asc" },
+          select: { createdAt: true, avgConfidence: true, skillCount: true, explicitCount: true, skillVector: true },
+        })
+        if (snaps.length < 2) return reply(intent, "I don't have enough history to show a trend yet — I record a snapshot when your profile content changes (or every 30 days). Keep your skills, experience and résumé current and your growth will show here.", [], { label: "Update your profile", href: "/career" })
+        const series: SeriesPoint[] = snaps.map((s) => ({ at: s.createdAt.toISOString(), avgConfidence: s.avgConfidence, skillCount: s.skillCount, explicitCount: s.explicitCount }))
+        const m = momentum(series)
+        const first = snaps[0], last = snaps[snaps.length - 1]
+        const deltas = diffVectors(safeVec(first.skillVector), safeVec(last.skillVector)).slice(0, 6)
+        const trend = m.direction === "up" ? `up ${m.deltaPct} points` : m.direction === "down" ? `down ${Math.abs(m.deltaPct)} points` : "holding steady"
+        return reply(intent, `Across ${snaps.length} snapshots your average skill confidence is ${trend}, and you've gone from ${first.skillCount} to ${last.skillCount} tracked skills (${last.explicitCount} demonstrated). All measured from your own recorded history — nothing estimated.`, [
+          { kind: "meter", title: "Confidence over time", items: series.map((pt) => ({ label: new Date(pt.at).toLocaleDateString(), value: Math.round(pt.avgConfidence * 100) })) },
+          ...(deltas.length ? [{ kind: "chips" as const, title: "Biggest movers", items: deltas.map((d) => `${d.skill} ${d.delta >= 0 ? "+" : ""}${d.delta}`) }] : []),
+        ], { label: "Open Career DNA", href: "/career" })
+      }
       default:
         return reply("fallback", "I'm not sure I caught that. I can help with your best-fit jobs, what to learn next, your seniority, résumé, interview prep, Career DNA and career paths — try one of these:", [{ kind: "list", items: FOLLOWUPS.fallback }])
     }
@@ -140,3 +163,4 @@ export async function POST(req: NextRequest) {
 }
 
 const article = (s: string) => (/^[aeiou]/i.test(s) ? "an" : "a")
+function safeVec(s: string): SkillVector { try { return JSON.parse(s || "{}") } catch { return {} } }

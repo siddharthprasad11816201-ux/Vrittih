@@ -12,8 +12,10 @@ export type Intent =
 // résumé question that also says "improve" must resolve to résumé, not "learn").
 // No trailing \b so plurals ("jobs", "skills") still match; input is
 // accent-stripped first so "résumé" == "resume".
+// Specific-intent rules first; the greeting/help rule is LAST so a message like
+// "help me improve my résumé" routes to résumé, not the generic menu. Genuine
+// greetings ("hi", "menu", bare "help") match no specific rule and fall through.
 const RULES: [RegExp, Intent][] = [
-  [/\b(hi|hello|hey|help|what can you|who are you|how (do|does) (you|this) work|options|menu|start)\b/i, "help"],
   [/(\bresume|\bcv\b|\bats\b|cover letter|bullet)/i, "resume"],
   [/\b(interview|mock|whiteboard|behavioural|behavioral|prep)/i, "interview"],
   [/\b(salary|salaries|pay|paid|compensation|ctc|stipend|package|earn|how much)/i, "salary"],
@@ -23,6 +25,7 @@ const RULES: [RegExp, Intent][] = [
   [/\b(senior|junior|mid.?level|seniority|my level|am i ready|ready for|experienced enough|principal|staff)/i, "level"],
   [/\b(strength|weak|good at|career dna|\bdna\b|archetype|fingerprint|who am i|my profile|describe me)/i, "dna"],
   [/\b(progress|improv|momentum|over time|trend|growth|getting better)/i, "progress"],
+  [/\b(hi|hello|hey|help|what can you|who are you|how (do|does) (you|this) work|options|menu|start)\b/i, "help"],
 ]
 
 export function classifyIntent(text: string): Intent {
