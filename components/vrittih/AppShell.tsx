@@ -86,6 +86,7 @@ function buildNav(caps: Set<string>): Section[] {
 
   // Account & security is always reachable; admin/developer only with the capability.
   const foot: Item[] = [{ href: "/account", label: "Account", icon: <IconUser size={18} /> }]
+  if (can("ai.ops.view") || caps.has("admin.access")) foot.push({ href: "/executive", label: "Executive", icon: <IconActivity size={18} /> })
   if (can("api.keys")) foot.push({ href: "/developers", label: "Developers", icon: <IconKey size={18} /> })
   if (caps.has("admin.access")) foot.push({ href: "/admin", label: "Admin", icon: <IconShield size={18} /> })
   sections.push({ title: "You", items: foot })
