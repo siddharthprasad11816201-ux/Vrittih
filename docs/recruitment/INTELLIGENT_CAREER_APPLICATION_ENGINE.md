@@ -237,13 +237,13 @@ Legend: ✅ shipped · �driving now · ⬜ planned.
 | # | Item | Status | Location |
 |---|---|---|---|
 | 1 | Master spec (this doc) | ✅ | `docs/recruitment/INTELLIGENT_CAREER_APPLICATION_ENGINE.md` |
-| 2 | Role/title normalization | ⬜ | `lib/opportunity/normalize.ts` |
-| 3 | Related opportunity groups | ⬜ | `lib/opportunity/groups.ts` |
-| 4 | Groups API (discovery + readiness + why) | ⬜ | `app/api/opportunities/groups/route.ts` |
-| 5 | Multi-company batch apply | ⬜ | `app/api/applications/batch/route.ts` |
-| 6 | Opportunities UI (group-first, multi-apply) | ⬜ | `app/opportunities/page.tsx` |
-| 7 | Nav entry + capability gating | ⬜ | `components/vrittih/AppShell.tsx` |
-| 8 | Autonomous discovery (persist Recommendations, cron) | ⬜ | `app/api/cron/discover` + `Recommendation` |
+| 2 | Role/title normalization | ✅ | `lib/opportunity/normalize.ts` (33 unit tests) |
+| 3 | Related opportunity groups | ✅ | `lib/opportunity/groups.ts` |
+| 4 | Groups API (discovery + readiness + why) | ✅ | `app/api/opportunities/groups/route.ts` |
+| 5 | Multi-company batch apply | ✅ | `app/api/applications/batch/route.ts` |
+| 6 | Opportunities UI (group-first, multi-apply) | ✅ | `app/opportunities/page.tsx` |
+| 7 | Nav entry + capability gating | ✅ | `components/vrittih/AppShell.tsx` (IconLayers) |
+| 8 | Autonomous discovery (persist Recommendations, cron) | ✅ | `app/api/cron/discover` (07:00 UTC) + `Recommendation` |
 | 9 | Career Intelligence dashboard extensions | ⬜ | `app/career/*` (extend existing) |
 | 10 | Reconcile the 3 legacy scorers onto `career/match` | ⬜ | `lib/matching.ts`, `app/api/jobs/match` |
 
@@ -342,4 +342,13 @@ Node assertion script (see existing `lib/interview/governance` tests).
 - **2026-08-03** — Spec created. Architecture, AI design, unified opportunity model,
   matching/application/recommendation engines, knowledge graph, scoring models,
   explainability, tracker, DDRs, known gaps, dependencies, verification, roadmap,
-  migration notes recorded. Implementation of items #2–#7 begins immediately.
+  migration notes recorded.
+- **2026-08-03** — v1 shipped: items #2–#8. Role/title normalization
+  (`lib/opportunity/normalize.ts`, 33 tests) + related opportunity groups
+  (`lib/opportunity/groups.ts`); groups discovery API with readiness/gap/why
+  (`/api/opportunities/groups`); multi-company batch apply (`/api/applications/batch`);
+  group-first UI (`/opportunities`) + nav (IconLayers); autonomous discovery cron
+  (`/api/cron/discover`, daily 07:00 UTC) persisting `Recommendation`s and notifying
+  candidates of strong new matches. No schema changes (normalization derived; batch
+  reuses `Application`; discovery reuses `Recommendation`). Remaining: #9 dashboard
+  extensions, #10 scorer consolidation.
