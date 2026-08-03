@@ -7,7 +7,7 @@ import {
   IconActivity, IconBriefcase, IconTarget, IconFileText, IconUsers, IconTrendingUp,
   IconClipboard, IconMessage, IconMail, IconNetwork, IconUser, IconSearch, IconBell,
   IconShield, IconMenu, IconX, IconHome, IconBookmark, IconGlobe, IconBanknote,
-  IconKey, IconCheckCircle, IconStar, IconAward, IconZap, IconMonitor,
+  IconKey, IconCheckCircle, IconStar, IconAward, IconZap, IconMonitor, IconLayers,
 } from "@/components/ui/Icons"
 
 /* Vrittih shell — Architecture A (compact island sidebar), per the redesign brief.
@@ -62,6 +62,7 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/learn", label: "Learn", icon: <IconMonitor size={18} /> },      // internships (learn & earn)
       { href: "/internship", label: "Internship", icon: <IconCheckCircle size={18} /> }, // active programme + roadmap
       { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> }, // full-time / contract / freelance (earn)
+      { href: "/opportunities", label: "Opportunities", icon: <IconLayers size={18} /> }, // ICAE: related role groups + multi-apply
       { href: "/jobs/match", label: "Matched", icon: <IconTarget size={18} /> },
       { href: "/applications", label: "Applications", icon: <IconFileText size={18} /> },
       { href: "/jobs/saved", label: "Saved", icon: <IconBookmark size={18} /> },

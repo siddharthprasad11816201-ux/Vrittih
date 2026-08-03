@@ -33,6 +33,9 @@ export const IconFileText = (p: IconProps) => (
 export const IconActivity = (p: IconProps) => (
   <svg {...base(p)}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
 )
+export const IconLayers = (p: IconProps) => (
+  <svg {...base(p)}><path d="M12 3 3 8l9 5 9-5-9-5Z" {...duo}/><path d="M12 3 3 8l9 5 9-5-9-5Z"/><path d="M3 12.5 12 17.5 21 12.5"/><path d="M3 16.5 12 21.5 21 16.5"/></svg>
+)
 export const IconUpload = (p: IconProps) => (
   <svg {...base(p)}><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
 )
