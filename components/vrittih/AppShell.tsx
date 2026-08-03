@@ -139,6 +139,15 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const active = (href: string) => (href === "/dashboard" ? pathname === "/dashboard" : pathname === href || pathname.startsWith(href + "/"))
   const activeTab = tabs.findIndex((t) => active(t.href))
   const initials = (user?.name || "?").split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
+  const signOut = async () => { try { await fetch("/api/auth/logout", { method: "POST" }) } catch {} ; window.location.href = "/login" }
+  const SignOutRow = () => (
+    <button onClick={signOut} className="ks-nav" style={S.signOut} aria-label="Sign out">
+      <span style={{ display: "inline-flex", width: 18, height: 18, color: "var(--danger)" }}>
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+      </span>
+      Sign out
+    </button>
+  )
 
   const NavRow = ({ it }: { it: Item }) => {
     const on = active(it.href)
@@ -209,6 +218,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
                 <span style={S.coachSub}>Ask about your next move</span>
               </span>
             </Link>
+            <SignOutRow />
           </aside>
         )}
         <main style={{ ...S.main, paddingBottom: isMobile ? 84 : 32 }}>{children}</main>
@@ -240,6 +250,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
               <button onClick={() => setDrawerOpen(false)} style={{ marginLeft: "auto", background: "none", border: "none", color: "var(--v-ink-2)", cursor: "pointer" }} aria-label="Close menu"><IconX size={20} /></button>
             </div>
             <div style={{ flex: 1, overflowY: "auto", padding: "8px 10px" }}><Nav /></div>
+            <div style={{ padding: "8px 10px", borderTop: "1px solid var(--border)" }}><SignOutRow /></div>
           </div>
         </>
       )}
@@ -286,6 +297,7 @@ const S: Record<string, any> = {
   coach: { display: "flex", alignItems: "center", gap: 10, padding: "10px 11px", marginTop: 6, borderTop: "1px solid var(--border)", paddingTop: 12, textDecoration: "none", borderRadius: "var(--r-md)", border: "1px solid transparent" },
   coachTitle: { font: "500 13px var(--font-sans)", color: "var(--v-ink)" },
   coachSub: { font: "400 11.5px var(--font-sans)", color: "var(--v-ink-3)", overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" },
+  signOut: { display: "flex", alignItems: "center", gap: 11, width: "100%", height: 38, marginTop: 6, padding: "0 10px", borderRadius: "var(--r-md)", border: "none", background: "none", color: "var(--danger)", font: "500 14px var(--font-sans)", cursor: "pointer", textAlign: "left" },
 
   main: { flex: 1, minWidth: 0, padding: "24px 28px" },
 

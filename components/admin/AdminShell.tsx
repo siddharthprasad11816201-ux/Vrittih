@@ -38,6 +38,7 @@ export default function AdminShell({ children }: { children: ReactNode }) {
         </nav>
         <div style={S.sideBottom}>
           <Link href="/" style={S.backLink}>← Back to platform</Link>
+          <button onClick={async () => { try { await fetch("/api/auth/logout", { method: "POST" }) } catch {} ; window.location.href = "/login" }} style={S.signOut}>Sign out</button>
         </div>
       </aside>
       <main style={S.main}>{children}</main>
@@ -67,8 +68,9 @@ const S: Record<string, any> = {
   nav: { padding: "1rem .75rem", flex: 1, display: "flex", flexDirection: "column" as const, gap: 2 },
   navLink: { display: "flex", alignItems: "center", gap: 10, padding: "8px 12px", borderRadius: 8, fontSize: 13, color: "rgba(255,255,255,.6)", textDecoration: "none", transition: "all .15s" },
   navLinkOn: { background: "rgba(15,110,86,.2)", color: "#9FD4C3" },
-  sideBottom: { padding: "1rem 1.5rem", borderTop: "0.5px solid rgba(255,255,255,.06)" },
+  sideBottom: { padding: "1rem 1.5rem", borderTop: "0.5px solid rgba(255,255,255,.06)", display: "flex", flexDirection: "column" as const, gap: 10, alignItems: "flex-start" },
   backLink: { fontSize: 13, color: "rgba(255,255,255,.4)", textDecoration: "none" },
+  signOut: { fontSize: 13, fontWeight: 600, color: "#FCA5A5", background: "rgba(220,38,38,.12)", border: "1px solid rgba(220,38,38,.3)", borderRadius: 8, padding: "7px 14px", cursor: "pointer" },
   main: { overflow: "auto" },
   topBar: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "1.5rem 2rem", background: "#fff", borderBottom: "0.5px solid rgba(0,0,0,.07)" },
   pageTitle: { fontSize: 20, fontWeight: 600, color: "#0A0A0F", letterSpacing: "-.3px" },

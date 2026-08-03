@@ -68,7 +68,12 @@ const TRUST = [
 
 export default function Home() {
   const [s, setS] = useState<Stats | null>(null)
-  useEffect(() => { fetch("/api/stats").then(r => r.json()).then(setS).catch(() => {}) }, [])
+  const [authed, setAuthed] = useState(false)
+  useEffect(() => {
+    fetch("/api/stats").then(r => r.json()).then(setS).catch(() => {})
+    // No-DB auth check — show "Dashboard" for signed-in visitors.
+    fetch("/api/auth/status").then(r => r.json()).then(d => setAuthed(!!d.authenticated)).catch(() => {})
+  }, [])
 
   const roles = s ? s.jobs.toLocaleString() : "—"
   const companies = s ? s.companies.toLocaleString() : "—"
@@ -87,8 +92,14 @@ export default function Home() {
             <Link href="/developers">Developers</Link>
           </nav>
           <div className="navCta">
-            <Link href="/login" className="ghost">Sign in</Link>
-            <Link href="/register" className="btn">Get started</Link>
+            {authed ? (
+              <Link href="/dashboard" className="btn">Go to dashboard</Link>
+            ) : (
+              <>
+                <Link href="/login" className="ghost">Sign in</Link>
+                <Link href="/register" className="btn">Get started</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -106,7 +117,9 @@ export default function Home() {
           <h1 className="h1">Hiring, reduced to a certainty.</h1>
           <p className="lede">Vrittih is one platform for every job seeker and every employer — apply, interview, test and get hired in one place, with live status from first click to offer letter.</p>
           <div className="ctaRow">
-            <Link href="/register" className="btn lg">Get started free</Link>
+            {authed
+              ? <Link href="/dashboard" className="btn lg">Go to dashboard</Link>
+              : <Link href="/register" className="btn lg">Get started free</Link>}
             <Link href="/jobs" className="btn lg ghostBtn">Browse {roles} roles</Link>
           </div>
         </div>
