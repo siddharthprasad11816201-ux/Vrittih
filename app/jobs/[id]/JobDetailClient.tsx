@@ -30,13 +30,15 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
       .then(d => { setJob(d.job); setLoading(false) })
   }, [id])
 
-  // Restore a cover letter the candidate wrote before being sent to sign in.
+  // Returned from sign-in mid-apply: resume in the FULL validated apply flow, not
+  // the legacy inline cover-letter form (which POSTed incomplete applications,
+  // skipping required questions/documents/assessments). The draft is left in
+  // sessionStorage for the flow to pick up.
   useEffect(() => {
     try {
-      const draft = sessionStorage.getItem(`vrittih:draft:${id}`)
-      if (draft) { setCoverLetter(draft); setShowForm(true); sessionStorage.removeItem(`vrittih:draft:${id}`) }
+      if (sessionStorage.getItem(`vrittih:draft:${id}`)) router.push(`/jobs/${id}/apply`)
     } catch {}
-  }, [id])
+  }, [id, router])
 
   async function apply() {
     setApplying(true)

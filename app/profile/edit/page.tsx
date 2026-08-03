@@ -15,6 +15,9 @@ export default function EditProfile() {
   const [uploading, setUploading] = useState(false)
   const [uploadMsg, setUploadMsg] = useState("")
   const [tab, setTab] = useState("basic")
+  const [parseBusy, setParseBusy] = useState(false)
+  const [parsed, setParsed] = useState<any>(null)
+  const [parseMsg, setParseMsg] = useState("")
 
   useEffect(() => {
     fetch("/api/profile").then(r => r.json()).then(d => {
@@ -38,6 +41,45 @@ export default function EditProfile() {
     await fetch("/api/profile", { method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) })
     setSaving(false); setSaved(true)
     setTimeout(() => setSaved(false), 2500)
+  }
+
+  // Résumé parser — read an uploaded résumé in-house and prefill the profile.
+  async function onResumeFile(file: File) {
+    if (!file) return
+    setParseBusy(true); setParseMsg(""); setParsed(null)
+    try {
+      const fd = new FormData(); fd.append("file", file)
+      const d = await fetch("/api/resume/parse", { method:"POST", body: fd }).then(r => r.json())
+      if (!d.ok) { setParseMsg(d.error || "We couldn't read that résumé."); return }
+      const p = d.parsed; setParsed(p)
+      // Prefill only EMPTY basic fields — never clobber what you've already typed.
+      setForm(f => ({ ...f,
+        name: f.name || p.name || "", headline: f.headline || p.headline || "",
+        bio: f.bio || p.summary || "", location: f.location || p.location || "",
+        phone: f.phone || p.phone || "", website: f.website || p.links?.website || "",
+        github: f.github || p.links?.github || "", linkedin: f.linkedin || p.links?.linkedin || "",
+        twitter: f.twitter || p.links?.twitter || "",
+      }))
+      const bits: string[] = []
+      if (p.fieldsFound?.some((x: string) => ["name","headline","summary","location","phone","links"].includes(x))) bits.push("basic details filled")
+      if (p.skills?.length) bits.push(`${p.skills.length} skills`)
+      if (p.experience?.length) bits.push(`${p.experience.length} experience`)
+      if (p.education?.length) bits.push(`${p.education.length} education`)
+      setParseMsg(bits.length ? `Read your résumé — ${bits.join(" · ")}. Review, add the sections below, then Save.` : "Read the file but couldn't confidently find fields — please fill them in.")
+    } catch { setParseMsg("Network error reading the résumé.") }
+    finally { setParseBusy(false) }
+  }
+  async function applyParsedSkills() {
+    for (const name of (parsed?.skills || []).slice(0, 40)) await fetch("/api/profile/skills", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ name }) }).catch(()=>{})
+    const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user); setParsed((x:any)=> x ? { ...x, skills: [] } : x)
+  }
+  async function applyParsedExperience() {
+    for (const e of (parsed?.experience || [])) await fetch("/api/profile/experience", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ company:e.company||"", title:e.title||"", location:"", startDate:e.start||"", endDate:e.end||"", description:"" }) }).catch(()=>{})
+    const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user); setParsed((x:any)=> x ? { ...x, experience: [] } : x)
+  }
+  async function applyParsedEducation() {
+    for (const e of (parsed?.education || [])) await fetch("/api/profile/education", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ school:e.school||"", degree:e.degree||"", field:"", startYear:"", endYear:e.year||"" }) }).catch(()=>{})
+    const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user); setParsed((x:any)=> x ? { ...x, education: [] } : x)
   }
 
   async function addExp(e: any) {
@@ -138,6 +180,30 @@ export default function EditProfile() {
           {tab === "basic" && (
             <div style={S.card}>
               <h3 style={S.cardTitle}>Basic information</h3>
+
+              {/* Résumé parser — fill the profile from an uploaded résumé (in-house). */}
+              <div style={S.rp}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={S.rpTitle}>Fill from your résumé</div>
+                  <div style={S.rpSub}>Upload a PDF or DOCX — we read it in-house and fill your profile. The file is not stored.</div>
+                  {parseMsg && <div style={S.rpMsg}>{parseMsg}</div>}
+                  {parsed && (parsed.skills?.length || parsed.experience?.length || parsed.education?.length) ? (
+                    <div style={S.rpActions}>
+                      {parsed.skills?.length ? <button type="button" onClick={applyParsedSkills} style={S.rpBtn}>Add {parsed.skills.length} skills</button> : null}
+                      {parsed.experience?.length ? <button type="button" onClick={applyParsedExperience} style={S.rpBtn}>Add {parsed.experience.length} experience</button> : null}
+                      {parsed.education?.length ? <button type="button" onClick={applyParsedEducation} style={S.rpBtn}>Add {parsed.education.length} education</button> : null}
+                    </div>
+                  ) : null}
+                </div>
+                <label role="button" tabIndex={0} aria-label="Upload résumé to fill your profile"
+                  onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); (e.currentTarget.querySelector("input") as HTMLInputElement | null)?.click() } }}
+                  style={{ ...S.rpUpload, ...(parseBusy ? { opacity: .6, pointerEvents: "none" } : {}) }}>
+                  {parseBusy ? "Reading…" : "Upload résumé"}
+                  <input type="file" accept=".pdf,.docx,.doc,.html,.txt" tabIndex={-1} style={{ display: "none" }}
+                    onChange={e => { const f = e.target.files?.[0]; if (f) onResumeFile(f); e.currentTarget.value = "" }} />
+                </label>
+              </div>
+
               {saved && <div style={S.savedMsg}>Saved successfully</div>}
               <form onSubmit={saveBasic}>
                 <label style={{ display:"flex", alignItems:"center", gap:12, padding:"12px 14px", border:"1px solid var(--v-line-2)", borderRadius:12, marginBottom:16, cursor:"pointer", background: form.openToWork ? "var(--brand-100)" : "var(--v-surface)" }}>
@@ -290,6 +356,13 @@ const S: Record<string,any> = {
   main: { display:"flex", flexDirection:"column", gap:12 },
   card: { background:"#fff", border:"0.5px solid rgba(0,0,0,.08)", borderRadius:14, padding:"1.5rem" },
   cardTitle: { fontSize:16, fontWeight:600, color:"#0A0A0F", marginBottom:16, paddingBottom:10, borderBottom:"0.5px solid rgba(0,0,0,.07)" },
+  rp: { display:"flex", alignItems:"flex-start", gap:14, flexWrap:"wrap", padding:"14px 16px", marginBottom:16, border:"1px solid var(--v-accent-soft)", background:"var(--v-accent-soft)", borderRadius:12 },
+  rpTitle: { fontSize:14, fontWeight:600, color:"var(--v-ink)" },
+  rpSub: { fontSize:12.5, color:"var(--v-ink-2)", marginTop:2, lineHeight:1.5 },
+  rpMsg: { fontSize:12.5, color:"var(--v-accent-2)", marginTop:8, fontWeight:500, lineHeight:1.5 },
+  rpActions: { display:"flex", gap:8, flexWrap:"wrap", marginTop:10 },
+  rpBtn: { border:"1px solid var(--v-accent)", background:"var(--v-surface)", color:"var(--v-accent)", borderRadius:9, padding:"6px 12px", fontSize:12.5, fontWeight:600, cursor:"pointer" },
+  rpUpload: { flexShrink:0, display:"inline-flex", alignItems:"center", gap:7, background:"var(--v-accent)", color:"#fff", borderRadius:10, padding:"10px 16px", fontSize:13.5, fontWeight:600, cursor:"pointer" },
   row: { display:"flex", flexWrap:"wrap" as const, gap:12, marginBottom:12 },
   input: { width:"100%", border:"0.5px solid rgba(0,0,0,.13)", borderRadius:8, padding:"8px 11px", fontSize:13, color:"#0A0A0F", outline:"none", fontFamily:"inherit" },
   saveBtn: { background:"#6366F1", color:"#fff", border:"none", padding:"9px 20px", borderRadius:8, fontSize:13, fontWeight:500, cursor:"pointer", marginTop:4 },

@@ -254,9 +254,14 @@ export default function ApplyPage() {
                     <div style={S.docLabel}>{d.label}{d.required && <em style={S.req}> *</em>}</div>
                     <div style={S.docMeta}>{docs[d.id] ? `${docs[d.id].filename} · ${Math.round(docs[d.id].size / 1024)} KB` : (d.help || `Accepted: ${d.accept}`)}</div>
                   </div>
-                  <label style={{ ...S.ghost, cursor: "pointer" }}>
+                  {/* Keyboard-operable upload: the label is a real button (Tab +
+                      Enter/Space opens the picker); previously display:none on the
+                      input removed the only keyboard path, blocking required docs. */}
+                  <label role="button" tabIndex={0} aria-label={`Upload ${d.label}`}
+                    onKeyDown={e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); (e.currentTarget.querySelector("input") as HTMLInputElement | null)?.click() } }}
+                    style={{ ...S.ghost, cursor: "pointer" }}>
                     {uploading === d.id ? "Uploading…" : docs[d.id] ? "Replace" : <><IconUpload size={14} /> Upload</>}
-                    <input type="file" accept={d.accept} style={{ display: "none" }}
+                    <input type="file" accept={d.accept} tabIndex={-1} style={{ display: "none" }}
                       onChange={e => { const f = e.target.files?.[0]; if (f) upload(d, f); e.currentTarget.value = "" }} />
                   </label>
                 </div>
