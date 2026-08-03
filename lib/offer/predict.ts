@@ -33,12 +33,14 @@ export function predictAcceptance(input: PredictInput): Prediction {
   const factors: PredictFactor[] = []
   let signals = 0
 
-  if (input.matchScore != null && Number.isFinite(input.matchScore)) {
+  const hasFit = input.matchScore != null && Number.isFinite(input.matchScore)
+  if (hasFit) {
+    const ms = input.matchScore as number
     signals++
     // Fit centred at 60: strong fit lifts, weak fit drops (±0.2 across 0..100).
-    const eff = clamp01(input.matchScore / 100) * 0.4 - 0.2
+    const eff = clamp01(ms / 100) * 0.4 - 0.2
     s += eff
-    factors.push({ label: "Role fit", effect: +(eff * 100).toFixed(0), note: `Candidate–role match ${Math.round(input.matchScore)}%.` })
+    factors.push({ label: "Role fit", effect: +(eff * 100).toFixed(0), note: `Candidate–role match ${Math.round(ms)}%.` })
   }
 
   if (input.hasBaseComp != null) {
@@ -74,7 +76,7 @@ export function predictAcceptance(input: PredictInput): Prediction {
   const band = score >= 0.66 ? "Likely" : score >= 0.45 ? "Uncertain" : "At risk"
   // Confidence grows with how many real signals fed the estimate (5 possible).
   const confidence = +Math.min(0.9, 0.3 + signals * 0.12).toFixed(2)
-  const note = input.matchScore == null
+  const note = !hasFit
     ? "No role-fit signal available — attach the application for a sharper estimate. Market salary benchmarking is not modelled (no dataset)."
     : "Deterministic factor estimate; market salary benchmarking is not modelled (no dataset)."
   return { score, band, factors: factors.sort((a, b) => Math.abs(b.effect) - Math.abs(a.effect)), confidence, note }

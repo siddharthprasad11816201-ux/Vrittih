@@ -11,6 +11,7 @@ import { createNotification } from "@/lib/notify"
 export const dynamic = "force-dynamic"
 
 const canManage = (ctx: any) => ctx.has("pipeline.manage") || ctx.has("jobs.post") || ctx.has("admin.access")
+const posNum = (v: any): number | null => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : null }
 
 async function load(id: string) {
   return prisma.offer.findUnique({
@@ -30,9 +31,15 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   if (!offer) return NextResponse.json({ error: "Offer not found" }, { status: 404 })
   const isParty = offer.candidateId === ctx.userId || offer.createdById === ctx.userId || ctx.has("admin.access")
   if (!isParty) return NextResponse.json({ error: "Offer not found" }, { status: 404 })
-  // A candidate can only see an offer once it has actually been sent.
-  if (offer.candidateId === ctx.userId && offer.createdById !== ctx.userId && !["SENT", "ACCEPTED", "DECLINED", "WITHDRAWN", "EXPIRED"].includes(offer.status)) {
-    return NextResponse.json({ error: "Offer not found" }, { status: 404 })
+  const isCandidateOnly = offer.candidateId === ctx.userId && offer.createdById !== ctx.userId && !ctx.has("admin.access")
+  // A candidate can only see an offer that was ACTUALLY sent (sentAt is set solely on
+  // send) — not a drafted-then-withdrawn one that was never extended.
+  if (isCandidateOnly && !offer.sentAt) return NextResponse.json({ error: "Offer not found" }, { status: 404 })
+  // Redact internal fields (recruiter notes, supersede lineage, event actor ids) from
+  // the candidate — mirror what the list projection strips.
+  if (isCandidateOnly) {
+    const { notes, supersededById, createdById, ...rest } = offer as any
+    return NextResponse.json({ offer: { ...rest, events: (offer.events || []).map((e: any) => ({ action: e.action, note: e.note, createdAt: e.createdAt })) } })
   }
   return NextResponse.json({ offer })
 }
@@ -60,9 +67,9 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       where: { id: offer.id },
       data: {
         title: b.title != null ? String(b.title).slice(0, 200) : undefined,
-        baseAmount: b.baseAmount != null ? (Number(b.baseAmount) || null) : undefined,
+        baseAmount: b.baseAmount != null ? posNum(b.baseAmount) : undefined,
         currency: b.currency != null ? String(b.currency).slice(0, 8).toUpperCase() : undefined,
-        bonusAmount: b.bonusAmount != null ? (Number(b.bonusAmount) || null) : undefined,
+        bonusAmount: b.bonusAmount != null ? posNum(b.bonusAmount) : undefined,
         equity: b.equity != null ? String(b.equity).slice(0, 120) : undefined,
         benefits: benefits != null ? (benefits.length ? JSON.stringify(benefits) : null) : undefined,
         startDate: b.startDate != null ? (b.startDate ? new Date(b.startDate) : null) : undefined,
@@ -77,19 +84,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   const check = canTransition(action as OfferAction, offer.status, { isApproverDistinct, isAdmin, sendRequiresApproval: true })
   if (!check.ok) return NextResponse.json({ error: check.reason }, { status: 409 })
 
-  // ---- revise: retire this offer, spawn a fresh DRAFT one version higher ----
+  const uid: string = ctx.userId   // narrowed non-null above; stable inside closures
+
+  // ---- revise: retire this offer, spawn a fresh DRAFT one version higher.
+  // Atomic: the new version and the retirement of the old one commit together. ----
   if (action === "revise") {
-    const fresh = await prisma.offer.create({
-      data: {
-        applicationId: offer.applicationId, candidateId: offer.candidateId, jobId: offer.jobId,
-        createdById: ctx.userId, title: offer.title, companyName: offer.companyName, status: "DRAFT",
-        baseAmount: offer.baseAmount, currency: offer.currency, bonusAmount: offer.bonusAmount,
-        equity: offer.equity, benefits: offer.benefits, startDate: offer.startDate, expiresAt: offer.expiresAt,
-        version: offer.version + 1, notes: offer.notes,
-        events: { create: { action: "created", actorId: ctx.userId, note: `Revised from v${offer.version}` } },
-      },
+    const fresh = await prisma.$transaction(async (tx) => {
+      const created = await tx.offer.create({
+        data: {
+          applicationId: offer.applicationId, candidateId: offer.candidateId, jobId: offer.jobId,
+          createdById: uid, title: offer.title, companyName: offer.companyName, status: "DRAFT",
+          baseAmount: offer.baseAmount, currency: offer.currency, bonusAmount: offer.bonusAmount,
+          equity: offer.equity, benefits: offer.benefits, startDate: offer.startDate, expiresAt: offer.expiresAt,
+          version: offer.version + 1, notes: offer.notes,
+          events: { create: { action: "created", actorId: uid, note: `Revised from v${offer.version}` } },
+        },
+      })
+      await tx.offer.update({ where: { id: offer.id }, data: { status: "WITHDRAWN", supersededById: created.id, events: { create: { action: "revised", actorId: uid, note: `Superseded by v${created.version}` } } } })
+      return created
     })
-    await prisma.offer.update({ where: { id: offer.id }, data: { status: "WITHDRAWN", supersededById: fresh.id, events: { create: { action: "revised", actorId: ctx.userId, note: `Superseded by v${fresh.version}` } } } })
     return NextResponse.json({ success: true, offer: fresh, revisedTo: fresh.id })
   }
 

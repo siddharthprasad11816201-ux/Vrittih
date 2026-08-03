@@ -115,7 +115,7 @@ export default function OffersPage() {
               : received.map((o: any) => <OfferCard key={o.id} o={o} mine="candidate" busy={busy} onRespond={respond} />))}
             {tab === "managing" && data.canManage && (created.length === 0
               ? <div style={S.empty}><p style={S.sub}>No offers created yet. Use “New offer”.</p></div>
-              : created.map((o: any) => <OfferCard key={o.id} o={o} mine="manager" busy={busy} onAct={act} />))}
+              : created.map((o: any) => <OfferCard key={o.id} o={o} mine="manager" isAdmin={!!data.isAdmin} busy={busy} onAct={act} />))}
           </div>
         )}
       </div>
@@ -123,8 +123,8 @@ export default function OffersPage() {
   )
 }
 
-function OfferCard({ o, mine, busy, onAct, onRespond }: any) {
-  const acts = mine === "manager" ? managerActions(o.status) : candidateActions(o.status)
+function OfferCard({ o, mine, isAdmin, busy, onAct, onRespond }: any) {
+  const acts = mine === "manager" ? managerActions(o.status, { isAdmin }) : candidateActions(o.status)
   const pred = o.acceptFactors
   return (
     <div style={S.card}>

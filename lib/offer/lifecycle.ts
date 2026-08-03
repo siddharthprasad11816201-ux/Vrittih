@@ -33,7 +33,7 @@ export const TRANSITIONS: Record<OfferAction, Transition> = {
   approve:  { from: ["PENDING_APPROVAL"], to: "APPROVED", by: "approver" },
   send:     { from: ["APPROVED", "DRAFT"], to: "SENT", by: "manager" },  // DRAFT→SENT allowed when approval is waived (admin)
   withdraw: { from: ["DRAFT", "PENDING_APPROVAL", "APPROVED", "SENT"], to: "WITHDRAWN", by: "manager" },
-  revise:   { from: ["SENT", "APPROVED", "DECLINED"], to: "DRAFT", by: "manager" }, // creates a new version in DRAFT
+  revise:   { from: ["SENT", "APPROVED"], to: "DRAFT", by: "manager" }, // creates a new version in DRAFT (DECLINED is terminal)
   expire:   { from: ["SENT"], to: "EXPIRED", by: "system" },
   accept:   { from: ["SENT"], to: "ACCEPTED", by: "candidate" },
   decline:  { from: ["SENT"], to: "DECLINED", by: "candidate" },
@@ -54,7 +54,9 @@ export function canTransition(
   if (!t.from.includes(status as OfferStatus)) {
     return { ok: false, reason: `Cannot ${action} an offer that is ${OFFER_STATUS_LABEL[status as OfferStatus] || status}.` }
   }
-  if (action === "approve" && !opts?.isAdmin && opts?.isApproverDistinct === false) {
+  // Fail-CLOSED: approval needs an admin or an explicitly-distinct approver. An
+  // omitted/undefined isApproverDistinct blocks (never assume the caller is distinct).
+  if (action === "approve" && !opts?.isAdmin && !opts?.isApproverDistinct) {
     return { ok: false, reason: "An offer must be approved by someone other than its creator." }
   }
   // Sending straight from DRAFT (skipping approval) is admin-only when approval is required.
@@ -64,11 +66,20 @@ export function canTransition(
   return { ok: true, to: t.to }
 }
 
-/* Actions available to a manager/approver on an offer in a given status (for the UI). */
-export function managerActions(status: string, opts?: { isAdmin?: boolean }): OfferAction[] {
+/* Actions available to a manager/approver on an offer in a given status (for the UI).
+ * Forwards the SAME governance options the API enforces, so a button is only shown when
+ * the API would actually accept it (no more "Send"/"Approve" buttons that 409):
+ *  - isApproverDistinct defaults to FALSE (a creator viewing their own offer cannot
+ *    self-approve; only an admin or a genuinely distinct approver sees "Approve").
+ *  - sendRequiresApproval defaults to TRUE (a non-admin never sees "Send" on a DRAFT). */
+export function managerActions(status: string, opts?: { isAdmin?: boolean; isApproverDistinct?: boolean; sendRequiresApproval?: boolean }): OfferAction[] {
   const out: OfferAction[] = []
   for (const a of ["submit", "approve", "send", "withdraw", "revise"] as OfferAction[]) {
-    if (canTransition(a, status, { isAdmin: opts?.isAdmin, isApproverDistinct: true }).ok) out.push(a)
+    if (canTransition(a, status, {
+      isAdmin: opts?.isAdmin,
+      isApproverDistinct: opts?.isApproverDistinct ?? false,
+      sendRequiresApproval: opts?.sendRequiresApproval ?? true,
+    }).ok) out.push(a)
   }
   return out
 }

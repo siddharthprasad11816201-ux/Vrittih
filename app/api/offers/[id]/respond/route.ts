@@ -31,21 +31,30 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const check = canTransition(action, offer.status)
   if (!check.ok) return NextResponse.json({ error: check.reason }, { status: 409 })
 
-  await prisma.offer.update({
-    where: { id: offer.id },
-    data: {
-      status: check.to, respondedAt: new Date(),
-      declineReason: action === "decline" && reason ? String(reason).slice(0, 1000) : undefined,
-      events: { create: { action, actorId: p.userId, note: action === "decline" ? (reason ? String(reason).slice(0, 300) : "Declined") : "Accepted" } },
-    },
-  })
-
-  // Accepting hires the candidate on the linked application.
-  if (action === "accept" && offer.applicationId) {
-    await prisma.application.update({
-      where: { id: offer.applicationId },
-      data: { status: "HIRED", timeline: { create: { status: "HIRED", note: "Offer accepted" } } },
-    }).catch(() => {})
+  // Atomic + optimistic: the offer transition and (on accept) the application→HIRED
+  // write commit together or not at all. The `status: "SENT"` guard means only the
+  // first of two concurrent responses wins — the loser gets a 409, never a divergence.
+  try {
+    await prisma.$transaction(async (tx) => {
+      const res = await tx.offer.updateMany({
+        where: { id: offer.id, status: "SENT" },
+        data: {
+          status: check.to, respondedAt: new Date(),
+          declineReason: action === "decline" && reason ? String(reason).slice(0, 1000) : undefined,
+        },
+      })
+      if (res.count !== 1) throw new Error("STALE")
+      await tx.offerEvent.create({ data: { offerId: offer.id, action, actorId: p.userId, note: action === "decline" ? (reason ? String(reason).slice(0, 300) : "Declined") : "Accepted" } })
+      if (action === "accept" && offer.applicationId) {
+        await tx.application.update({
+          where: { id: offer.applicationId },
+          data: { status: "HIRED", timeline: { create: { status: "HIRED", note: "Offer accepted" } } },
+        })
+      }
+    })
+  } catch (e: any) {
+    if (e?.message === "STALE") return NextResponse.json({ error: "This offer has already been responded to." }, { status: 409 })
+    return NextResponse.json({ error: "Could not record your response — please try again." }, { status: 500 })
   }
 
   // Notify the recruiter who created the offer.

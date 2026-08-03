@@ -37,8 +37,11 @@ export async function GET(req: NextRequest) {
     createdBy: { select: { id: true, name: true } },
     events: { orderBy: { createdAt: "asc" as const } },
   }
+  // A candidate only ever sees offers that were ACTUALLY sent to them. sentAt is set
+  // solely by the send action, so it's the correct "was this extended?" signal — a
+  // drafted-then-withdrawn offer (never sent) must never surface its compensation.
   const received = await prisma.offer.findMany({
-    where: { candidateId: ctx.userId, status: { in: ["SENT", "ACCEPTED", "DECLINED", "WITHDRAWN", "EXPIRED"] } },
+    where: { candidateId: ctx.userId, sentAt: { not: null } },
     include: inc, orderBy: { updatedAt: "desc" }, take: 100,
   })
   let created: any[] = []
@@ -48,7 +51,7 @@ export async function GET(req: NextRequest) {
       include: inc, orderBy: { updatedAt: "desc" }, take: 200,
     })
   }
-  return NextResponse.json({ created: created.map(shape), received: received.map(shape), canManage: canManage(ctx) })
+  return NextResponse.json({ created: created.map(shape), received: received.map(shape), canManage: canManage(ctx), isAdmin: ctx.has("admin.access") })
 }
 
 export async function POST(req: NextRequest) {
@@ -71,13 +74,25 @@ export async function POST(req: NextRequest) {
     if (!ctx.has("admin.access") && app.job?.postedById !== ctx.userId) {
       return NextResponse.json({ error: "You can only make offers for your own jobs." }, { status: 403 })
     }
-    candidateId = app.userId; jobId = jobId || app.jobId
+    candidateId = app.userId; jobId = app.jobId   // derive strictly from the ownership-checked application; never let client jobId override
     title = title || app.job?.title || "Offer"
     companyName = companyName || app.job?.company || ""
-  } else if (!candidateId && b.candidateEmail) {
-    const u = await prisma.user.findUnique({ where: { email: String(b.candidateEmail).toLowerCase() }, select: { id: true } })
-    if (!u) return NextResponse.json({ error: "No user found with that email." }, { status: 404 })
-    candidateId = u.id
+  } else {
+    if (!candidateId && b.candidateEmail) {
+      const u = await prisma.user.findUnique({ where: { email: String(b.candidateEmail).toLowerCase() }, select: { id: true } })
+      if (!u) return NextResponse.json({ error: "No user found with that email." }, { status: 404 })
+      candidateId = u.id
+    }
+    // A client-supplied jobId must belong to the caller (unless admin) — never trust it.
+    if (jobId) {
+      const job = await prisma.job.findUnique({ where: { id: jobId }, select: { postedById: true, title: true, company: true } })
+      if (!job) return NextResponse.json({ error: "Job not found." }, { status: 404 })
+      if (!ctx.has("admin.access") && job.postedById !== ctx.userId) {
+        return NextResponse.json({ error: "You can only make offers for your own jobs." }, { status: 403 })
+      }
+      title = title || job.title || ""
+      companyName = companyName || job.company || ""
+    }
   }
   if (!candidateId) return NextResponse.json({ error: "A candidate (application, id, or email) is required." }, { status: 400 })
   if (!title) return NextResponse.json({ error: "An offer title is required." }, { status: 400 })
