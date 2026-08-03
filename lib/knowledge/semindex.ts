@@ -6,41 +6,9 @@
  * See docs/ai/SELF_EVOLVING_INTELLIGENCE_ARCHITECTURE.md §16, DDR-003. */
 import { prisma } from "@/lib/prisma"
 import crypto from "crypto"
+import { tokenize, termFreq, tfidfVector, norm, cosine } from "@/lib/knowledge/tokenize"
+export { tokenize, termFreq, tfidfVector, norm, cosine } from "@/lib/knowledge/tokenize"
 
-const STOP = new Set("a an the and or but if then else of to in on at for with without from by as is are was were be been being this that these those it its it's you your we our they their he she his her i me my not no do does did will would can could should has have had".split(" "))
-
-export function tokenize(text: string): string[] {
-  return (text || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "")
-    .split(/[^a-z0-9+#.]+/).map((t) => t.replace(/^[.]+|[.]+$/g, ""))
-    .filter((t) => t.length >= 2 && t.length <= 40 && !STOP.has(t) && !/^\d+$/.test(t))
-}
-
-export function termFreq(tokens: string[]): Record<string, number> {
-  const tf: Record<string, number> = {}
-  for (const t of tokens) tf[t] = (tf[t] || 0) + 1
-  return tf
-}
-
-/** Sparse TF-IDF vector from a term-frequency map + an idf lookup. Sub-linear tf
- * (1+log) so a single doc can't dominate on repetition. */
-export function tfidfVector(tf: Record<string, number>, idf: (term: string) => number): Record<string, number> {
-  const v: Record<string, number> = {}
-  for (const [term, count] of Object.entries(tf)) {
-    const w = (1 + Math.log(count)) * idf(term)
-    if (w > 0) v[term] = w
-  }
-  return v
-}
-
-export const norm = (v: Record<string, number>) => Math.sqrt(Object.values(v).reduce((s, x) => s + x * x, 0)) || 0
-
-export function cosine(a: Record<string, number>, b: Record<string, number>, na?: number, nb?: number): number {
-  const [small, large] = Object.keys(a).length <= Object.keys(b).length ? [a, b] : [b, a]
-  let dot = 0
-  for (const k in small) if (k in large) dot += small[k] * large[k]
-  const d = (na ?? norm(a)) * (nb ?? norm(b))
-  return d ? dot / d : 0
-}
 
 /** Pure in-memory ranker — the reference implementation the DB layer mirrors.
  * Computes idf across the given corpus, then cosine-ranks docs vs the query. */
@@ -97,6 +65,34 @@ export async function indexDoc(refType: string, refId: string, text: string, ind
   const rows = Object.entries(vec).map(([term, weight]) => ({ index, term, docId: doc.id, weight }))
   if (rows.length) await prisma.semanticPosting.createMany({ data: rows })
   return { indexed: true, terms: rows.length }
+}
+
+/** Bulk (re)build an entire named index from a document set. Computes IDF once in
+ * memory (O(docs)) and batch-writes docs + postings — the scalable path used by
+ * reindex jobs (the per-doc indexDoc is for incremental single-doc updates). */
+export async function rebuildIndex(index: string, docs: { refType: string; refId: string; text: string }[]): Promise<{ docs: number; postings: number }> {
+  const tokenized = docs.map((d) => ({ refType: d.refType, refId: d.refId, text: d.text, tf: termFreq(tokenize(d.text)) }))
+  const df: Record<string, number> = {}
+  for (const d of tokenized) for (const t of Object.keys(d.tf)) df[t] = (df[t] || 0) + 1
+  const N = tokenized.length || 1
+  const idf = (t: string) => Math.log(1 + (N + 1) / ((df[t] || 0) + 1))
+
+  // Clear the existing index (full rebuild).
+  await prisma.semanticPosting.deleteMany({ where: { index } })
+  await prisma.semanticDoc.deleteMany({ where: { index } })
+
+  const docRows: any[] = []
+  const postingRows: any[] = []
+  for (const d of tokenized) {
+    const vec = tfidfVector(d.tf, idf)
+    if (!Object.keys(vec).length) continue
+    const id = crypto.randomUUID()
+    docRows.push({ id, refType: d.refType, refId: d.refId, index, vector: JSON.stringify(vec), norm: norm(vec), terms: Object.keys(vec).length, contentHash: hash(d.text) })
+    for (const [term, weight] of Object.entries(vec)) postingRows.push({ index, term, docId: id, weight })
+  }
+  for (let i = 0; i < docRows.length; i += 500) await prisma.semanticDoc.createMany({ data: docRows.slice(i, i + 500) })
+  for (let i = 0; i < postingRows.length; i += 1000) await prisma.semanticPosting.createMany({ data: postingRows.slice(i, i + 1000) })
+  return { docs: docRows.length, postings: postingRows.length }
 }
 
 export async function removeDoc(refType: string, refId: string, index = "default") {

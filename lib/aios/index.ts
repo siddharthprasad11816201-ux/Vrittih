@@ -1,6 +1,8 @@
 /* AIOS bootstrap — import this to use the gateway; it guarantees the built-in
- * capability providers are registered before execute() runs. */
+ * capability providers + knowledge event handlers are registered before use. */
 import "./providers"
+import { registerKnowledgeHandlers } from "@/lib/knowledge/handlers"
+registerKnowledgeHandlers()
 
 export { execute, registerProvider, providerKeys } from "./execute"
 export type { ExecCtx, ExecResult, Provider, ProviderResult } from "./execute"
