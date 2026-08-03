@@ -111,6 +111,13 @@ model User {
   enrollments          Enrollment[]         @relation("EnrollmentUser")
   mentorshipsAsMentor  Mentorship[]         @relation("MentorshipMentor")
   mentorshipsAsMentee  Mentorship[]         @relation("MentorshipMentee")
+  researchProjects     ResearchProject[]    @relation("ResearchOwner")
+  researchOutputs      ResearchOutput[]     @relation("ResearchAuthor")
+  researchReviews      ResearchReview[]     @relation("ResearchReviewer")
+  grantsPosted         Grant[]              @relation("GrantPoster")
+  grantApplications    GrantApplication[]   @relation("GrantApplicant")
+  challengesSponsored  InnovationChallenge[] @relation("ChallengeSponsor")
+  challengeSubmissions ChallengeSubmission[] @relation("ChallengeSubmitter")
 }
 
 // A structured internship engagement (native "InternshipOS"): a weekly milestone
@@ -1424,6 +1431,127 @@ model Mentorship {
   mentee        User     @relation("MentorshipMentee", fields: [menteeId], references: [id], onDelete: Cascade)
   @@index([mentorId, status])
   @@index([menteeId, status])
+}
+
+// ===== Phase 3 — Enterprise Research & Innovation Platform (ERIP) =====
+model ResearchProject {
+  id           String   @id @default(cuid())
+  ownerId      String
+  title        String
+  abstract     String?
+  field        String?
+  competencies String?                          // JSON string[] research competencies advanced
+  status       String   @default("ACTIVE")      // PROPOSED|ACTIVE|COMPLETED|ARCHIVED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  owner        User     @relation("ResearchOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  outputs      ResearchOutput[]
+  @@index([ownerId, status])
+}
+
+model ResearchOutput {
+  id           String   @id @default(cuid())
+  projectId    String?
+  authorId     String
+  title        String
+  kind         String   @default("paper")       // paper|preprint|patent|dataset|report
+  abstract     String?
+  venue        String?
+  url          String?
+  doi          String?
+  competencies String?                          // JSON string[]
+  status       String   @default("DRAFT")        // DRAFT|UNDER_REVIEW|PUBLISHED|REJECTED|WITHDRAWN
+  publishedAt  DateTime?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  author       User     @relation("ResearchAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  project      ResearchProject? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  reviews      ResearchReview[]
+  @@index([status, kind])
+  @@index([authorId])
+}
+
+model ResearchReview {
+  id             String   @id @default(cuid())
+  outputId       String
+  reviewerId     String
+  recommendation String                         // ACCEPT|MINOR|MAJOR|REJECT
+  score          Int?                            // 0..10
+  comments       String?
+  createdAt      DateTime @default(now())
+  output         ResearchOutput @relation(fields: [outputId], references: [id], onDelete: Cascade)
+  reviewer       User           @relation("ResearchReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
+  @@unique([outputId, reviewerId])
+}
+
+model Citation {
+  id           String   @id @default(cuid())
+  fromOutputId String
+  toOutputId   String?
+  externalRef  String?
+  createdAt    DateTime @default(now())
+  @@index([toOutputId])
+  @@index([fromOutputId])
+}
+
+model Grant {
+  id          String   @id @default(cuid())
+  postedById  String
+  title       String
+  funder      String?
+  amount      Float?
+  currency    String   @default("CHF")
+  field       String?
+  description String?
+  status      String   @default("OPEN")          // OPEN|CLOSED
+  deadline    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  postedBy    User     @relation("GrantPoster", fields: [postedById], references: [id], onDelete: Cascade)
+  applications GrantApplication[]
+  @@index([status])
+}
+
+model GrantApplication {
+  id          String   @id @default(cuid())
+  grantId     String
+  applicantId String
+  projectId   String?
+  summary     String?
+  status      String   @default("SUBMITTED")     // SUBMITTED|SHORTLISTED|AWARDED|REJECTED
+  createdAt   DateTime @default(now())
+  grant       Grant    @relation(fields: [grantId], references: [id], onDelete: Cascade)
+  applicant   User     @relation("GrantApplicant", fields: [applicantId], references: [id], onDelete: Cascade)
+  @@unique([grantId, applicantId])
+}
+
+model InnovationChallenge {
+  id          String   @id @default(cuid())
+  sponsorId   String
+  title       String
+  description String?
+  prize       String?
+  status      String   @default("OPEN")          // OPEN|JUDGING|CLOSED
+  deadline    DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sponsor     User     @relation("ChallengeSponsor", fields: [sponsorId], references: [id], onDelete: Cascade)
+  submissions ChallengeSubmission[]
+  @@index([status])
+}
+
+model ChallengeSubmission {
+  id          String   @id @default(cuid())
+  challengeId String
+  userId      String
+  title       String
+  summary     String?
+  url         String?
+  status      String   @default("SUBMITTED")     // SUBMITTED|SHORTLISTED|WINNER|REJECTED
+  createdAt   DateTime @default(now())
+  challenge   InnovationChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  user        User     @relation("ChallengeSubmitter", fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([challengeId, userId])
 }
 
 // What a given job requires of an applicant. Employers differ: some want a CV

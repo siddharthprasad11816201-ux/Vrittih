@@ -71,6 +71,8 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/tutor", label: "AI Tutor", icon: <IconZap size={18} /> },         // ELTOS in-house tutor (AIOS)
       { href: "/mentoring", label: "Mentoring", icon: <IconUsers size={18} /> },   // ELTOS mentor discovery/matching
       { href: "/learning-analytics", label: "Growth", icon: <IconTrendingUp size={18} /> }, // ELTOS learning analytics
+      { href: "/research", label: "Research", icon: <IconActivity size={18} /> },   // ERIP research lifecycle
+      { href: "/innovation", label: "Innovation", icon: <IconZap size={18} /> },     // ERIP grants + challenges
       { href: "/learn", label: "Learn", icon: <IconBookmark size={18} /> },      // internships (learn & earn)
       { href: "/internship", label: "Internship", icon: <IconCheckCircle size={18} /> }, // active programme + roadmap
       { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> }, // full-time / contract / freelance (earn)

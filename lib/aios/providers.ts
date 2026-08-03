@@ -120,3 +120,21 @@ registerProvider("learning.tutor", async (ctx) => {
   const res = tutorRespond(q, { focusSkills: focus, days })
   return { output: res, explanation: res.explanation, modelId: "tutor-v1" }
 })
+
+/* Research AI Assistant — in-house literature retrieval over the semantic index +
+ * knowledge base (no external LLM). Resolves research hits to output titles. Audited. */
+registerProvider("research.assistant", async (ctx) => {
+  const q = String(ctx.input?.question || "")
+  const [lit, knowledge] = await Promise.all([
+    search(q, { refType: "research", limit: 8 }).catch(() => [] as any[]),
+    search(q, { refType: "knowledge", limit: 5 }).catch(() => [] as any[]),
+  ])
+  const ids = (lit as any[]).map(r => r.refId)
+  const outs = ids.length ? await prisma.researchOutput.findMany({ where: { id: { in: ids }, status: "PUBLISHED" }, select: { id: true, title: true, kind: true, venue: true, url: true } }).catch(() => [] as any[]) : []
+  const byId = new Map((outs as any[]).map(o => [o.id, o]))
+  const literature = (lit as any[]).map(r => ({ ...(byId.get(r.refId) || { id: r.refId, title: "(untitled)" }), score: Math.round((r.score || 0) * 100) })).filter(x => byId.has(x.id))
+  return {
+    output: { literature, knowledgeHits: (knowledge as any[]).length, note: "In-house semantic retrieval over the research + knowledge index; no external LLM. Ask me to find related work by topic." },
+    explanation: `Found ${literature.length} related published output(s)`, modelId: "research-assistant-v1",
+  }
+})
