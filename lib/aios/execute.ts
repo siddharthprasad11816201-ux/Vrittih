@@ -6,6 +6,7 @@
 import { getCapability } from "./registry"
 import { writeAiRun, inputsHash } from "./audit"
 import { emit } from "./events"
+import { authorize as authzCaps } from "@/lib/capability/policy"
 
 export type ExecCtx = { subjectId?: string | null; input?: any; agentId?: string | null; caps?: string[] }
 export type ProviderResult = { output: any; confidence?: number; explanation?: string; modelId?: string }
@@ -29,7 +30,12 @@ export async function execute(capId: string, ctx: ExecCtx): Promise<ExecResult> 
   if (cap.safetyClass === "forbidden-auto") return fail(await audit({ status: "blocked", error: "requires_human_approval" }), "blocked", "This action requires human approval")
 
   // §9 authorization — capability/permission/context driven (never role).
-  if (cap.permissions?.includes("auth") && !ctx.subjectId) return fail(await audit({ status: "denied", error: "not_authenticated" }), "denied", "Not authenticated")
+  // "auth" = any authenticated subject; any other permission is a capability key
+  // the subject must hold (from lib/capability). Fail-closed.
+  const perms = cap.permissions || []
+  if (perms.includes("auth") && !ctx.subjectId) return fail(await audit({ status: "denied", error: "not_authenticated" }), "denied", "Not authenticated")
+  const requiredCaps = perms.filter((p: string) => p !== "auth")
+  if (requiredCaps.length && !authzCaps(ctx.caps, requiredCaps, "all")) return fail(await audit({ status: "denied", error: "missing_capability" }), "denied", "Missing required capability")
 
   const provider = PROVIDERS.get(cap.provider)
   if (!provider) return fail(await audit({ status: "error", error: "no_provider" }), "error", "No provider registered for capability")

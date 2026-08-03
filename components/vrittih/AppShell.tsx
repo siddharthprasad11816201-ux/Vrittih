@@ -9,7 +9,6 @@ import {
   IconSearch, IconBell, IconShield, IconScan, IconMenu, IconX, IconHome, IconBookmark, IconGlobe,
   IconBanknote, IconKey, IconCheckCircle,
 } from "@/components/ui/Icons"
-import { hasFeature, type Feature } from "@/lib/entitlements"
 
 /* Vrittih Identity System v1 navigation — cornflower shell.
  * Desktop: glass top bar + 264px sectioned sidebar (active indicator + AI Coach).
@@ -32,10 +31,12 @@ function Keystone({ size = 36 }: { size?: number }) {
   )
 }
 
-function buildNav(user: any): Section[] {
-  const emp = !!user && ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user.role)
-  const isAdmin = !!user && ["ADMIN", "SUPER_ADMIN"].includes(user.role)
-  const can = (f: Feature) => hasFeature(user, f)
+// Navigation Composer (Phase 1 · Module 1) — capability-driven, never role-driven.
+// Every section/item is gated on a capability from lib/capability.
+function buildNav(caps: Set<string>): Section[] {
+  const emp = caps.has("jobs.post")
+  const isAdmin = caps.has("admin.access")
+  const can = (c: string) => caps.has(c)
   const I = (n: ReactNode) => n
 
   const sections: Section[] = [{ items: [{ href: "/dashboard", label: "Overview", icon: <IconHome size={19} /> }] }]
@@ -47,9 +48,9 @@ function buildNav(user: any): Section[] {
           { href: "/dashboard/post-job", label: "Post a job", icon: <IconFileText size={19} /> },
           { href: "/dashboard/recruiter", label: "Candidates", icon: <IconUsers size={19} /> },
           { href: "/dashboard/pipeline", label: "Pipeline", icon: <IconTrendingUp size={19} /> },
-          ...(can("hrms") ? [{ href: "/hrms", label: "HRMS", icon: <IconClipboard size={19} /> }] : []),
-          ...(can("payroll") ? [{ href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={19} /> }] : []),
-          ...(can("tasks") ? [{ href: "/tasks", label: "Tasks", icon: <IconCheckCircle size={19} /> }] : []),
+          ...(can("hrms.view") ? [{ href: "/hrms", label: "HRMS", icon: <IconClipboard size={19} /> }] : []),
+          ...(can("payroll.view") ? [{ href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={19} /> }] : []),
+          ...(can("tasks.view") ? [{ href: "/tasks", label: "Tasks", icon: <IconCheckCircle size={19} /> }] : []),
           { href: "/jobs", label: "All jobs", icon: <IconBriefcase size={19} /> },
           { href: "/companies", label: "Companies", icon: <IconGlobe size={19} /> },
         ]
@@ -69,10 +70,10 @@ function buildNav(user: any): Section[] {
     { href: "/community", label: "Community", icon: <IconUsers size={19} /> },
     { href: "/messages", label: "Messages", icon: <IconMessage size={19} /> },
   ]
-  if (can("mail")) networking.push({ href: "/mail", label: "Mail", icon: <IconMail size={19} /> })
+  if (can("mail.send")) networking.push({ href: "/mail", label: "Mail", icon: <IconMail size={19} /> })
   sections.push({ title: "NETWORKING", items: networking })
 
-  if (can("crm")) sections.push({
+  if (can("crm.view")) sections.push({
     title: "CRM",
     items: [
       { href: "/contacts", label: "Contacts", icon: <IconUsers size={19} /> },
@@ -85,7 +86,7 @@ function buildNav(user: any): Section[] {
     { href: "/tests", label: "Assessments", icon: <IconClipboard size={19} /> },
     { href: "/tools", label: "Tools", icon: <IconTarget size={19} /> },
   ]
-  if (can("api")) resources.push({ href: "/developers", label: "Developers", icon: <IconKey size={19} /> })
+  if (can("api.keys")) resources.push({ href: "/developers", label: "Developers", icon: <IconKey size={19} /> })
   resources.push({ href: "/verify/face-setup", label: "Security", icon: <IconScan size={19} /> })
   if (isAdmin) resources.push({ href: "/admin", label: "Admin panel", icon: <IconShield size={19} /> })
   sections.push({ title: "RESOURCES", items: resources })
@@ -93,9 +94,9 @@ function buildNav(user: any): Section[] {
   return sections
 }
 
-// The five primary destinations for the mobile bottom bar (role-aware).
-function bottomTabs(user: any): Item[] {
-  const emp = !!user && ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user.role)
+// The five primary destinations for the mobile bottom bar (capability-driven).
+function bottomTabs(caps: Set<string>): Item[] {
+  const emp = caps.has("jobs.post")
   return emp
     ? [
         { href: "/dashboard", label: "Home", icon: <IconHome size={22} /> },
@@ -117,6 +118,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   const pathname = usePathname()
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
+  const [caps, setCaps] = useState<Set<string>>(new Set())
   const [authLoaded, setAuthLoaded] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
   const [isTablet, setIsTablet] = useState(false)
@@ -124,6 +126,8 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
 
   useEffect(() => {
     fetch("/api/auth/me").then((r) => r.json()).then((d) => setUser(d.user || null)).catch(() => setUser(null)).finally(() => setAuthLoaded(true))
+    // Navigation is composed from the subject's capabilities (role-free).
+    fetch("/api/me/capabilities").then((r) => r.json()).then((d) => setCaps(new Set(d.capabilities || []))).catch(() => setCaps(new Set()))
   }, [])
   useEffect(() => {
     // <720 = mobile (bottom nav + drawer); 720–1119 = tablet (72px icon rail); ≥1120 = full sidebar. §7
@@ -139,10 +143,10 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey)
   }, [])
 
-  const isEmployer = !!user && ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user.role)
+  const isEmployer = caps.has("jobs.post")
   const rail = isTablet // 72px icon-rail sidebar
-  const sections = buildNav(user)
-  const tabs = bottomTabs(user)
+  const sections = buildNav(caps)
+  const tabs = bottomTabs(caps)
   const active = (href: string) => href === "/dashboard" ? pathname === "/dashboard" : (pathname === href || pathname.startsWith(href + "/"))
   const activeTab = tabs.findIndex((t) => active(t.href))
   const initials = (user?.name || "?").split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
@@ -275,7 +279,7 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
         </>
       )}
 
-      <CommandPalette isEmployer={isEmployer} canCrm={hasFeature(user, "crm")} canMail={hasFeature(user, "mail")} canInterviews={hasFeature(user, "interviews")} canApi={hasFeature(user, "api")} />
+      <CommandPalette isEmployer={isEmployer} canCrm={caps.has("crm.view")} canMail={caps.has("mail.send")} canInterviews={caps.has("interviews.host")} canApi={caps.has("api.keys")} />
     </div>
   )
 }
