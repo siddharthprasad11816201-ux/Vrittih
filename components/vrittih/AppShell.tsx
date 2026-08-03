@@ -42,6 +42,7 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/dashboard/post-job", label: "Post a job", icon: <IconFileText size={18} /> },
       { href: "/dashboard/recruiter", label: "Candidates", icon: <IconUsers size={18} /> },
       { href: "/dashboard/pipeline", label: "Pipeline", icon: <IconTrendingUp size={18} /> },
+      { href: "/internship", label: "Interns", icon: <IconCheckCircle size={18} /> },
       { href: "/jobs", label: "All jobs", icon: <IconBriefcase size={18} /> },
       { href: "/companies", label: "Companies", icon: <IconGlobe size={18} /> },
     ]
@@ -59,6 +60,7 @@ function buildNav(caps: Set<string>): Section[] {
     sections.push({ title: "Career", items: [
       { href: "/career", label: "Career AI", icon: <IconActivity size={18} /> },
       { href: "/learn", label: "Learn", icon: <IconMonitor size={18} /> },      // internships (learn & earn)
+      { href: "/internship", label: "Internship", icon: <IconCheckCircle size={18} /> }, // active programme + roadmap
       { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> }, // full-time / contract / freelance (earn)
       { href: "/jobs/match", label: "Matched", icon: <IconTarget size={18} /> },
       { href: "/applications", label: "Applications", icon: <IconFileText size={18} /> },

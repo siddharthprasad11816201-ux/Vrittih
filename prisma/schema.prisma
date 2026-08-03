@@ -93,6 +93,72 @@ model User {
   certificatesEarned   Certificate[]        @relation("CertRecipient")
   trialStartedAt       DateTime?            // 7-day Basic trial (unlocks Basic features + up to 10 applications)
   trialEndsAt          DateTime?
+  internships          Internship[]         @relation("Intern")
+  mentoring            Internship[]         @relation("Mentor")
+  evaluationsReceived  Evaluation[]         @relation("EvalSubject")
+}
+
+// A structured internship engagement (native "InternshipOS"): a weekly milestone
+// roadmap, a mentor, stipend, evaluations, and a PPO (pre-placement offer) path.
+model Internship {
+  id            String    @id @default(cuid())
+  userId        String                                   // the intern
+  user          User      @relation("Intern", fields: [userId], references: [id], onDelete: Cascade)
+  mentorId      String?
+  mentor        User?     @relation("Mentor", fields: [mentorId], references: [id])
+  createdById   String?                                  // employer/admin who set it up
+  jobId         String?                                  // originating internship posting, if any
+  companyName   String
+  title         String
+  track         String?
+  cohort        String?
+  status        String    @default("ACTIVE")             // ACTIVE | COMPLETED | DROPPED
+  ppoStatus     String    @default("NONE")               // NONE | CONSIDERING | OFFERED | ACCEPTED | DECLINED
+  startedAt     DateTime  @default(now())
+  durationWeeks Int       @default(8)
+  stipendAmount Float?
+  stipendCurrency String? @default("INR")
+  completionPct Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  milestones    InternshipMilestone[]
+  evaluations   Evaluation[]
+  @@index([userId])
+  @@index([mentorId])
+}
+
+model InternshipMilestone {
+  id           String    @id @default(cuid())
+  internshipId String
+  internship   Internship @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  week         Int
+  title        String
+  status       String    @default("PENDING")             // PENDING | IN_PROGRESS | DONE
+  dueAt        DateTime?
+  completedAt  DateTime?
+  note         String?
+  @@index([internshipId])
+}
+
+// Structured human evaluation (weekly / milestone / final) — mentor or HR review.
+model Evaluation {
+  id           String    @id @default(cuid())
+  internshipId String?
+  internship   Internship? @relation(fields: [internshipId], references: [id], onDelete: Cascade)
+  subjectId    String
+  subject      User      @relation("EvalSubject", fields: [subjectId], references: [id], onDelete: Cascade)
+  reviewerId   String?
+  reviewerName String
+  kind         String    @default("weekly")              // weekly | milestone | final | peer | self
+  period       String?                                   // e.g. "Week 3"
+  scoresJson   String?                                   // JSON: dimension -> 0..5
+  overall      Float?
+  strengths    String?
+  improvements String?
+  note         String?
+  createdAt    DateTime  @default(now())
+  @@index([subjectId])
+  @@index([internshipId])
 }
 
 // Company profile — a real employer page, not just a string on a job. Jobs link by
