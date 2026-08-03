@@ -8,12 +8,13 @@ import { IconStar, IconLock, IconArrowRight } from "@/components/ui/Icons"
  * teaser + unlock CTA; paid users see their best-fit roles. Uses lib/astrology
  * (deterministic, in-house — no external service). */
 
-export default function AstroJobCard({ paid, birthDate, experience = [] }: {
+export default function AstroJobCard({ paid, birthDate, birthTime, experience = [] }: {
   paid: boolean
   birthDate?: string | null
+  birthTime?: string | null
   experience?: { title?: string }[]
 }) {
-  const a = analyze(birthDate)
+  const a = analyze(birthDate, birthTime)
 
   // Locked (not paid) — teaser + unlock. Show the sun sign as a hook, blur the pick.
   if (!paid) {
@@ -59,6 +60,13 @@ export default function AstroJobCard({ paid, birthDate, experience = [] }: {
       </div>
       <p style={S.headline}>{fit.headline}</p>
       <p style={S.note}>{fit.note}</p>
+      {a.psychophysical && (
+        <div style={S.pp}>
+          <div style={S.ppRow}>{a.psychophysical.temperament}</div>
+          {a.psychophysical.disposition && <div style={S.ppRow}>{a.psychophysical.disposition}</div>}
+          <div style={S.ppNote}>{a.psychophysical.precisionNote}</div>
+        </div>
+      )}
       <div style={S.roles}>
         {fit.recommended.map((r: string) => (
           <Link key={r} href={`/jobs?q=${encodeURIComponent(r)}`} style={S.roleChip}>{r}</Link>
@@ -77,6 +85,9 @@ const S: Record<string, any> = {
   metaLine: { font: "400 12px var(--font-sans)", color: "var(--v-ink-3)", marginTop: 2 },
   headline: { font: "500 14.5px var(--font-sans)", color: "var(--v-ink)", lineHeight: 1.5 },
   note: { font: "400 13px var(--font-sans)", color: "var(--v-ink-2)", lineHeight: 1.6, marginTop: 6 },
+  pp: { marginTop: 12, padding: "11px 13px", background: "var(--v-surface-2)", borderRadius: "var(--r-md)", display: "flex", flexDirection: "column", gap: 5 },
+  ppRow: { font: "400 12.5px var(--font-sans)", color: "var(--v-ink-2)", lineHeight: 1.5 },
+  ppNote: { font: "400 11px var(--font-sans)", color: "var(--v-ink-3)", marginTop: 2 },
   roles: { display: "flex", flexWrap: "wrap", gap: 7, marginTop: 12 },
   roleChip: { display: "inline-flex", alignItems: "center", background: "var(--v-surface)", border: "1px solid var(--v-accent-soft)", color: "var(--v-accent)", padding: "6px 12px", borderRadius: 999, font: "500 12.5px var(--font-sans)", textDecoration: "none" },
   moreLink: { display: "inline-flex", alignItems: "center", gap: 4, font: "500 13px var(--font-sans)", color: "var(--v-accent)", textDecoration: "none", marginTop: 12 },

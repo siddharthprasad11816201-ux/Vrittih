@@ -25,7 +25,7 @@ export default function Dashboard() {
   const [stats, setStats] = useState<any>(null)
   const [applications, setApplications] = useState<any[]>([])
   const [jobs, setJobs] = useState<any[]>([])
-  const [profile, setProfile] = useState<{ birthDate: string | null; experience: any[] } | null>(null)
+  const [profile, setProfile] = useState<{ birthDate: string | null; birthTime: string | null; experience: any[] } | null>(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
@@ -40,7 +40,7 @@ export default function Dashboard() {
     // Profile (birth details) for everyone — powers the daily astrological guidance
     // (advanced tiers + admins) and the best-fit card (seekers).
     const prof = await fetch("/api/profile").then(r => r.json()).catch(() => ({}))
-    setProfile({ birthDate: prof?.user?.profile?.birthDate || null, experience: prof?.user?.experience || [] })
+    setProfile({ birthDate: prof?.user?.profile?.birthDate || null, birthTime: prof?.user?.profile?.birthTime || null, experience: prof?.user?.experience || [] })
     if (isEmp) {
       const [jobsData, appsData] = await Promise.all([
         fetch("/api/jobs?mine=true").then(r => r.json()),
@@ -186,7 +186,7 @@ export default function Dashboard() {
             )}
 
             {/* Astrological best-fit career — paid (Basic) unlock, applicant home board */}
-            {!isEmployer && <AstroJobCard paid={paid} birthDate={profile?.birthDate} experience={profile?.experience || []} />}
+            {!isEmployer && <AstroJobCard paid={paid} birthDate={profile?.birthDate} birthTime={profile?.birthTime} experience={profile?.experience || []} />}
 
             {!empty && setupOpen && <Setup />}
 

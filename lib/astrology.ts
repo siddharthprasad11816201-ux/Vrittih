@@ -1,5 +1,9 @@
-// In-house astrology + numerology engine — deterministic, no third-party service.
-// Career-oriented: framed for a professional platform (strengths, work style, ideal roles).
+// In-house psychophysical-nature engine (astronomy + numerology) — deterministic,
+// no third-party service. Positional astronomy (lib/astro/ephemeris) drives a
+// precise Sun position and, when a birth time is known, the Moon's position and
+// lunar mansion; these feed a career-oriented psychophysical profile. Framed for a
+// professional platform (temperament, energy, work style, best-fit roles).
+import { computeChart, type Chart } from "@/lib/astro/ephemeris"
 
 export type AstroSign = {
   name: string
@@ -199,19 +203,69 @@ const ELEMENT_DOSHA: Record<string, Dosha> = {
   Water: { name: "Kapha–Vata", body: "Water-led. Fluid, nurturing, emotionally deep and adaptable.", energy: "Steady, empathetic, intuitive endurance.", balance: "Benefits from clear boundaries and forward motion to avoid over-absorbing others' weight." },
 }
 
+// ---- Psychophysical profile (science-framed layer over the chart) ----
+export type Psychophysical = {
+  temperament: string        // solar temperament (from element)
+  energyPattern: string      // from guna/dosha
+  cognitiveStyle: string     // from modality
+  disposition: string | null // lunar disposition (only when birth time known)
+  precisionNote: string
+  summary: string
+}
+const TEMPERAMENT: Record<string, string> = {
+  Fire: "Initiating and drive-led — moves first, energised by challenge and momentum.",
+  Earth: "Grounded and methodical — builds steadily, energised by structure and tangible progress.",
+  Air: "Communicative and adaptive — thinks in connections, energised by ideas and people.",
+  Water: "Perceptive and empathetic — reads people and context, energised by meaning and depth.",
+}
+const COGNITIVE: Record<string, string> = {
+  Cardinal: "Starts things: sets direction and opens new work.",
+  Fixed: "Sustains things: sees work through with focus and consistency.",
+  Mutable: "Adapts things: flexes, connects and improvises across contexts.",
+}
+function psychophysicalProfile(sign: AstroSign, chart: Chart): Psychophysical {
+  const disposition = chart.moon
+    ? `Lunar disposition in ${chart.moon.sign.name} (${chart.moon.nakshatra.name}) — an inner tempo that colours how you recharge and relate.`
+    : null
+  const precisionNote = chart.moon
+    ? `Computed from your date and time of birth (Sun ${chart.sun.sidereal.degree}° ${chart.sun.sidereal.name} sidereal · Moon in ${chart.moon.nakshatra.name}).`
+    : `Computed from your date of birth (Sun ${chart.sun.sidereal.degree}° ${chart.sun.sidereal.name} sidereal). Add a birth time for lunar precision.`
+  return {
+    temperament: TEMPERAMENT[sign.element],
+    energyPattern: guna(sign).summary,
+    cognitiveStyle: COGNITIVE[sign.modality],
+    disposition,
+    precisionNote,
+    summary: `${TEMPERAMENT[sign.element]} ${COGNITIVE[sign.modality]}`,
+  }
+}
+
 export type AstroAnalysis = {
   sign: AstroSign
   guna: Guna
   dosha: Dosha
   lifePath: { number: number; title: string; summary: string } | null
+  precise: Chart
+  psychophysical: Psychophysical
 } | null
 
-export function analyze(birthDateISO?: string | Date | null): AstroAnalysis {
+export function analyze(birthDateISO?: string | Date | null, birthTime?: string | null): AstroAnalysis {
   if (!birthDateISO) return null
   const name = sunSign(birthDateISO)
   if (!name) return null
   const sign = SIGNS[name]
-  return { sign, guna: guna(sign), dosha: ELEMENT_DOSHA[sign.element], lifePath: lifePath(birthDateISO) }
+  // Precise chart from real positional astronomy. A birth time (HH:MM) unlocks the
+  // Moon/lunar-mansion layer; without it we compute the Sun precisely and omit the
+  // Moon rather than fabricate accuracy.
+  const base = typeof birthDateISO === "string" ? new Date(birthDateISO) : birthDateISO
+  let dt = base, hasTime = false
+  if (birthTime && /^\d{1,2}:\d{2}/.test(birthTime)) {
+    const [h, m] = birthTime.split(":").map(Number)
+    dt = new Date(Date.UTC(base.getUTCFullYear(), base.getUTCMonth(), base.getUTCDate(), h, m))
+    hasTime = true
+  }
+  const precise = computeChart(dt, hasTime)
+  return { sign, guna: guna(sign), dosha: ELEMENT_DOSHA[sign.element], lifePath: lifePath(birthDateISO), precise, psychophysical: psychophysicalProfile(sign, precise) }
 }
 
 // ---- Career fit: blend the chart with the career pathway completed so far ----
