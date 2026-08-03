@@ -70,12 +70,13 @@ Legend: ✅ exists & reused · ◐ partial (extend) · ⬜ gap (build) · ▶ bu
 | **8. Offer Management** | ▶ | **GAP — no `Offer` model.** THE keystone. Building now: `Offer`/`OfferEvent`, lifecycle state machine, compensation (FX-aware), approval, versioning, digital acceptance → HIRED + onboarding trigger, acceptance prediction, dashboards. |
 | **9. Onboarding** | ◐ | Internship OS (`/internship`), `Employee.onboarding`, identity verification, mentor/buddy (internship). GAP: unify a general new-hire onboarding triggered by offer acceptance. |
 | **AI Recruitment Intelligence** | ◐ | Match/DNA/funnel calibration (`lib/career/*`), EIDP decisions/forecast. GAP: offer-acceptance & hiring-success prediction (this build starts it), bias monitoring. |
-| **Dashboards** | ◐ | Recruiter/pipeline (`/dashboard/*`), Executive (`/executive`). GAP: offer/forecast/assessment/campus workspaces. |
+| **Dashboards** | ✅ | Recruiter/pipeline (`/dashboard/*`), Executive (`/executive`), **Recruitment Analytics** (`/recruitment-analytics` — funnels + rates), Workforce Planning (`/workforce-planning`), Offers (`/offers`), Integrity (`/proctoring`), Copilot (`/copilot`). All capability‑driven. |
 | **Workflow Automation** | ◐ | Notifications, webhooks, status transitions, cron (ingest/discover). GAP: approvals, SLA monitoring, reminders engine. |
 | **AI Copilots** | ✅ | Career coach + **Recruiter Copilot** (`lib/copilot/recruit.ts`, 8 tests) — deterministic next-best-actions from real pipeline state, registered as AIOS capability `recruit.copilot` and run through `execute()` (audited via AiRun). `/api/copilot/recruit` + `/copilot` UI. |
 | **Workflow Automation** | ✅ | `/api/cron/recruit-automation` (daily): interview reminders, offer-expiry nudges, stale-pipeline SLA digests via the notification engine. Registered in vercel.json. |
 
-**This build (batch 1): Module 8 — Offer Management, complete.**
+**EROS COMPLETE (Batches 1–6 shipped + reviewed). Production readiness: GO — see
+`docs/recruitment/EROS_COMPLETION_REPORT.md`. Next: Phase 2 (ELTOS).**
 
 ---
 
