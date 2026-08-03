@@ -70,6 +70,9 @@ export default function PayPage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState(false)
   const [showFx, setShowFx] = useState(false)
+  const [couponCode, setCouponCode] = useState("")
+  const [coupon, setCoupon] = useState<any>(null)   // /api/payment/apply-coupon result
+  const [couponBusy, setCouponBusy] = useState(false)
   // Live catalogue (admin prices applied). Falls back to the shipped defaults so
   // the page still renders if the endpoint is briefly unavailable.
   const [catalogue, setCatalogue] = useState<Plan[]>(DEFAULT_PLANS)
@@ -93,6 +96,8 @@ export default function PayPage() {
   const plans = useMemo(() => catalogue.filter(p => p.audience === audience && p.priceCHF > 0), [audience, catalogue])
   const plan = plans.find(p => p.id === planId) || plans[0]
   const rate = rates.find(r => r.code === currency)
+  // A coupon's discount depends on the plan/audience, so clear it when they change.
+  useEffect(() => { setCoupon(null) }, [planId, audience])
 
   // rates come back priced for 1 CHF; scale to the plan
   const localAmount = rate && plan ? rate.amount * plan.priceCHF : null
@@ -101,6 +106,10 @@ export default function PayPage() {
     const zero = rate.code === "JPY"
     return `${rate.symbol}${n.toLocaleString(undefined, { minimumFractionDigits: zero ? 0 : 2, maximumFractionDigits: zero ? 0 : 2 })}`
   }
+  // Amount after any applied coupon (coupon.finalCHF is authoritative, from the server).
+  const effectiveCHF = coupon?.ok ? coupon.finalCHF : (plan ? plan.priceCHF : null)
+  const localEffective = rate && effectiveCHF != null ? rate.amount * effectiveCHF : null
+  const isWaiver = !!(coupon?.ok && coupon.waiver)
 
   async function pay() {
     if (!plan) return
@@ -108,9 +117,13 @@ export default function PayPage() {
     try {
       const d = await fetch("/api/payment/create-order", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ currency, planId: plan.id, type: audience === "employer" ? "employer" : "jobseeker" }),
+        body: JSON.stringify({
+          currency, planId: plan.id, type: audience === "employer" ? "employer" : "jobseeker",
+          couponCode: coupon?.ok && !coupon?.waiver ? couponCode.trim() : undefined,
+        }),
       }).then(r => r.json())
 
+      if (d.waiver) { setBusy(false); return activateWaiver() }   // coupon covers the full amount
       if (!d.orderId) {
         setError(d.error || "We couldn't start the payment. Please try again in a moment.")
         setBusy(false); return
@@ -137,6 +150,33 @@ export default function PayPage() {
       setError("Network error. Please try again.")
       setBusy(false)
     }
+  }
+
+  async function applyCoupon() {
+    if (!couponCode.trim() || !plan) return
+    setCouponBusy(true); setError("")
+    try {
+      const d = await fetch("/api/payment/apply-coupon", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode.trim(), planId: plan.id, type: audience === "employer" ? "employer" : "jobseeker" }),
+      }).then(r => r.json())
+      setCoupon(d)
+    } catch {
+      setCoupon({ ok: false, reason: "Couldn't check that code — try again." })
+    } finally { setCouponBusy(false) }
+  }
+
+  async function activateWaiver() {
+    if (!plan) return
+    setBusy(true); setError("")
+    try {
+      const d = await fetch("/api/payment/redeem-waiver", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ code: couponCode.trim(), planId: plan.id, type: audience === "employer" ? "employer" : "jobseeker" }),
+      }).then(r => r.json())
+      if (d.success) { setSuccess(true); setTimeout(() => router.push("/dashboard"), 1800) }
+      else { setError(d.error || "We couldn't apply that code."); setBusy(false) }
+    } catch { setError("Network error. Please try again."); setBusy(false) }
   }
 
   if (success) return (
@@ -211,10 +251,25 @@ export default function PayPage() {
           <p className="upiHint">Want to pay by UPI? Choose <button type="button" className="linkBtn" onClick={() => setCurrency("INR")}>₹ INR</button> — UPI, netbanking &amp; wallets are available for rupee payments.</p>
         )}
 
-        <button onClick={pay} disabled={busy || !plan || !rate} className={"btn wide" + (busy || !rate ? " off" : "")}>
-          <IconLock size={15} />
-          {busy ? "Opening secure checkout…" : plan ? `Subscribe — ${money(localAmount)} / month` : "Choose a plan"}
-        </button>
+        <div className="coupon">
+          <input value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())} placeholder="Discount code" className="couponIn" aria-label="Discount code" />
+          <button type="button" onClick={applyCoupon} disabled={couponBusy || !couponCode.trim()} className="couponBtn">{couponBusy ? "…" : "Apply"}</button>
+        </div>
+        {coupon && (coupon.ok
+          ? <p className="couponOk">{coupon.waiver ? "This code covers the full amount — activate for free below." : `Code applied — you save ${money(rate ? rate.amount * coupon.discountCHF : null)}/month.`}</p>
+          : <p className="couponErr">{coupon.reason || "That code isn't valid."}</p>)}
+
+        {isWaiver ? (
+          <button onClick={activateWaiver} disabled={busy || !plan} className={"btn wide" + (busy ? " off" : "")}>
+            <IconLock size={15} />
+            {busy ? "Activating…" : "Activate free"}
+          </button>
+        ) : (
+          <button onClick={pay} disabled={busy || !plan || !rate} className={"btn wide" + (busy || !rate ? " off" : "")}>
+            <IconLock size={15} />
+            {busy ? "Opening secure checkout…" : plan ? `Subscribe — ${money(localEffective)} / month` : "Choose a plan"}
+          </button>
+        )}
 
         <p className="fine">
           Secure checkout by Razorpay · {currency === "INR" ? "UPI, cards, netbanking & wallets" : "international cards"}.
@@ -291,6 +346,13 @@ const CSS = `
 .ccyBar select{font:inherit;font-size:13.5px;font-weight:600;padding:7px 11px;border:1px solid var(--line);border-radius:10px;background:var(--card);color:var(--ink);cursor:pointer}
 .ccyBar .methods{margin-left:auto;font-size:12.5px;color:var(--ink3);font-weight:500}
 .upiHint{font-size:12.5px;color:var(--ink2);margin:10px 2px 0;line-height:1.6}
+.coupon{display:flex;gap:8px;margin-top:14px}
+.couponIn{flex:1;border:1px solid var(--line);border-radius:12px;padding:11px 14px;font:inherit;font-size:14px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink);outline:none;background:var(--card)}
+.couponIn:focus{border-color:var(--g)}
+.couponBtn{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:12px;padding:0 18px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+.couponBtn:disabled{opacity:.5;cursor:not-allowed}
+.couponOk{font-size:12.5px;color:var(--gh);margin:8px 2px 0;font-weight:600;line-height:1.5}
+.couponErr{font-size:12.5px;color:#B42318;margin:8px 2px 0;font-weight:500;line-height:1.5}
 .fine{font-size:12.5px;color:var(--ink3);text-align:center;margin:12px 0 0;line-height:1.6}
 .linkBtn{background:none;border:none;padding:0;font:inherit;font-size:12.5px;color:var(--g);font-weight:600;cursor:pointer;text-decoration:underline}
 .fx{margin-top:12px;padding:13px 15px;border:1px solid var(--line);border-radius:14px;background:var(--bg);font-size:13px;line-height:1.6;color:var(--ink2)}

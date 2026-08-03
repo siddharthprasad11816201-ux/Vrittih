@@ -1,12 +1,19 @@
 import Link from "next/link"
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { verifyToken } from "@/lib/jwt"
 import KeysPanel from "@/components/developers/KeysPanel"
 import DomainsPanel from "@/components/developers/DomainsPanel"
 import WebhooksPanel from "@/components/developers/WebhooksPanel"
 import BrandPanel from "@/components/developers/BrandPanel"
 
 export const metadata = { title: "Vrittih — Developer API" }
+export const dynamic = "force-dynamic"
 
-export default function DevelopersPage() {
+export default async function DevelopersPage() {
+  // Developer console is authenticated-only — it mints live API keys.
+  const token = (await cookies()).get("er_token")?.value
+  if (!token || !verifyToken(token)) redirect("/login?next=/developers")
   return (
     <div style={S.page}>
       <div style={S.wrap}>

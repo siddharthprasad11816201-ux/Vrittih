@@ -3,6 +3,7 @@ import crypto from "crypto"
 import { verifyToken } from "@/lib/jwt"
 import { prisma } from "@/lib/prisma"
 import { getRazorpay } from "@/lib/razorpay"
+import { recordRedemption } from "@/lib/coupon"
 
 export const dynamic = "force-dynamic"
 
@@ -27,9 +28,15 @@ export async function POST(req: NextRequest) {
       crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(razorpay_signature))
     if (!ok) return NextResponse.json({ error: "Invalid payment signature" }, { status: 400 })
 
-    // Read the plan from the order server-side (never trust the client for the tier).
-    let planId = ""
-    try { const order = await getRazorpay().orders.fetch(razorpay_order_id); planId = (order.notes?.planId as string) || "" } catch {}
+    // Read the plan + any applied coupon from the order server-side (never trust
+    // the client for the tier or the discount).
+    let planId = "", couponId = "", feeCHF = 0
+    try {
+      const order = await getRazorpay().orders.fetch(razorpay_order_id)
+      planId = (order.notes?.planId as string) || ""
+      couponId = (order.notes?.couponId as string) || ""
+      feeCHF = Number(order.notes?.feeCHF) || 0
+    } catch {}
 
     const data: any = { paid: true, paidAt: new Date(), paymentId: razorpay_payment_id }
     if (planId) {
@@ -37,6 +44,12 @@ export async function POST(req: NextRequest) {
       data.plan = planId; data.planRenewsAt = renews
     }
     await prisma.user.update({ where: { id: payload.userId }, data })
+
+    // Consume a partial coupon only now that payment is confirmed (abandoned
+    // checkouts never burn a code). Best-effort — must not fail the activation.
+    if (couponId) {
+      await recordRedemption(couponId, payload.userId, { planId: planId || null, amountBeforeCHF: feeCHF, amountAfterCHF: feeCHF, waiver: false, orderId: razorpay_order_id }).catch(() => {})
+    }
     return NextResponse.json({ success: true, paymentId: razorpay_payment_id, plan: planId || null })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

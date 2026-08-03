@@ -1592,4 +1592,43 @@ model Answer {
   question    Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
 }
 
+// Discount / waiver codes applied at checkout. All discount math is computed
+// server-side (never trust the client); a 100% coupon activates access through a
+// dedicated no-charge waiver path (see app/api/payment/redeem-waiver).
+model Coupon {
+  id             String   @id @default(cuid())
+  code           String   @unique              // stored UPPERCASE
+  description    String?
+  kind           String   @default("percent")  // "percent" | "fixed" | "waiver"
+  value          Float    @default(0)          // percent 0-100, or fixed CHF; ignored for "waiver"
+  audience       String   @default("all")       // "all" | "individual" | "employer"
+  planId         String?                         // null = any plan
+  maxRedemptions Int?                            // null = unlimited (global cap)
+  redeemedCount  Int      @default(0)
+  perUserLimit   Int      @default(1)            // per-user cap (0 = unlimited)
+  active         Boolean  @default(true)
+  startsAt       DateTime?
+  expiresAt      DateTime?
+  createdBy      String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  redemptions    CouponRedemption[]
+  @@index([active])
+}
+
+model CouponRedemption {
+  id              String   @id @default(cuid())
+  couponId        String
+  coupon          Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId          String
+  planId          String?
+  amountBeforeCHF Float
+  amountAfterCHF  Float
+  waiver          Boolean  @default(false)
+  orderId         String?
+  createdAt       DateTime @default(now())
+  @@unique([couponId, userId])                   // enforces per-user single redemption
+  @@index([userId])
+}
+
 
