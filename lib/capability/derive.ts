@@ -9,6 +9,7 @@ export type SubjectEvidence = { id?: string | null; role?: string | null; plan?:
 const FEATURE_CAP: [Feature, string][] = [
   ["hrms", "hrms.view"], ["payroll", "payroll.view"], ["tasks", "tasks.view"],
   ["crm", "crm.view"], ["mail", "mail.send"], ["interviews", "interviews.host"], ["api", "api.keys"],
+  ["network", "network.access"],   // professional networking — advanced tiers
 ]
 
 /** Compute the capability keys a subject holds. Pure + deterministic. */

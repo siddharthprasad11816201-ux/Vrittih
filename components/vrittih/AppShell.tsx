@@ -64,12 +64,16 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/jobs/saved", label: "Saved", icon: <IconBookmark size={18} /> },
       { href: "/resume", label: "Résumé", icon: <IconClipboard size={18} /> },
     ] })
-    sections.push({ title: "Network", items: [
+    // Professional networking (Feed/Network/Community) is an advanced-tier feature;
+    // Messages stays available to everyone (core to recruiter communication).
+    const net: Item[] = []
+    if (can("network.access")) net.push(
       { href: "/feed", label: "Feed", icon: <IconTrendingUp size={18} /> },
       { href: "/network", label: "Network", icon: <IconNetwork size={18} /> },
       { href: "/community", label: "Community", icon: <IconUsers size={18} /> },
-      { href: "/messages", label: "Messages", icon: <IconMessage size={18} /> },
-    ] })
+    )
+    net.push({ href: "/messages", label: "Messages", icon: <IconMessage size={18} /> })
+    sections.push({ title: "Network", items: net })
     sections.push({ title: "Resources", items: [
       { href: "/tests", label: "Assessments", icon: <IconAward size={18} /> },
       { href: "/tools", label: "Tools", icon: <IconZap size={18} /> },
@@ -97,7 +101,10 @@ function bottomTabs(caps: Set<string>): Item[] {
         { href: "/dashboard", label: "Home", icon: <IconHome size={22} /> },
         { href: "/jobs", label: "Jobs", icon: <IconBriefcase size={22} /> },
         { href: "/applications", label: "Applied", icon: <IconFileText size={22} /> },
-        { href: "/network", label: "Network", icon: <IconNetwork size={22} /> },
+        // Network is advanced-tier; free users get Matched in the tab bar instead.
+        caps.has("network.access")
+          ? { href: "/network", label: "Network", icon: <IconNetwork size={22} /> }
+          : { href: "/jobs/match", label: "Matched", icon: <IconTarget size={22} /> },
         { href: "/account", label: "Account", icon: <IconUser size={22} /> },
       ]
 }

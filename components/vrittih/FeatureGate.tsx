@@ -25,10 +25,10 @@ export default function FeatureGate({ feature, title, children }: { feature: Fea
     <AppShell title={title}>
       <div style={S.wrap}>
         <div style={S.icon}><IconLock size={22} /></div>
-        <h1 style={S.h1}>{FEATURE_LABEL[feature]} is an enterprise feature</h1>
+        <h1 style={S.h1}>{FEATURE_LABEL[feature]} is on the {up.name} plan</h1>
         <p style={S.p}>
-          {FEATURE_LABEL[feature]} is available on the <b>{up.name}</b> plan, for large
-          organisations. It isn’t part of your current plan.
+          {FEATURE_LABEL[feature]} is available on the <b>{up.name}</b> plan. It isn’t
+          part of your current plan yet.
         </p>
         <div style={S.row}>
           <Link href="/pricing" style={S.primary}>See the {up.name} plan</Link>

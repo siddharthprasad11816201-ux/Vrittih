@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
+import FeatureGate from "@/components/vrittih/FeatureGate"
 import { IconAward, IconMonitor, IconActivity, IconBanknote, IconBookmark, IconCamera, IconShield, IconMessage } from "@/components/ui/Icons"
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -17,7 +18,8 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 
 type Tab = "spaces" | "jobs" | "pages"
 
-export default function CommunityHub() {
+export default function CommunityHub() { return (<FeatureGate feature="network" title="Community"><CommunityInner /></FeatureGate>) }
+function CommunityInner() {
   const [spaces, setSpaces] = useState<any[]>([])
   const [jobs, setJobs] = useState<any[]>([])
   const [loading, setLoading] = useState(true)

@@ -4,7 +4,7 @@
  * EVIDENCE used by derive.ts to compute which capabilities a subject holds.
  * See docs/ai/SELF_EVOLVING_INTELLIGENCE_ARCHITECTURE.md §9. */
 
-export type CapabilityGroup = "platform" | "jobs" | "recruit" | "hrms" | "crm" | "career" | "workspace" | "account" | "admin" | "ai" | "dev"
+export type CapabilityGroup = "platform" | "jobs" | "recruit" | "hrms" | "crm" | "career" | "network" | "workspace" | "account" | "admin" | "ai" | "dev"
 
 export type CapabilityDef = { key: string; group: CapabilityGroup; label: string; description: string }
 
@@ -32,6 +32,8 @@ export const CAPABILITIES: CapabilityDef[] = [
   { key: "career.coach", group: "career", label: "Career coach", description: "AI Career Coach" },
   { key: "career.intelligence", group: "career", label: "Career intelligence", description: "DNA, match, roadmap, frontier" },
   { key: "resume.build", group: "career", label: "Résumé builder", description: "Build and export résumés" },
+  // professional networking (advanced tiers — Pro / Growth / Scale)
+  { key: "network.access", group: "network", label: "Professional networking", description: "Feed, Network and Community" },
   // workspace / dashboard framework
   { key: "workspace.view", group: "workspace", label: "Workspace", description: "The universal workspace" },
   { key: "dashboard.compose", group: "workspace", label: "Compose dashboard", description: "Arrange own dashboard widgets" },

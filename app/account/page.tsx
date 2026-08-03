@@ -117,6 +117,11 @@ export default function AccountCenterPage() {
                 ))}
               </div>
             ))}
+            {/* Sign out — always visible at the foot of the account rail. */}
+            <button onClick={signOut} style={S.railSignOut}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
+              Sign out
+            </button>
           </aside>
 
           {/* Panel */}
@@ -452,6 +457,7 @@ const S: Record<string, any> = {
   railGroup: { font: "600 10.5px var(--font-sans)", letterSpacing: ".07em", color: "#94A3B8", padding: "10px 10px 4px" },
   railItem: { display: "flex", alignItems: "center", gap: 10, width: "100%", height: 38, padding: "0 10px", borderRadius: 9, border: "none", background: "none", color: "#475569", font: "500 13.5px var(--font-sans)", cursor: "pointer", textAlign: "left" },
   railItemOn: { background: "#EAF1FE", color: "#2F6BE0" },
+  railSignOut: { display: "flex", alignItems: "center", gap: 10, width: "100%", height: 38, marginTop: 10, padding: "0 10px", borderRadius: 9, border: "1px solid #FECACA", background: "#fff", color: "#B91C1C", font: "600 13.5px var(--font-sans)", cursor: "pointer", textAlign: "left" },
 
   panel: { display: "flex", flexDirection: "column", gap: 16, minWidth: 0 },
   msg: { borderRadius: 10, padding: "10px 14px", font: "500 13px var(--font-sans)" },

@@ -1,9 +1,11 @@
 "use client"
 import { useEffect, useState } from "react"
 import AppShell from "@/components/vrittih/AppShell"
+import FeatureGate from "@/components/vrittih/FeatureGate"
 import { IconUsers, IconMapPin, IconInbox, IconZap } from "@/components/ui/Icons"
 
-export default function NetworkPage() {
+export default function NetworkPage() { return (<FeatureGate feature="network" title="Network"><NetworkInner /></FeatureGate>) }
+function NetworkInner() {
   const [tab, setTab] = useState<"connections"|"requests"|"suggestions">("suggestions")
   const [connections, setConnections] = useState<any[]>([])
   const [received, setReceived] = useState<any[]>([])

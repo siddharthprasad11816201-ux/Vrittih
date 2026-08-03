@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
+import FeatureGate from "@/components/vrittih/FeatureGate"
 import { IconMessage, IconTrendingUp, IconUsers } from "@/components/ui/Icons"
 
 const ACCENT = "#6495ED"
@@ -18,7 +19,8 @@ function Avatar({ name, avatar, size = 44 }: { name?: string; avatar?: string; s
     : <div style={{ width: size, height: size, borderRadius: "50%", background: "#EAF1FE", color: ACCENT, display: "grid", placeItems: "center", fontWeight: 700, fontSize: size * 0.34, flexShrink: 0 }}>{initials(name)}</div>
 }
 
-export default function FeedPage() {
+export default function FeedPage() { return (<FeatureGate feature="network" title="Feed"><FeedInner /></FeatureGate>) }
+function FeedInner() {
   const [me, setMe] = useState<any>(null)
   const [posts, setPosts] = useState<any[]>([])
   const [draft, setDraft] = useState("")

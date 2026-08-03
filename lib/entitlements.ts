@@ -9,11 +9,14 @@
 //
 // Tiers (lib/plans.ts):  emp_starter (49) < emp_growth (149) < emp_scale (349, max).
 
-export type Feature = "interviews" | "hrms" | "payroll" | "tasks" | "crm" | "mail" | "api"
+export type Feature = "interviews" | "hrms" | "payroll" | "tasks" | "crm" | "mail" | "api" | "network"
 
 type UserLike = { role?: string | null; plan?: string | null } | null | undefined
 
-// Feature -> employer plan ids that unlock it. (Tier map set by the owner.)
+// Feature -> plan ids that unlock it. Employer features list only employer plans
+// (so seekers never pass). `network` is the exception: professional networking
+// (Feed, Network, Community) is an ADVANCED-tier feature available to the
+// individual Pro plan and to advanced employer tiers.
 export const FEATURE_PLANS: Record<Feature, string[]> = {
   // Growth and up: run-the-company operations.
   hrms: ["emp_growth", "emp_scale"],
@@ -24,6 +27,8 @@ export const FEATURE_PLANS: Record<Feature, string[]> = {
   mail: ["emp_scale"],
   interviews: ["emp_scale"],
   api: ["emp_scale"],
+  // Advanced tiers (individual Pro + advanced employer): professional networking.
+  network: ["pro", "emp_growth", "emp_scale"],
 }
 
 export const FEATURE_LABEL: Record<Feature, string> = {
@@ -34,6 +39,7 @@ export const FEATURE_LABEL: Record<Feature, string> = {
   crm: "CRM",
   mail: "Mail & sending domains",
   api: "Developer API",
+  network: "Professional networking",
 }
 
 // The plan a feature upgrades toward, for the upgrade prompt (lowest tier that unlocks it).
@@ -45,6 +51,7 @@ export const FEATURE_UPGRADE: Record<Feature, { plan: string; name: string }> = 
   mail: { plan: "emp_scale", name: "Scale" },
   interviews: { plan: "emp_scale", name: "Scale" },
   api: { plan: "emp_scale", name: "Scale" },
+  network: { plan: "pro", name: "Pro" },
 }
 
 export function hasFeature(user: UserLike, f: Feature): boolean {
