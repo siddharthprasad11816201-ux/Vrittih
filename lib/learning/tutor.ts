@@ -55,12 +55,14 @@ export interface QuizItem { prompt: string; bloom: "recall" | "apply" | "analyse
 /* Honest quiz OUTLINE — question templates across Bloom levels for a skill. These are
  * prompts for a learner/assessor to answer, not fabricated auto-graded Q&A. */
 export function quizOutline(skill: string, count = 5): QuizItem[] {
+  // Interleaved by Bloom level (recall → apply → analyse → …) so ANY count >= 3 covers
+  // all three levels, and counts 1–2 still pick distinct levels.
   const templates: { t: (s: string) => string; bloom: QuizItem["bloom"] }[] = [
     { t: s => `Define the core concept behind ${s} in your own words.`, bloom: "recall" },
-    { t: s => `List the key components or steps involved in ${s}.`, bloom: "recall" },
     { t: s => `Given a realistic scenario, how would you apply ${s} to solve it?`, bloom: "apply" },
-    { t: s => `Work through a concrete example that uses ${s} end to end.`, bloom: "apply" },
     { t: s => `Compare ${s} with an alternative approach — when would you choose each?`, bloom: "analyse" },
+    { t: s => `List the key components or steps involved in ${s}.`, bloom: "recall" },
+    { t: s => `Work through a concrete example that uses ${s} end to end.`, bloom: "apply" },
     { t: s => `What are the common mistakes or trade-offs when using ${s}, and why?`, bloom: "analyse" },
   ]
   const out: QuizItem[] = []

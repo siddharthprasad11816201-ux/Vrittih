@@ -21,13 +21,22 @@ export function mentorMatch(
 ): MentorMatch {
   const gap = new Set(menteeGapKeys.map(k => k.toLowerCase()))
   if (!gap.size) return { score: 0, covers: [], strengthAvg: 0 }
-  const strong = mentorStrengths.filter(s => s.proficiency >= MENTOR_MIN_PROFICIENCY)
-  const covers = strong.filter(s => gap.has(s.key.toLowerCase()))
+  // Dedupe covered competencies by lowercased key (keep the strongest) so a caller-
+  // supplied array with repeats can't inflate coverage/score past 100.
+  const byKey = new Map<string, { key: string; proficiency: number }>()
+  for (const s of mentorStrengths) {
+    if (s.proficiency < MENTOR_MIN_PROFICIENCY) continue
+    const k = s.key.toLowerCase()
+    if (!gap.has(k)) continue
+    const ex = byKey.get(k)
+    if (!ex || s.proficiency > ex.proficiency) byKey.set(k, s)
+  }
+  const covers = Array.from(byKey.values())
   if (!covers.length) return { score: 0, covers: [], strengthAvg: 0 }
-  const coverage = covers.length / gap.size
+  const coverage = Math.min(1, covers.length / gap.size)
   const strengthAvg = covers.reduce((a, s) => a + s.proficiency, 0) / covers.length
-  // 75% coverage of the gap + 25% mentor strength in the covered areas.
-  const score = Math.round((coverage * 0.75 + strengthAvg * 0.25) * 100)
+  // 75% coverage of the gap + 25% mentor strength in the covered areas (capped at 100).
+  const score = Math.min(100, Math.round((coverage * 0.75 + strengthAvg * 0.25) * 100))
   return { score, covers: covers.map(c => c.key), strengthAvg: +strengthAvg.toFixed(2) }
 }
 

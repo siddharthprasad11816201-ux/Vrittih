@@ -126,7 +126,8 @@ recommended follow.
 - **ELTOS‑era:** `lib/learning/*` (competency, course, tutor, mentoring) — 61 unit tests
   (15 + 14 + 19 + 13); 8 learning API route files; 5 learner/exec pages.
 - **Adversarial reviews:** Competency Framework (4 fixed), Content Platform (7 fixed),
-  Batch 3/4 (tutor/mentoring/analytics — final pass in flight).
+  Batch 3/4 tutor/mentoring/analytics (**0 confirmed** — 2 latent/defensive gaps hardened
+  anyway: mentorMatch dedup+clamp, quiz Bloom interleave).
 
 ## 17. Technical Debt Register
 
@@ -142,7 +143,7 @@ recommended follow.
 | Gate | Status |
 |---|---|
 | Every planned module implemented or mapped to a reused system | ✅ |
-| Verified (unit + adversarial review, defects fixed) | ✅ (final Batch 3/4 pass in flight) |
+| Verified (unit + adversarial review, defects fixed) | ✅ (3 reviews; 11 fixed + 2 hardened; Batch 3/4 clean) |
 | Deployed to `main` → Vercel | ✅ |
 | AI runs through AIOS (audited) | ✅ (`learning.tutor` + reused caps) |
 | Recommendations explainable | ✅ |
