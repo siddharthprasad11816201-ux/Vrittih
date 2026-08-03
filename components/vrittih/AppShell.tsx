@@ -39,7 +39,10 @@ function buildNav(caps: Set<string>): Section[] {
   const can = (c: string) => caps.has(c)
   const I = (n: ReactNode) => n
 
-  const sections: Section[] = [{ items: [{ href: "/dashboard", label: "Overview", icon: <IconHome size={19} /> }] }]
+  const sections: Section[] = [{ items: [
+    { href: "/dashboard", label: "Overview", icon: <IconHome size={19} /> },
+    ...(can("workspace.view") ? [{ href: "/workspace", label: "Workspace", icon: <IconTarget size={19} /> }] : []),
+  ] }]
 
   sections.push({
     title: "CAREER",
