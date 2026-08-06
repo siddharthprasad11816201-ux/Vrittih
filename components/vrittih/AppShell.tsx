@@ -59,6 +59,7 @@ function buildNav(caps: Set<string>): Section[] {
     if (can("hrms.view")) ops.push({ href: "/hrms", label: "HRMS", icon: <IconClipboard size={18} /> })
     if (can("payroll.view")) ops.push({ href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={18} /> })
     ops.push({ href: "/hrms/performance", label: "Performance", icon: <IconActivity size={18} /> })
+    ops.push({ href: "/hr", label: "Workforce AI", icon: <IconZap size={18} /> })   // Phase 6 HCM: HR Copilot (attrition/promotion via brain)
     ops.push({ href: "/projects", label: "Projects", icon: <IconLayers size={18} /> })   // Phase 5 project & collaboration OS
     ops.push({ href: "/finance", label: "Finance", icon: <IconBanknote size={18} /> })    // Phase 6 ERP finance
     if (can("tasks.view")) ops.push({ href: "/tasks", label: "Tasks", icon: <IconCheckCircle size={18} /> })

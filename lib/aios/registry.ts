@@ -35,6 +35,8 @@ export const MODELS: ModelSeed[] = [
   { modelId: "marketplace-intelligence-v1", task: "recommendation", capabilities: ["trending", "marketplace-revenue"] },
   // EAIL — the unified Enterprise Intelligence Layer reasoning core.
   { modelId: "enterprise-brain-v1", task: "reasoning", capabilities: ["deliberation", "evidence-reasoning", "explainable-decision"] },
+  // Phase 6 HCM — Workforce Intelligence.
+  { modelId: "hr-copilot-v1", task: "prediction", capabilities: ["attrition-risk", "promotion-readiness", "workforce-intelligence"] },
 ]
 
 // §9 — capabilities (authorization derives from these, never role names).
@@ -66,6 +68,8 @@ export const CAPABILITIES: CapabilitySeed[] = [
   { capId: "intelligence.deliberate", name: "Enterprise deliberation (unified evidence-based reasoning)", provider: "intelligence.deliberate", modelId: "enterprise-brain-v1", safetyClass: "standard", permissions: ["auth"] },
   // Recruiter Copilot — managed placement: rank the pool for a requirement via the brain.
   { capId: "recruit.shortlist", name: "Recruiter Copilot — evidence-based candidate shortlist", provider: "recruit.shortlist", modelId: "enterprise-brain-v1", safetyClass: "standard", permissions: ["auth"] },
+  // Phase 6 HCM — HR Copilot: evidence-based attrition risk + promotion readiness via the brain.
+  { capId: "hr.copilot", name: "HR Copilot — workforce intelligence", provider: "hr.copilot", modelId: "hr-copilot-v1", safetyClass: "standard", permissions: ["auth"] },
 ]
 
 // §7 — registered agents. The Career Coach is the first.
