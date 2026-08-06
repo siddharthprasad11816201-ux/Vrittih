@@ -55,6 +55,7 @@ function buildNav(caps: Set<string>): Section[] {
     ]
     sections.push({ title: "Hiring", items: hiring })
     const ops: Item[] = []
+    ops.push({ href: "/hire", label: "Hire (managed)", icon: <IconUsers size={18} /> })   // Recruiter Copilot — AI-sourced talent
     if (can("hrms.view")) ops.push({ href: "/hrms", label: "HRMS", icon: <IconClipboard size={18} /> })
     if (can("payroll.view")) ops.push({ href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={18} /> })
     ops.push({ href: "/hrms/performance", label: "Performance", icon: <IconActivity size={18} /> })
