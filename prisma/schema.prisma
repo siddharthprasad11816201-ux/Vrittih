@@ -2657,3 +2657,68 @@ model MarketplaceReview {
   @@unique([itemId, userId])
   @@index([itemId])
 }
+
+// ============================================================================
+// Managed Placement (the core business): employers state a requirement, Vrittih's
+// HR team fulfils it from the candidate pool with AI (EAIL brain); candidates ask
+// to be placed (intern/full-time/contract) and HR works it end-to-end.
+// ============================================================================
+model TalentRequest {
+  id           String               @id @default(cuid())
+  employerId   String                                  // client employer (User id)
+  assignedHrId String?                                 // Vrittih recruiter working it
+  title        String
+  roleType     String               @default("FULLTIME") // INTERN|FULLTIME|CONTRACT|FREELANCE
+  skills       String               @default("[]")       // JSON array of required skills
+  seniority    String?                                   // Junior|Mid|Senior|Lead
+  headcount    Int                  @default(1)
+  minYears     Int                  @default(0)
+  budget       Float?
+  currency     String               @default("CHF")
+  location     String?
+  remote       Boolean              @default(false)
+  deadline     DateTime?
+  notes        String?
+  status       String               @default("OPEN")     // OPEN|IN_PROGRESS|SHORTLISTED|DELIVERED|CLOSED
+  createdAt    DateTime             @default(now())
+  updatedAt    DateTime             @updatedAt
+  candidates   PlacementCandidate[]
+  @@index([employerId, status])
+  @@index([assignedHrId])
+  @@index([status])
+}
+
+model PlacementRequest {
+  id           String   @id @default(cuid())
+  userId       String                                    // the candidate seeking placement
+  assignedHrId String?
+  desiredType  String   @default("FULLTIME")             // INTERN|FULLTIME|CONTRACT|FREELANCE
+  targetRoles  String   @default("[]")                   // JSON array
+  skills       String   @default("[]")                   // JSON array
+  location     String?
+  remote       Boolean  @default(false)
+  availability String?
+  notes        String?
+  status       String   @default("OPEN")                 // OPEN|IN_PROGRESS|PLACED|CLOSED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  @@index([userId, status])
+  @@index([assignedHrId])
+  @@index([status])
+}
+
+model PlacementCandidate {
+  id          String        @id @default(cuid())
+  requestId   String
+  candidateId String                                      // User id of the sourced candidate
+  stage       String        @default("SOURCED")           // SOURCED|SCREENED|SHORTLISTED|PRESENTED|INTERVIEW|OFFER|PLACED|REJECTED
+  score       Float         @default(0)                   // suitability 0..1 (deliberation confidence)
+  verdict     String?                                     // supported|uncertain|refuted|insufficient-evidence
+  rationale   String?                                     // JSON: { why, evidence, risks, confidence }
+  addedById   String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+  request     TalentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  @@unique([requestId, candidateId])
+  @@index([requestId, stage])
+}

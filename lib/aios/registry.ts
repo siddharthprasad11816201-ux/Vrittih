@@ -64,6 +64,8 @@ export const CAPABILITIES: CapabilitySeed[] = [
   { capId: "marketplace.intelligence", name: "Marketplace Intelligence", provider: "marketplace.intelligence", modelId: "marketplace-intelligence-v1", safetyClass: "standard", permissions: ["auth"] },
   // EAIL — unified deliberation core. Every AI product's decisions route through this.
   { capId: "intelligence.deliberate", name: "Enterprise deliberation (unified evidence-based reasoning)", provider: "intelligence.deliberate", modelId: "enterprise-brain-v1", safetyClass: "standard", permissions: ["auth"] },
+  // Recruiter Copilot — managed placement: rank the pool for a requirement via the brain.
+  { capId: "recruit.shortlist", name: "Recruiter Copilot — evidence-based candidate shortlist", provider: "recruit.shortlist", modelId: "enterprise-brain-v1", safetyClass: "standard", permissions: ["auth"] },
 ]
 
 // §7 — registered agents. The Career Coach is the first.
