@@ -62,7 +62,9 @@ function buildNav(caps: Set<string>): Section[] {
     if (can("crm.view")) ops.push({ href: "/contacts", label: "Contacts", icon: <IconTarget size={18} /> })
     if (ops.length) sections.push({ title: "Operations", items: ops })
     const comms: Item[] = [{ href: "/messages", label: "Messages", icon: <IconMessage size={18} /> }]
-    if (can("mail.send")) comms.push({ href: "/mail", label: "Mail", icon: <IconMail size={18} /> })
+    // Email (Mail) and the built-in video-call (Interviews) are hidden for all tiers for
+    // now (feature-flagged off) — surfaces removed; underlying features remain in place.
+    // if (can("mail.send")) comms.push({ href: "/mail", label: "Mail", icon: <IconMail size={18} /> })
     sections.push({ title: "Communication", items: comms })
   } else {
     sections.push({ title: "Career", items: [
@@ -275,7 +277,8 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
         </>
       )}
 
-      <CommandPalette isEmployer={isEmployer} canCrm={caps.has("crm.view")} canMail={caps.has("mail.send")} canInterviews={caps.has("interviews.host")} canApi={caps.has("api.keys")} />
+      {/* Mail + built-in video-call (Interviews) hidden for all tiers for now. */}
+      <CommandPalette isEmployer={isEmployer} canCrm={caps.has("crm.view")} canMail={false} canInterviews={false} canApi={caps.has("api.keys")} />
     </div>
   )
 }

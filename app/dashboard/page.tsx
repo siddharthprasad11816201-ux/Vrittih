@@ -85,7 +85,7 @@ export default function Dashboard() {
 
   const seekerMetrics = [
     { label: "Applications", value: applications.length, href: "/applications", action: "Browse jobs" },
-    { label: "Interviews", value: count(a => a.status === "INTERVIEW"), href: "/interviews", action: "Prepare" },
+    { label: "Interviews", value: count(a => a.status === "INTERVIEW"), href: "/applications", action: null }, // video room hidden for now
     { label: "Offers", value: count(a => a.status === "OFFERED"), href: "/applications", action: null },
     { label: "Hired", value: count(a => a.status === "HIRED"), href: "/applications", action: null },
   ]
@@ -232,13 +232,12 @@ export default function Dashboard() {
               {(isEmployer ? [
                 { href: "/dashboard/post-job", icon: <IconFileText size={16} />, t: "Post a job" },
                 { href: "/dashboard/recruiter", icon: <IconUsers size={16} />, t: "Best candidates" },
-                { href: "/interviews/schedule", icon: <IconVideo size={16} />, t: "Schedule interview" },
+                // Built-in video-call (Interviews) hidden for all tiers for now.
                 { href: "/tests/create", icon: <IconClipboard size={16} />, t: "Create assessment" },
                 { href: "/account", icon: <IconSettings size={16} />, t: "Account & security" },
               ] : [
                 { href: "/jobs/match", icon: <IconTarget size={16} />, t: "Matched for you" },
                 { href: "/resume", icon: <IconFileText size={16} />, t: "Build your résumé" },
-                { href: "/interviews", icon: <IconVideo size={16} />, t: "Interviews" },
                 { href: "/network", icon: <IconNetwork size={16} />, t: "Grow your network" },
                 { href: "/account", icon: <IconSettings size={16} />, t: "Account & security" },
               ]).map(q => (
