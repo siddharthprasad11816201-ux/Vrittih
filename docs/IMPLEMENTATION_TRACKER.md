@@ -19,7 +19,7 @@ Sec = Security · AI = AI/reasoning quality · UX · A11y = Accessibility · Per
 | CRM (Sales/Campaigns/Support) | 7 | P1 | ✅ | 100% | 21 unit + 21 E2E ✅ | ✅ | 🟡 | ✅ | 🟡 | ✅ | local | Sales assistant → brain parity |
 | University OS | 8 | P2 | ✅ | 100% | 21 unit + 18 E2E ✅ | ✅ | 🟡 | ✅ | 🟡 | ✅ | local | Campus intel → brain parity |
 | **Enterprise Brain** (`deliberate`) | EAIL | P0 | ✅ | 100% | 23 unit + 9 E2E ✅ | ✅ | ✅ | n/a | n/a | ✅ | local | Adopt across all copilots |
-| **Recruiter Copilot** (placement) | EAIL | P0 | 🟡 | 90% | 17 E2E ✅ | ✅ | ✅ | ⬜ | ⬜ | local | Build `/hire` + HR desk UI |
+| **Recruiter Copilot** (placement) | EAIL | P0 | 🟡 | 95% | 17 E2E ✅ | ✅ | ✅ | 🟡 | ⬜ | local | `/hire` UI ✅; build `/get-placed` + HR desk; wire candidate↔request matching |
 | Landing (marketing) | — | P1 | ✅ | 100% | build ✅ | ✅ | n/a | ✅ | 🟡 | ✅ | local | — (legal names + mobile + SW fixed) |
 | Career Coach | EAIL | P0 | ⬜ | 10% | — | 🟡 | ⬜ | 🟡 | 🟡 | 🟡 | local | Rebuild through brain w/ real evidence |
 | Interview AI | EAIL | P0 | ⬜ | 10% | — | 🟡 | ⬜ | 🟡 | 🟡 | 🟡 | local | Adaptive, evidence-based rebuild |
