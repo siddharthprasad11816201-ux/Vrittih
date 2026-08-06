@@ -1,6 +1,8 @@
 // Vrittih service worker — makes the app installable + resilient offline.
 // Network-first (always fresh when online), cache fallback when offline.
-const CACHE = "vrittih-v1"
+// Bump CACHE whenever cached HTML must be invalidated — activate() purges older caches,
+// so a stale page can't be served from a previous version's cache.
+const CACHE = "vrittih-v2"
 
 self.addEventListener("install", () => self.skipWaiting())
 self.addEventListener("activate", (e) => {

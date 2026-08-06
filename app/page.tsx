@@ -181,15 +181,15 @@ export default function Home() {
                 { label: "Applied", count: 5 }, { label: "Screening", count: 3 },
                 { label: "Interview", count: 2 }, { label: "Offer", count: 1 }, { label: "Hired", count: 0 },
               ]} />
-              <div style={PV.rows}>
+              <div className="pvRows">
                 {PREVIEW_ROWS.map(r => (
-                  <div key={r.role} style={PV.row}>
-                    <span style={PV.main}>
-                      <span style={PV.role}>{r.role}</span>
-                      <span style={PV.meta}>{r.company} · {r.city}</span>
+                  <div key={r.role} className="pvRow">
+                    <span className="pvMain">
+                      <span className="pvRole">{r.role}</span>
+                      <span className="pvMeta">{r.company} · {r.city}</span>
                     </span>
-                    <span style={{ ...PV.badge, background: r.bg, color: r.fg }}>{r.stage}</span>
-                    <span style={PV.next}>{r.next}</span>
+                    <span className="pvBadge" style={{ background: r.bg, color: r.fg }}>{r.stage}</span>
+                    <span className="pvNext">{r.next}</span>
                   </div>
                 ))}
               </div>
@@ -355,9 +355,9 @@ const CSS = `
 .navLinks a{font-size:14.5px;font-weight:500;color:var(--ink2);text-decoration:none;transition:color .15s var(--e)}
 .navLinks a:hover{color:var(--ink)}
 .navCta{display:flex;align-items:center;gap:10px}
-.ghost{font-size:14.5px;font-weight:600;color:var(--ink);text-decoration:none;padding:9px 14px;border-radius:14px;transition:background .15s}
+.ghost{font-size:14.5px;font-weight:600;color:var(--ink);text-decoration:none;padding:9px 14px;border-radius:14px;white-space:nowrap;transition:background .15s}
 .ghost:hover{background:var(--line2)}
-.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--g);color:#fff;border:none;border-radius:14px;padding:11px 20px;font-size:14.5px;font-weight:600;text-decoration:none;cursor:pointer;transition:background .15s var(--e),transform .1s var(--e),box-shadow .15s}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;background:var(--g);color:#fff;border:none;border-radius:14px;padding:11px 20px;font-size:14.5px;font-weight:600;text-decoration:none;cursor:pointer;white-space:nowrap;transition:background .15s var(--e),transform .1s var(--e),box-shadow .15s}
 .btn:hover{background:var(--gh);color:#fff}
 .btn:active{transform:scale(.97)}
 .btn.lg{padding:15px 28px;font-size:16px;border-radius:14px}
@@ -418,6 +418,15 @@ const CSS = `
 /* sample caption under the hero mockup */
 .sampleNote{font-size:12px;color:var(--ink3);margin:12px 0 0;text-align:center}
 
+/* hero product-shot deal rows (real CSS classes so mobile media queries can restyle them) */
+.pvRows{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.pvRow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:12px 14px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.pvMain{flex:1;min-width:0;display:flex;flex-direction:column}
+.pvRole{font-size:14px;font-weight:500;color:var(--ink)}
+.pvMeta{font-size:12.5px;color:var(--ink3);margin-top:1px}
+.pvBadge{font-size:11.5px;font-weight:500;padding:3px 10px;border-radius:999px;flex:none}
+.pvNext{font-size:12.5px;color:var(--ink2);flex:none;min-width:84px;text-align:right}
+
 /* "Know what fits" — circular fit gauge that pops in like a little card */
 .fitPop{display:inline-flex;align-items:center;gap:18px;margin:0 0 28px;padding:16px 22px 16px 16px;
  background:var(--card);border:1px solid var(--line);border-left:3px solid var(--g);border-radius:18px;box-shadow:var(--shH);
@@ -470,6 +479,20 @@ const CSS = `
   .kpis,.footIn,.grid3{grid-template-columns:1fr}
   .ctaRow .btn{width:100%}
   .fitPop{width:100%}
+
+  /* compact nav so the CTAs never wrap to two lines */
+  .wrap{padding:0 16px}
+  .navIn{gap:10px;height:58px}
+  .navCta{gap:8px}
+  .btn{padding:10px 14px;font-size:13.5px}
+  .ghost{padding:8px 10px;font-size:13.5px}
+
+  /* hero mockup: tighter padding; deal rows stack (title line, then badge+time line) */
+  .shotBody{padding:16px}
+  .shotTitle{font-size:19px}
+  .pvRow{gap:6px 10px}
+  .pvMain{flex-basis:100%}
+  .pvNext{margin-left:auto}
 
   /* Flashable smooth cards: horizontal scroll-snap rail, momentum, hidden scrollbar,
      and a peek of the next card so it reads as swipeable. (Stats grid3 stays stacked.) */
