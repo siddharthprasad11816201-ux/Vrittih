@@ -2,6 +2,11 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-07
+- **Phase 6 HCM — HR Copilot (Workforce Intelligence)** shipped: evidence-based attrition risk + promotion readiness per employee, routed through the Enterprise Brain (12 unit + 9 E2E). `/hr` + `/api/hr/copilot`. Extends existing HRMS/EHWOS (no duplication).
+- Decoded the Phase 6→15 PDF spec (subsetted-font +29 offset) into a readable source.
+- Deployment: `git push origin main` prepared (14 commits ahead, Vercel `vrittih.online` connected); production push requires user action / permission.
+
 ## 2026-08-06
 - **Phase 11 Government** + **Phase 12 Healthcare** shipped — both route intelligence through the Enterprise Brain (Policy Intelligence 18+15 tests; Clinical Ops 19+14 tests; triage routing; FX-safe scheme reach). Build clean (144 pages).
 - **/hire** managed-placement UI shipped — employer/HR interface over the Recruiter Copilot (describe requirement → AI shortlist → evidence-ranked candidates + stage mgmt). Renders 200; nav wired.

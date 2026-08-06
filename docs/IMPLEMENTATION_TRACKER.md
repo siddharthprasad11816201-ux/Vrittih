@@ -13,7 +13,7 @@ Sec = Security · AI = AI/reasoning quality · UX · A11y = Accessibility · Per
 | Recruitment OS (EROS) | 1 | P0 | ✅ | 100% | E2E ✅ | ✅ | 🟡 | ✅ | 🟡 | ✅ | local | Route recruiter next-best-actions through brain |
 | Learning & Talent (ELTOS) | 2 | P0 | ✅ | 100% | unit+E2E ✅ | ✅ | 🟡 | ✅ | 🟡 | ✅ | local | Rebuild Tutor via `deliberate()` |
 | Research & Innovation (ERIP) | 3 | P1 | ✅ | 100% | unit+E2E ✅ | ✅ | 🟡 | ✅ | 🟡 | ✅ | local | Research Assistant → brain |
-| HRMS & Workforce (EHWOS) | 4 | P0 | ✅ | 100% | unit+E2E ✅ | ✅ | 🟡 | ✅ | 🟡 | ✅ | local | HR Copilot → brain |
+| HRMS & Workforce (EHWOS) | 4 | P0 | ✅ | 100% | unit+E2E ✅ | ✅ | ✅ | ✅ | 🟡 | ✅ | local | HR Copilot ✅ (attrition/promotion via brain) — `/hr`, 12+9 tests |
 | Project & Collaboration (EPCOS) | 5 | P1 | ✅ | 100% | 58 unit + E2E ✅ | ✅ | 🟡 | ✅ | 🟡 | ✅ | local | AI PM → brain parity |
 | ERP Finance (EERP) | 6 | P1 | ✅ | 100% | unit+E2E ✅ | ✅ | 🟡 | ✅ | 🟡 | ✅ | local | Finance advisor → brain parity |
 | CRM (Sales/Campaigns/Support) | 7 | P1 | ✅ | 100% | 21 unit + 21 E2E ✅ | ✅ | 🟡 | ✅ | 🟡 | ✅ | local | Sales assistant → brain parity |
