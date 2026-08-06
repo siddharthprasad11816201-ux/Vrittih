@@ -70,6 +70,8 @@ export const CAPABILITIES: CapabilitySeed[] = [
   { capId: "recruit.shortlist", name: "Recruiter Copilot — evidence-based candidate shortlist", provider: "recruit.shortlist", modelId: "enterprise-brain-v1", safetyClass: "standard", permissions: ["auth"] },
   // Phase 6 HCM — HR Copilot: evidence-based attrition risk + promotion readiness via the brain.
   { capId: "hr.copilot", name: "HR Copilot — workforce intelligence", provider: "hr.copilot", modelId: "hr-copilot-v1", safetyClass: "standard", permissions: ["auth"] },
+  // Managed placement — candidate side: match a candidate to open employer requirements via the brain.
+  { capId: "candidate.opportunities", name: "Candidate opportunity matcher (managed placement)", provider: "candidate.opportunities", modelId: "enterprise-brain-v1", safetyClass: "standard", permissions: ["auth"] },
 ]
 
 // §7 — registered agents. The Career Coach is the first.

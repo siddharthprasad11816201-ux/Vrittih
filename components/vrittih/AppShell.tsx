@@ -76,6 +76,7 @@ function buildNav(caps: Set<string>): Section[] {
     sections.push({ title: "Communication", items: comms })
   } else {
     sections.push({ title: "Career", items: [
+      { href: "/get-placed", label: "Get placed", icon: <IconTarget size={18} /> }, // managed placement — candidate side
       { href: "/career", label: "Career AI", icon: <IconActivity size={18} /> },
       { href: "/competencies", label: "Competencies", icon: <IconTarget size={18} /> }, // ELTOS competency framework
       { href: "/academy", label: "Academy", icon: <IconMonitor size={18} /> },   // ELTOS courses + learning paths

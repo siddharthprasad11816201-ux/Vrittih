@@ -79,3 +79,30 @@ registerProvider("recruit.shortlist", async (ctx) => {
   const summary = `Screened ${profiles.length} candidate(s); deliberated ${ranked.length}; ${strong} strong fit(s) for ${req.headcount} ${req.title} opening(s).`
   return { output: { request: { id: req.id, title: req.title, headcount: req.headcount, skills: spec.skills }, candidates: ranked, screened: profiles.length, summary }, explanation: summary, confidence: ranked[0]?.confidence || 0, modelId: "enterprise-brain-v1" }
 })
+
+/* Managed placement — candidate side. For the calling candidate, rank OPEN employer
+ * requirements by fit: build the same suitability Brief (candidate vs each requirement) and
+ * route through the Enterprise Brain. Returns the best-matched openings with why/confidence/
+ * missing-skills — the Constitution's "which companies match me", evidence-based. */
+registerProvider("candidate.opportunities", async (ctx) => {
+  const uid = ctx.subjectId as string
+  const u = await prisma.user.findUnique({ where: { id: uid }, include: { skills: { include: { skill: true } }, experience: true } })
+  if (!u) return { output: { candidate: null, opportunities: [], summary: "No profile found." }, explanation: "No candidate profile.", confidence: 0, modelId: "enterprise-brain-v1" }
+  const comps = await prisma.userCompetency.findMany({ where: { userId: uid }, select: { competencyKey: true, proficiency: true } }).catch(() => [] as any[])
+  const profile: CandidateProfile = {
+    id: uid, name: u.name || u.email || "You", headline: (u as any).headline || undefined,
+    skills: (u.skills || []).map((s: any) => s.skill?.name).filter(Boolean),
+    years: yearsFromExperience((u as any).experience || []),
+    competencies: (comps as any[]).map(c => ({ key: c.competencyKey, proficiency: c.proficiency })), remoteOk: true,
+  }
+  const reqs = await prisma.talentRequest.findMany({ where: { status: { in: ["OPEN", "IN_PROGRESS"] } }, orderBy: { createdAt: "desc" }, take: 100 })
+  const ranked = reqs.map(r => {
+    const spec: RequestSpec = { title: r.title, roleType: r.roleType, skills: safeArr(r.skills), minYears: r.minYears, seniority: r.seniority, remote: r.remote, location: r.location, budget: r.budget, currency: r.currency }
+    const d = deliberate(buildSuitabilityBrief(profile, spec))
+    const ov = skillOverlap(profile.skills, spec.skills)
+    return { requestId: r.id, title: r.title, roleType: r.roleType, remote: r.remote, verdict: d.decision.verdict, confidence: d.confidence, matched: ov.matched, missing: ov.missing, coverage: ov.coverage, why: d.explanation }
+  }).filter(x => x.verdict !== "refuted").sort((a, b) => (verdictRank(b.verdict) - verdictRank(a.verdict)) || b.confidence - a.confidence)
+  const strong = ranked.filter(x => x.verdict === "supported").length
+  const summary = ranked.length ? `${ranked.length} matching opening(s); ${strong} strong fit(s) for your profile.` : "No open requirements match your profile yet — add more skills/experience to improve matches."
+  return { output: { candidate: { name: profile.name, skills: profile.skills, years: profile.years }, opportunities: ranked.slice(0, 25), summary }, explanation: summary, confidence: ranked[0]?.confidence || 0, modelId: "enterprise-brain-v1" }
+})
