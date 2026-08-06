@@ -58,6 +58,8 @@ function buildNav(caps: Set<string>): Section[] {
     if (can("hrms.view")) ops.push({ href: "/hrms", label: "HRMS", icon: <IconClipboard size={18} /> })
     if (can("payroll.view")) ops.push({ href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={18} /> })
     ops.push({ href: "/hrms/performance", label: "Performance", icon: <IconActivity size={18} /> })
+    ops.push({ href: "/projects", label: "Projects", icon: <IconLayers size={18} /> })   // Phase 5 project & collaboration OS
+    ops.push({ href: "/finance", label: "Finance", icon: <IconBanknote size={18} /> })    // Phase 6 ERP finance
     if (can("tasks.view")) ops.push({ href: "/tasks", label: "Tasks", icon: <IconCheckCircle size={18} /> })
     if (can("crm.view")) ops.push({ href: "/contacts", label: "Contacts", icon: <IconTarget size={18} /> })
     if (ops.length) sections.push({ title: "Operations", items: ops })
@@ -97,6 +99,7 @@ function buildNav(caps: Set<string>): Section[] {
     net.push({ href: "/messages", label: "Messages", icon: <IconMessage size={18} /> })
     sections.push({ title: "Network", items: net })
     sections.push({ title: "Resources", items: [
+      { href: "/projects", label: "Projects", icon: <IconLayers size={18} /> }, // Phase 5 personal project workspace
       { href: "/tests", label: "Assessments", icon: <IconAward size={18} /> },
       { href: "/tools", label: "Tools", icon: <IconZap size={18} /> },
     ] })

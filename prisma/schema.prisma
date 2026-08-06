@@ -578,8 +578,10 @@ model Task {
   completedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  projectId   String?                          // Phase 5: link a task to a Project (kanban)
   @@index([employerId, status])
   @@index([assigneeId])
+  @@index([projectId])
 }
 
 // ==== ICIRE — Career Intelligence (in-house knowledge graph) ====
@@ -1618,6 +1620,110 @@ model SuccessionPlan {
   notes         String?
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
+  @@index([ownerId])
+}
+
+// ===== Phase 5 — Enterprise Project & Collaboration =====
+// (Scalar user ids by design; reuses the existing Task model for the board.)
+model Project {
+  id          String   @id @default(cuid())
+  ownerId     String                            // creator (User id)
+  employerId  String?                           // owning company
+  name        String
+  description String?
+  status      String   @default("ACTIVE")        // PLANNING|ACTIVE|ON_HOLD|DONE|ARCHIVED
+  startAt     DateTime?
+  dueAt       DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  milestones  Milestone[]
+  @@index([ownerId, status])
+}
+
+model Milestone {
+  id        String   @id @default(cuid())
+  projectId String
+  title     String
+  status    String   @default("PENDING")         // PENDING|IN_PROGRESS|DONE
+  dueAt     DateTime?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  @@index([projectId])
+}
+
+model WikiPage {
+  id          String   @id @default(cuid())
+  ownerId     String
+  projectId   String?
+  title       String
+  contentMd   String   @default("")
+  updatedById String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  @@index([ownerId])
+  @@index([projectId])
+}
+
+// ===== Phase 6 — Enterprise ERP (Finance) =====
+model Vendor {
+  id          String   @id @default(cuid())
+  ownerId     String
+  name        String
+  contact     String?
+  category    String?
+  createdAt   DateTime @default(now())
+  @@index([ownerId])
+}
+
+model PurchaseOrder {
+  id         String   @id @default(cuid())
+  ownerId    String
+  vendorId   String?
+  title      String
+  amount     Float    @default(0)
+  currency   String   @default("CHF")
+  status     String   @default("DRAFT")          // DRAFT|OPEN|RECEIVED|CLOSED|CANCELLED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([ownerId, status])
+}
+
+model Invoice {
+  id         String   @id @default(cuid())
+  ownerId    String
+  number     String
+  client     String?
+  amount     Float    @default(0)
+  currency   String   @default("CHF")
+  status     String   @default("DRAFT")          // DRAFT|SENT|PAID|OVERDUE|VOID
+  dueAt      DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([ownerId, status])
+}
+
+model Expense {
+  id         String   @id @default(cuid())
+  ownerId    String
+  category   String   @default("general")
+  description String?
+  amount     Float    @default(0)
+  currency   String   @default("CHF")
+  status     String   @default("SUBMITTED")       // SUBMITTED|APPROVED|REJECTED|REIMBURSED
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  @@index([ownerId, status])
+}
+
+model Budget {
+  id        String   @id @default(cuid())
+  ownerId   String
+  category  String
+  amount    Float    @default(0)
+  currency  String   @default("CHF")
+  period    String?
+  createdAt DateTime @default(now())
   @@index([ownerId])
 }
 
