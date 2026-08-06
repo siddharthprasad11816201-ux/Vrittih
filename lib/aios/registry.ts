@@ -33,6 +33,8 @@ export const MODELS: ModelSeed[] = [
   { modelId: "policy-intelligence-v1", task: "prediction", capabilities: ["grievance-sla", "scheme-reach"] },
   { modelId: "clinical-assistant-v1", task: "prediction", capabilities: ["triage", "no-show", "population-health"] },
   { modelId: "marketplace-intelligence-v1", task: "recommendation", capabilities: ["trending", "marketplace-revenue"] },
+  // EAIL — the unified Enterprise Intelligence Layer reasoning core.
+  { modelId: "enterprise-brain-v1", task: "reasoning", capabilities: ["deliberation", "evidence-reasoning", "explainable-decision"] },
 ]
 
 // §9 — capabilities (authorization derives from these, never role names).
@@ -60,6 +62,8 @@ export const CAPABILITIES: CapabilitySeed[] = [
   { capId: "gov.policy.intelligence", name: "Policy Intelligence", provider: "gov.policy.intelligence", modelId: "policy-intelligence-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "health.clinical.assistant", name: "Clinical Operations Assistant", provider: "health.clinical.assistant", modelId: "clinical-assistant-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "marketplace.intelligence", name: "Marketplace Intelligence", provider: "marketplace.intelligence", modelId: "marketplace-intelligence-v1", safetyClass: "standard", permissions: ["auth"] },
+  // EAIL — unified deliberation core. Every AI product's decisions route through this.
+  { capId: "intelligence.deliberate", name: "Enterprise deliberation (unified evidence-based reasoning)", provider: "intelligence.deliberate", modelId: "enterprise-brain-v1", safetyClass: "standard", permissions: ["auth"] },
 ]
 
 // §7 — registered agents. The Career Coach is the first.

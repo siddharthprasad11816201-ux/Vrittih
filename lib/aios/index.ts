@@ -4,6 +4,7 @@ import "./providers"
 import "./engine-providers"
 import "./ops-providers"
 import "./vertical-providers"
+import "./intelligence-providers"
 import { registerKnowledgeHandlers } from "@/lib/knowledge/handlers"
 registerKnowledgeHandlers()
 
