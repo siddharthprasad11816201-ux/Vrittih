@@ -9,8 +9,8 @@ const jobs = [
   { title:"Civil Engineer", company:"BuildRight", industry:"Manufacturing", location:"Delhi NCR", type:"FULLTIME", salary:"85,000–105,000 CHF", remote:false, description:"Join our infrastructure team working on large-scale construction projects across India." },
   { title:"HR Executive", company:"PeopleFirst", industry:"Other", location:"Hyderabad", type:"FULLTIME", salary:"70,000–90,000 CHF", remote:false, description:"Manage recruitment, onboarding, and employee relations for a growing team of 200+." },
   { title:"Graphic Designer", company:"CreativeStudio", industry:"Media", location:"Pune", type:"CONTRACT", salary:"6,000 CHF/month", remote:true, description:"Create compelling visual designs for digital campaigns, social media, and brand materials." },
-  { title:"Accountant", company:"HDFC Consulting", industry:"Finance", location:"Chennai", type:"FULLTIME", salary:"80,000–100,000 CHF", remote:false, description:"Handle financial reporting, GST compliance, and audit preparation for corporate clients." },
-  { title:"Nurse — ICU", company:"Apollo Hospitals", industry:"Healthcare", location:"Bengaluru", type:"FULLTIME", salary:"78,000–95,000 CHF", remote:false, description:"Provide critical care nursing in our ICU ward. 2+ years ICU experience required." },
+  { title:"Accountant", company:"Ledgerline Advisory", industry:"Finance", location:"Geneva", type:"FULLTIME", salary:"80,000–100,000 CHF", remote:false, description:"Handle financial reporting, tax compliance, and audit preparation for corporate clients." },
+  { title:"Nurse — ICU", company:"Northshore Health", industry:"Healthcare", location:"Zürich", type:"FULLTIME", salary:"78,000–95,000 CHF", remote:false, description:"Provide critical care nursing in our ICU ward. 2+ years ICU experience required." },
 ]
 for (const job of jobs) {
   await p.job.create({ data: { ...job, postedById: employer.id, active: true } })

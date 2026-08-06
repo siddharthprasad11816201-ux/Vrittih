@@ -2372,3 +2372,288 @@ model CouponRedemption {
 }
 
 
+
+// ============================================================================
+// Phase 7 - Enterprise CRM (extends the existing Contact/Workspace CRM)
+// ============================================================================
+model Deal {
+  id          String    @id @default(cuid())
+  workspaceId String
+  createdById String
+  title       String
+  contactId   String?
+  amount      Float     @default(0)
+  currency    String    @default("CHF")
+  stage       String    @default("LEAD")
+  probability Int       @default(10)
+  ownerName   String?
+  source      String?
+  closeAt     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  @@index([workspaceId, stage])
+}
+
+model Campaign {
+  id          String    @id @default(cuid())
+  workspaceId String
+  createdById String
+  name        String
+  channel     String    @default("EMAIL")
+  status      String    @default("DRAFT")
+  budget      Float     @default(0)
+  currency    String    @default("CHF")
+  sent        Int       @default(0)
+  opened      Int       @default(0)
+  converted   Int       @default(0)
+  startAt     DateTime?
+  createdAt   DateTime  @default(now())
+  @@index([workspaceId])
+}
+
+model Ticket {
+  id          String    @id @default(cuid())
+  workspaceId String
+  createdById String
+  contactId   String?
+  subject     String
+  body        String?
+  priority    String    @default("MEDIUM")
+  status      String    @default("OPEN")
+  assignee    String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  resolvedAt  DateTime?
+  @@index([workspaceId, status])
+}
+
+// ============================================================================
+// Phase 8 - Enterprise University OS
+// ============================================================================
+model Institution {
+  id        String    @id @default(cuid())
+  ownerId   String
+  name      String
+  kind      String    @default("UNIVERSITY")
+  city      String?
+  country   String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  programs  Program[]
+  @@index([ownerId])
+}
+
+model Program {
+  id             String      @id @default(cuid())
+  institutionId  String
+  name           String
+  department     String?
+  level          String      @default("UG")
+  durationMonths Int         @default(48)
+  seats          Int         @default(60)
+  createdAt      DateTime    @default(now())
+  institution    Institution @relation(fields: [institutionId], references: [id], onDelete: Cascade)
+  @@index([institutionId])
+}
+
+model AdmissionApplication {
+  id            String   @id @default(cuid())
+  institutionId String
+  programId     String?
+  applicantName String
+  email         String?
+  score         Float?
+  status        String   @default("SUBMITTED")
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  @@index([institutionId, status])
+}
+
+model StudentRecord {
+  id            String   @id @default(cuid())
+  institutionId String
+  programId     String?
+  name          String
+  email         String?
+  enrollmentId  String
+  year          Int      @default(1)
+  gpa           Float?
+  status        String   @default("ACTIVE")
+  placed        Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  @@index([institutionId, status])
+}
+
+model FacultyMember {
+  id            String   @id @default(cuid())
+  institutionId String
+  name          String
+  department    String?
+  designation   String?
+  email         String?
+  createdAt     DateTime @default(now())
+  @@index([institutionId])
+}
+
+model ExamResult {
+  id            String   @id @default(cuid())
+  institutionId String
+  studentId     String?
+  course        String
+  term          String?
+  score         Float    @default(0)
+  maxScore      Float    @default(100)
+  createdAt     DateTime @default(now())
+  @@index([institutionId])
+}
+
+// ============================================================================
+// Phase 9 - Enterprise Government Platform
+// ============================================================================
+model GovAgency {
+  id        String   @id @default(cuid())
+  ownerId   String
+  name      String
+  level     String   @default("LOCAL")
+  createdAt DateTime @default(now())
+  schemes   Scheme[]
+  @@index([ownerId])
+}
+
+model Scheme {
+  id            String    @id @default(cuid())
+  agencyId      String
+  name          String
+  category      String?
+  budget        Float     @default(0)
+  currency      String    @default("CHF")
+  beneficiaries Int       @default(0)
+  status        String    @default("ACTIVE")
+  startAt       DateTime?
+  createdAt     DateTime  @default(now())
+  agency        GovAgency @relation(fields: [agencyId], references: [id], onDelete: Cascade)
+  @@index([agencyId])
+}
+
+model CitizenRequest {
+  id          String    @id @default(cuid())
+  agencyId    String
+  kind        String    @default("SERVICE")
+  citizenName String
+  subject     String
+  details     String?
+  category    String?
+  priority    String    @default("MEDIUM")
+  status      String    @default("OPEN")
+  slaDays     Int       @default(15)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  resolvedAt  DateTime?
+  @@index([agencyId, status])
+}
+
+// ============================================================================
+// Phase 10 - Enterprise Healthcare Platform
+// ============================================================================
+model HealthFacility {
+  id        String    @id @default(cuid())
+  ownerId   String
+  name      String
+  kind      String    @default("HOSPITAL")
+  city      String?
+  createdAt DateTime  @default(now())
+  patients  Patient[]
+  @@index([ownerId])
+}
+
+model Patient {
+  id           String          @id @default(cuid())
+  facilityId   String
+  name         String
+  mrn          String
+  dob          DateTime?
+  sex          String?
+  bloodGroup   String?
+  phone        String?
+  createdAt    DateTime        @default(now())
+  facility     HealthFacility  @relation(fields: [facilityId], references: [id], onDelete: Cascade)
+  appointments Appointment[]
+  records      MedicalRecord[]
+  @@index([facilityId])
+}
+
+model Appointment {
+  id          String   @id @default(cuid())
+  facilityId  String
+  patientId   String?
+  doctorName  String?
+  department  String?
+  scheduledAt DateTime
+  status      String   @default("SCHEDULED")
+  reason      String?
+  createdAt   DateTime @default(now())
+  patient     Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
+  @@index([facilityId, status])
+}
+
+model MedicalRecord {
+  id         String   @id @default(cuid())
+  facilityId String
+  patientId  String
+  kind       String   @default("VISIT")
+  summary    String?
+  data       String?
+  createdAt  DateTime @default(now())
+  patient    Patient  @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  @@index([facilityId])
+  @@index([patientId])
+}
+
+// ============================================================================
+// Phase 11 - Enterprise AI Marketplace
+// ============================================================================
+model MarketplaceItem {
+  id            String               @id @default(cuid())
+  authorId      String
+  kind          String               @default("AGENT")
+  name          String
+  slug          String               @unique
+  summary       String?
+  category      String?
+  price         Float                @default(0)
+  currency      String               @default("CHF")
+  status        String               @default("DRAFT")
+  version       String               @default("1.0.0")
+  spec          String               @default("{}")
+  installs      Int                  @default(0)
+  ratingSum     Int                  @default(0)
+  ratingCount   Int                  @default(0)
+  createdAt     DateTime             @default(now())
+  updatedAt     DateTime             @updatedAt
+  installations MarketplaceInstall[]
+  reviews       MarketplaceReview[]
+  @@index([status, kind])
+  @@index([authorId])
+}
+
+model MarketplaceInstall {
+  id        String          @id @default(cuid())
+  itemId    String
+  userId    String
+  createdAt DateTime        @default(now())
+  item      MarketplaceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  @@unique([itemId, userId])
+  @@index([userId])
+}
+
+model MarketplaceReview {
+  id        String          @id @default(cuid())
+  itemId    String
+  userId    String
+  rating    Int             @default(5)
+  comment   String?
+  createdAt DateTime        @default(now())
+  item      MarketplaceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  @@unique([itemId, userId])
+  @@index([itemId])
+}

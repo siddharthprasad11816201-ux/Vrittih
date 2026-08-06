@@ -27,6 +27,12 @@ export const MODELS: ModelSeed[] = [
   // Phase 5/6 — operational intelligence (in-house deterministic).
   { modelId: "project-manager-v1", task: "planning", capabilities: ["project-forecast", "project-risk", "resource-allocation"] },
   { modelId: "finance-advisor-v1", task: "prediction", capabilities: ["cash-flow", "ar-aging", "budget-forecast"] },
+  // Phase 7-11 — vertical intelligence (in-house deterministic).
+  { modelId: "sales-assistant-v1", task: "recommendation", capabilities: ["pipeline-forecast", "sales-nba"] },
+  { modelId: "campus-intelligence-v1", task: "prediction", capabilities: ["admissions-funnel", "placement", "at-risk-students"] },
+  { modelId: "policy-intelligence-v1", task: "prediction", capabilities: ["grievance-sla", "scheme-reach"] },
+  { modelId: "clinical-assistant-v1", task: "prediction", capabilities: ["triage", "no-show", "population-health"] },
+  { modelId: "marketplace-intelligence-v1", task: "recommendation", capabilities: ["trending", "marketplace-revenue"] },
 ]
 
 // §9 — capabilities (authorization derives from these, never role names).
@@ -48,6 +54,12 @@ export const CAPABILITIES: CapabilitySeed[] = [
   // Phase 5/6 — AI Project Manager + Finance advisor (in-house, audited).
   { capId: "project.manager", name: "AI Project Manager — portfolio standup", provider: "project.manager", modelId: "project-manager-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "finance.advisor", name: "Financial Intelligence advisor", provider: "finance.advisor", modelId: "finance-advisor-v1", safetyClass: "standard", permissions: ["auth"] },
+  // Phase 7-11 — vertical AI assistants (in-house, audited).
+  { capId: "crm.sales.assistant", name: "AI Sales Assistant — revenue intelligence", provider: "crm.sales.assistant", modelId: "sales-assistant-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "university.intelligence", name: "Campus Intelligence", provider: "university.intelligence", modelId: "campus-intelligence-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "gov.policy.intelligence", name: "Policy Intelligence", provider: "gov.policy.intelligence", modelId: "policy-intelligence-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "health.clinical.assistant", name: "Clinical Operations Assistant", provider: "health.clinical.assistant", modelId: "clinical-assistant-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "marketplace.intelligence", name: "Marketplace Intelligence", provider: "marketplace.intelligence", modelId: "marketplace-intelligence-v1", safetyClass: "standard", permissions: ["auth"] },
 ]
 
 // §7 — registered agents. The Career Coach is the first.
