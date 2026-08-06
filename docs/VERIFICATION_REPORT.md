@@ -31,3 +31,5 @@ Live at **www.vrittih.online**. All pages 200 (home, jobs, hire, projects, finan
 
 ## Changelog
 - 2026-08-06 — Created.
+
+| AI Career Coach (readiness) | 12 ✅ | 12 ✅ | market-skill aggregation, gap analysis, readiness verdict via brain, learning plan/timeline, 400/401 |
