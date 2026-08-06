@@ -44,7 +44,7 @@ export async function POST(req: NextRequest) {
 
     // Nothing to reason about yet — guide honestly instead of inventing.
     if (candidate.length === 0) {
-      return reply(intent, "I don't have enough about you yet to answer that honestly. Add your experience and skills — or upload your résumé — and I'll base everything on your real profile.", [], { label: "Complete your profile", href: "/career" })
+      return reply(intent, "I don't have enough about you yet to answer that honestly. Add your experience and skills — or upload your résumé — and I'll base everything on your real profile.", [], { label: "Complete your profile", href: "/profile/edit" })
     }
 
     const experienceMonths = (input.experiences || []).reduce((n, e) => n + (e.months || 0), 0)
