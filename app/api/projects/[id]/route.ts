@@ -12,14 +12,14 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
   const project = await prisma.project.findUnique({ where: { id: params.id }, include: { milestones: { orderBy: { order: "asc" } } } })
   if (!project || project.ownerId !== p.userId) return NextResponse.json({ error: "Not found" }, { status: 404 })
   const tasks = await prisma.task.findMany({ where: { projectId: params.id }, orderBy: { createdAt: "desc" }, take: 500 })
-  const wiki = await prisma.wikiPage.findMany({ where: { projectId: params.id }, orderBy: { updatedAt: "desc" }, select: { id: true, title: true, updatedAt: true } })
+  const wiki = await prisma.wikiPage.findMany({ where: { projectId: params.id }, orderBy: { updatedAt: "desc" }, select: { id: true, title: true, updatedAt: true }, take: 300 })
   const mDone = project.milestones.filter(m => m.status === "DONE").length
   const tDone = tasks.filter(t => t.status === "DONE").length
   const progress = projectProgress({ milestonesDone: mDone, milestonesTotal: project.milestones.length, tasksDone: tDone, tasksTotal: tasks.length })
   return NextResponse.json({
     project: { id: project.id, name: project.name, description: project.description, status: project.status, dueAt: project.dueAt, startAt: project.startAt },
     milestones: project.milestones,
-    board: kanban(tasks.map(t => ({ id: t.id, title: t.title, status: t.status, priority: t.priority }))),
+    board: kanban(tasks.map(t => ({ id: t.id, title: t.title, status: t.status, priority: t.priority, assigneeId: t.assigneeId }))),
     wiki, progress, atRisk: isAtRisk({ status: project.status, dueAt: project.dueAt, progress }), statuses: PROJECT_STATUSES,
   })
 }

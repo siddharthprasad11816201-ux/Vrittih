@@ -2,6 +2,7 @@
  * capability providers + knowledge event handlers are registered before use. */
 import "./providers"
 import "./engine-providers"
+import "./ops-providers"
 import { registerKnowledgeHandlers } from "@/lib/knowledge/handlers"
 registerKnowledgeHandlers()
 

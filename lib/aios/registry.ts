@@ -24,6 +24,9 @@ export const MODELS: ModelSeed[] = [
   { modelId: "reflect-engine-v1", task: "reflection", capabilities: ["self-critique"] },
   { modelId: "evaluate-engine-v1", task: "evaluation", capabilities: ["rubric-scoring"] },
   { modelId: "recommend-engine-v1", task: "recommendation", capabilities: ["ranking", "recommendation-calibration"] },
+  // Phase 5/6 — operational intelligence (in-house deterministic).
+  { modelId: "project-manager-v1", task: "planning", capabilities: ["project-forecast", "project-risk", "resource-allocation"] },
+  { modelId: "finance-advisor-v1", task: "prediction", capabilities: ["cash-flow", "ar-aging", "budget-forecast"] },
 ]
 
 // §9 — capabilities (authorization derives from these, never role names).
@@ -42,6 +45,9 @@ export const CAPABILITIES: CapabilitySeed[] = [
   { capId: "reflection.reflect", name: "Reflection / self-critique", provider: "reflection.reflect", modelId: "reflect-engine-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "evaluation.evaluate", name: "Rubric evaluation", provider: "evaluation.evaluate", modelId: "evaluate-engine-v1", safetyClass: "standard", permissions: ["auth"] },
   { capId: "recommendation.rank", name: "Recommendation ranking + calibration", provider: "recommendation.rank", modelId: "recommend-engine-v1", safetyClass: "standard", permissions: ["auth"] },
+  // Phase 5/6 — AI Project Manager + Finance advisor (in-house, audited).
+  { capId: "project.manager", name: "AI Project Manager — portfolio standup", provider: "project.manager", modelId: "project-manager-v1", safetyClass: "standard", permissions: ["auth"] },
+  { capId: "finance.advisor", name: "Financial Intelligence advisor", provider: "finance.advisor", modelId: "finance-advisor-v1", safetyClass: "standard", permissions: ["auth"] },
 ]
 
 // §7 — registered agents. The Career Coach is the first.

@@ -1,7 +1,7 @@
 "use client"
 import { useCallback, useEffect, useState } from "react"
 import AppShell from "@/components/vrittih/AppShell"
-import { IconBanknote, IconCreditCard, IconBarChart, IconPlus, IconBriefcase } from "@/components/ui/Icons"
+import { IconBanknote, IconCreditCard, IconBarChart, IconPlus, IconBriefcase, IconZap, IconActivity, IconAlert } from "@/components/ui/Icons"
 
 const CURRENCIES = ["CHF", "EUR", "USD", "GBP", "INR"]
 const money = (n: number, c: string) => `${c} ${Number(n || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`
@@ -9,17 +9,19 @@ const money = (n: number, c: string) => `${c} ${Number(n || 0).toLocaleString(un
 export default function FinancePage() {
   const [state, setState] = useState<"loading" | "ok" | "denied">("loading")
   const [d, setD] = useState<any>(null)
+  const [fin, setFin] = useState<any>(null)
   const [tab, setTab] = useState<"invoices" | "expenses" | "budgets" | "vendors">("invoices")
 
+  const loadFin = useCallback(() => { fetch("/api/erp/intelligence").then(r => r.ok ? r.json() : null).then(x => x && setFin(x)).catch(() => {}) }, [])
   const load = useCallback(() => {
     fetch("/api/erp/finance").then(async r => {
       if (r.status === 401 || r.status === 403) { setState("denied"); return }
-      setD(await r.json()); setState("ok")
+      setD(await r.json()); setState("ok"); loadFin()
     }).catch(() => setState("denied"))
-  }, [])
+  }, [loadFin])
   useEffect(() => { load() }, [load])
 
-  const post = async (body: any) => { const r = await fetch("/api/erp/finance", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); if (r.ok) load(); return r.ok }
+  const post = async (body: any) => { const r = await fetch("/api/erp/finance", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); if (r.ok) { load(); loadFin() } return r.ok }
 
   if (state === "loading") return <AppShell title="Finance"><div style={S.page}><div style={S.empty}><p style={S.sub}>Loading…</p></div></div></AppShell>
   if (state === "denied") return <AppShell title="Finance"><div style={S.page}><div style={S.empty}><h1 style={S.h1}>Sign in to access finance</h1></div></div></AppShell>
@@ -51,6 +53,8 @@ export default function FinancePage() {
             ))}
           </div>
         )}
+
+        {fin && <FinancialIntelligencePanel fin={fin} />}
 
         <div style={S.tabs}>
           {(["invoices", "expenses", "budgets", "vendors"] as const).map(t => (
@@ -196,6 +200,72 @@ function Table({ rows, cols, statuses, kind, post }: any) {
   )
 }
 
+function FinancialIntelligencePanel({ fin }: { fin: any }) {
+  const advice = fin.advice || {}
+  const suggestions = advice.suggestions || []
+  const aging = fin.aging || []
+  const runway = fin.runway || []
+  const cashflow = fin.cashflow || []
+  const sevColor: any = { urgent: "var(--v-red)", high: "#b7791f", medium: "var(--v-accent)", low: "var(--v-ink-3)" }
+  if (aging.length === 0 && suggestions.length === 0 && runway.length === 0) return null
+  return (
+    <div style={S.fi}>
+      <div style={S.fiHead}>
+        <span style={S.fiTitle}><IconZap size={16} /> Financial Intelligence</span>
+        <span style={S.fiSummary}>{advice.summary}</span>
+      </div>
+      {suggestions.length > 0 && (
+        <div style={S.fiList}>
+          {suggestions.slice(0, 6).map((s: any) => (
+            <div key={s.id} style={S.fiItem}>
+              <span style={{ ...S.fiDot, background: sevColor[s.severity] || "var(--v-ink-3)" }} />
+              <div style={{ flex: 1 }}><div style={S.fiItemTitle}>{s.title} <span style={{ ...S.sevTag, color: sevColor[s.severity] }}>{s.severity}</span></div><div style={S.fiItemDetail}>{s.detail}</div></div>
+            </div>
+          ))}
+        </div>
+      )}
+      <div style={S.fiCols}>
+        {aging.length > 0 && (
+          <div style={S.fiCol}>
+            <div style={S.fiColHead}><IconAlert size={13} /> AR aging (owed to us)</div>
+            <div style={S.agingWrap}>
+              <table style={S.agingTable}>
+                <thead><tr><th style={S.agTh}>Cur</th><th style={S.agTh}>Current</th><th style={S.agTh}>1–30</th><th style={S.agTh}>31–60</th><th style={S.agTh}>61–90</th><th style={S.agTh}>90+</th></tr></thead>
+                <tbody>{aging.map((a: any) => <tr key={a.currency}><td style={S.agTd}><strong>{a.currency}</strong></td><td style={S.agTd}>{a.current.toLocaleString()}</td><td style={S.agTd}>{a.d1_30.toLocaleString()}</td><td style={S.agTd}>{a.d31_60.toLocaleString()}</td><td style={{ ...S.agTd, color: a.d61_90 > 0 ? "#b7791f" : undefined }}>{a.d61_90.toLocaleString()}</td><td style={{ ...S.agTd, color: a.d90plus > 0 ? "var(--v-red)" : undefined }}>{a.d90plus.toLocaleString()}</td></tr>)}</tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        {(runway.length > 0 || cashflow.length > 0) && (
+          <div style={S.fiCol}>
+            <div style={S.fiColHead}><IconActivity size={13} /> Burn & cash-flow</div>
+            {runway.map((r: any) => (
+              <div key={r.currency} style={S.rwRow}>
+                <span style={S.rwCur}>{r.currency}</span>
+                <span style={S.rwMeta}>{r.currency} {r.monthlyBurn.toLocaleString()}/mo burn · {r.months == null ? "no burn" : `${r.months}mo receivables cover`}</span>
+              </div>
+            ))}
+            {cashflow.map((cf: any) => {
+              const vals = (cf.weeks || []).map((w: any) => w.cumulative)
+              const max = Math.max(1, ...vals.map((v: number) => Math.abs(v)))
+              return (
+                <div key={cf.currency} style={S.cfRow}>
+                  <span style={S.rwCur}>{cf.currency}</span>
+                  <span style={S.cfBars}>
+                    {(cf.weeks || []).map((w: any, i: number) => <span key={i} title={`wk ${w.weekIndex}: ${cf.currency} ${w.cumulative.toLocaleString()}`} style={{ ...S.cfBar, height: `${Math.max(4, (Math.abs(w.cumulative) / max) * 100)}%`, background: w.cumulative < 0 ? "var(--v-red)" : "var(--v-accent)" }} />)}
+                  </span>
+                  <span style={{ ...S.rwMeta, color: cf.projectedNet < 0 ? "var(--v-red)" : "var(--v-ink-2)" }}>net {cf.projectedNet.toLocaleString()}</span>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </div>
+      <p style={S.fiFine}>In-house, deterministic financial intelligence — per-currency, never summed across currencies. Audited through the AI gateway. No external LLM.</p>
+    </div>
+  )
+}
+
 function Fig({ l, v, color }: { l: string; v: string; color?: string }) { return <div><div style={{ ...S.figN, ...(color ? { color } : {}) }}>{v}</div><div style={S.figL}>{l}</div></div> }
 function finStatusStyle(s: string): any {
   if (["PAID", "APPROVED", "REIMBURSED", "RECEIVED", "CLOSED"].includes(s)) return { background: "var(--v-green-bg,#e9f9ef)", color: "var(--v-green)" }
@@ -240,4 +310,28 @@ const S: Record<string, any> = {
   budNums: { fontSize: 11.5, color: "var(--v-ink-2)", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" },
   vendGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fill,minmax(200px,1fr))", gap: 10, marginBottom: 8 },
   vendCard: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 12, padding: "12px 14px", display: "flex", gap: 10, alignItems: "flex-start", color: "var(--v-ink-2)" },
+  fi: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 16, padding: 18, marginBottom: 18, borderLeft: "3px solid var(--v-accent)" },
+  fiHead: { display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 10, marginBottom: 12 },
+  fiTitle: { fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 700, color: "var(--v-ink)", display: "flex", alignItems: "center", gap: 7 },
+  fiSummary: { fontSize: 13, color: "var(--v-ink-2)" },
+  fiList: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 14 },
+  fiItem: { display: "flex", gap: 10, alignItems: "flex-start" },
+  fiDot: { width: 8, height: 8, borderRadius: 999, marginTop: 6, flexShrink: 0 },
+  fiItemTitle: { fontSize: 13, fontWeight: 600, color: "var(--v-ink)" },
+  fiItemDetail: { fontSize: 12, color: "var(--v-ink-2)", lineHeight: 1.5, marginTop: 1 },
+  sevTag: { fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".04em", marginLeft: 4 },
+  fiCols: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))", gap: 16 },
+  fiCol: {},
+  fiColHead: { fontSize: 11.5, fontWeight: 700, color: "var(--v-ink-2)", textTransform: "uppercase", letterSpacing: ".03em", marginBottom: 8, display: "flex", alignItems: "center", gap: 6 },
+  agingWrap: { overflowX: "auto" },
+  agingTable: { width: "100%", borderCollapse: "collapse", fontSize: 12, fontVariantNumeric: "tabular-nums" },
+  agTh: { textAlign: "right", padding: "4px 6px", fontSize: 10.5, fontWeight: 600, color: "var(--v-ink-3)", borderBottom: "1px solid var(--v-line)" },
+  agTd: { textAlign: "right", padding: "5px 6px", color: "var(--v-ink)", borderBottom: "1px solid var(--v-line)" },
+  rwRow: { display: "flex", alignItems: "center", gap: 10, padding: "5px 0", fontSize: 12 },
+  rwCur: { fontWeight: 700, color: "var(--v-ink-2)", width: 40 },
+  rwMeta: { color: "var(--v-ink-2)", fontSize: 11.5 },
+  cfRow: { display: "flex", alignItems: "center", gap: 10, padding: "6px 0" },
+  cfBars: { flex: 1, display: "flex", gap: 2, alignItems: "flex-end", height: 34 },
+  cfBar: { flex: 1, borderRadius: 2, minHeight: 3 },
+  fiFine: { fontSize: 11, color: "var(--v-ink-3)", lineHeight: 1.5, marginTop: 12, marginBottom: 0 },
 }

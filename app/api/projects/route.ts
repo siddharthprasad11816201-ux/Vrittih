@@ -29,6 +29,15 @@ export async function POST(req: NextRequest) {
   const b = await req.json()
   const action = String(b.action || "create-project")
 
+  // Assignees must be an Employee on the caller's own team — never a foreign Employee.id.
+  // Returns the validated id, null (unassign), or false (invalid → reject).
+  const resolveAssignee = async (raw: any): Promise<string | null | false> => {
+    if (!raw) return null
+    const id = String(raw).slice(0, 60)
+    const e = await prisma.employee.findUnique({ where: { id }, select: { employerId: true } }).catch(() => null)
+    return e && e.employerId === p.userId ? id : false
+  }
+
   if (action === "create-project") {
     const name = String(b.name || "").trim()
     if (!name) return NextResponse.json({ error: "Project name required." }, { status: 400 })
@@ -57,8 +66,24 @@ export async function POST(req: NextRequest) {
   }
   if (action === "add-task") {
     const title = String(b.title || "").trim(); if (!title) return NextResponse.json({ error: "Task title required." }, { status: 400 })
-    await prisma.task.create({ data: { employerId: p.userId, createdById: p.userId, projectId: String(b.projectId), title: title.slice(0, 200), status: "TODO", priority: (["LOW", "MEDIUM", "HIGH"].includes(b.priority) ? b.priority : "MEDIUM") } })
+    const assignee = await resolveAssignee(b.assigneeId)
+    if (assignee === false) return NextResponse.json({ error: "Assignee must be an employee on your team." }, { status: 400 })
+    await prisma.task.create({ data: {
+      employerId: p.userId, createdById: p.userId, projectId: String(b.projectId), title: title.slice(0, 200), status: "TODO",
+      priority: (["LOW", "MEDIUM", "HIGH"].includes(b.priority) ? b.priority : "MEDIUM"),
+      assigneeId: assignee,
+      dueAt: b.dueAt ? new Date(b.dueAt) : null,
+    } })
     return NextResponse.json({ success: true }, { status: 201 })
+  }
+  if (action === "assign-task") {
+    const t = await prisma.task.findUnique({ where: { id: String(b.taskId || "") }, select: { createdById: true } })
+    if (!t) return NextResponse.json({ error: "Task not found." }, { status: 404 })
+    if (t.createdById !== p.userId) return NextResponse.json({ error: "Not your task." }, { status: 403 })
+    const assignee = await resolveAssignee(b.assigneeId)
+    if (assignee === false) return NextResponse.json({ error: "Assignee must be an employee on your team." }, { status: 400 })
+    await prisma.task.update({ where: { id: String(b.taskId) }, data: { assigneeId: assignee } })
+    return NextResponse.json({ success: true })
   }
   if (action === "move-task") {
     const status = String(b.status || "").toUpperCase(); if (!(TASK_STATUSES as readonly string[]).includes(status)) return NextResponse.json({ error: "Invalid status." }, { status: 400 })
