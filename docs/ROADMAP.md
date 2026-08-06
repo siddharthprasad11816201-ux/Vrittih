@@ -26,8 +26,8 @@ See [PLATFORM_CONSTITUTION.md](PLATFORM_CONSTITUTION.md). In short: one unified 
 | — | **EAIL — Enterprise Brain** | Unified `deliberate()` pipeline (reason+evaluate+recommend+reflect; evidence/confidence/risks/explainability) | ✅ | 100 |
 | — | **Recruiter Copilot** (managed placement) | Employer requirement → brain-ranked candidates w/ evidence + salary + interview plan; candidate placement side | ✅ | 90 (UI pending) |
 | — | AI copilot rebuilds to expert grade | Career Coach, Interview AI, Learning Tutor, Executive/HR Copilots → route through the brain | 🟡 | 15 |
-| 9 | Government Platform | Citizen services, schemes, grievances + Policy Intelligence | ⬜ | 0 (models staged) |
-| 10 | Healthcare Platform | Patients, appointments, records + Clinical Assistant | ⬜ | 0 (models staged) |
+| 9 | Government Platform | Citizen services, schemes, grievances + **Policy Intelligence** (brain-routed, FX-safe) | ✅ | 100 |
+| 10 | Healthcare Platform | Patients, appointments, records, triage routing + **Clinical Ops Intelligence** (brain-routed) | ✅ | 100 |
 | 11 | AI Marketplace | Agents/prompts/tools/workflows, dev SDK | ⬜ | 0 (models staged) |
 | 12 | Analytics & BI | Dashboards, KPIs, forecasting, decision intelligence | ⬜ | 0 |
 | 13 | Automation Platform | Workflow/rules engine, integration hub, no/low-code | ⬜ | 0 |

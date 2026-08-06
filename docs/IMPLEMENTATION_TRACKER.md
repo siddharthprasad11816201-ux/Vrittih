@@ -25,8 +25,8 @@ Sec = Security · AI = AI/reasoning quality · UX · A11y = Accessibility · Per
 | Interview AI | EAIL | P0 | ⬜ | 10% | — | 🟡 | ⬜ | 🟡 | 🟡 | 🟡 | local | Adaptive, evidence-based rebuild |
 | Learning Tutor | EAIL | P0 | ⬜ | 15% | — | 🟡 | ⬜ | ✅ | 🟡 | ✅ | local | Gap-driven, brain-backed rebuild |
 | Executive Copilot | EAIL | P1 | ⬜ | 5% | — | 🟡 | ⬜ | 🟡 | 🟡 | 🟡 | local | Evidence-based org intelligence |
-| Government Platform | 9 | P2 | ⬜ | 0% | — | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | — | Models staged; build on brain |
-| Healthcare Platform | 10 | P2 | ⬜ | 0% | — | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | — | Models staged; build on brain |
+| Government Platform | 9 | P2 | ✅ | 100% | 18 unit + 15 E2E ✅ | ✅ | ✅ | ✅ | 🟡 | ✅ | local | Policy Intelligence via brain; add more service types |
+| Healthcare Platform | 10 | P2 | ✅ | 100% | 19 unit + 14 E2E ✅ | ✅ | ✅ | ✅ | 🟡 | ✅ | local | Clinical Ops via brain (operational, not diagnosis) |
 | AI Marketplace | 11 | P2 | ⬜ | 0% | — | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | — | Models staged |
 | Analytics/Automation/Twin/Autonomous/Global | 12–16 | P3 | ⬜ | 0–20% | — | ⬜ | ⬜ | ⬜ | ⬜ | ⬜ | — | Partner/white-label (16) partial |
 

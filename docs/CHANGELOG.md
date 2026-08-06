@@ -3,6 +3,7 @@
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
 ## 2026-08-06
+- **Phase 11 Government** + **Phase 12 Healthcare** shipped — both route intelligence through the Enterprise Brain (Policy Intelligence 18+15 tests; Clinical Ops 19+14 tests; triage routing; FX-safe scheme reach). Build clean (144 pages).
 - **/hire** managed-placement UI shipped — employer/HR interface over the Recruiter Copilot (describe requirement → AI shortlist → evidence-ranked candidates + stage mgmt). Renders 200; nav wired.
 - Documentation system bootstrapped: full `docs/` tree + per-directory READMEs + global docs (KNOWN_GAPS, VERIFICATION_REPORT, ARCHITECTURE_INDEX, DESIGN_DECISION_RECORDS, CHANGELOG) + master-spec skeletons.
 - **Recruiter Copilot** (managed placement) shipped, routed through the Enterprise Brain — 17/17 E2E on the "10 Backend Engineers" requirement.
