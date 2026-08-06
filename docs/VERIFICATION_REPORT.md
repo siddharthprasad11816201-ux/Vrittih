@@ -13,6 +13,10 @@ Running record of verification across dimensions. Every completed capability app
 | Government (Policy Intelligence) | 18 ✅ | 15 ✅ | SLA overdue, FX-safe scheme reach, brain verdict, 403/401 |
 | Healthcare (Clinical Ops) | 19 ✅ | 14 ✅ | no-show rate, triage routing, population health, brain verdict, 403/401 |
 | HCM HR Copilot (Workforce Intel) | 12 ✅ | 9 ✅ | attrition risk + promotion readiness via brain, evidence/confidence, non-HR 403 |
+| Managed placement — candidate side | — | 10 ✅ | brain-matched openings, strong-fit verdict, matched skills, runId audit, 401 |
+
+## Production deployment (2026-08-07)
+Live at **www.vrittih.online**. All pages 200 (home, jobs, hire, projects, finance, sales, university, government, healthcare, hr, pricing, get-placed). Prod Supabase migrated (`prisma db push` in sync). New-table APIs return 401 (auth), not 500 — tables present. Sign-in + /api/stats serve real prod data.
 
 ## Review dimensions
 - **Security:** capability-driven authz verified on new endpoints (403/404/401). Adversarial review run on Phase 5/6 intelligence (6 confirmed defects fixed).
