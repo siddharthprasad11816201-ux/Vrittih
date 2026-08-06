@@ -4,12 +4,14 @@ import Link from "next/link"
 import { Keystone } from "@/components/vrittih/Logo"
 import PipelineRail from "@/components/vrittih/PipelineRail"
 
-// Plausible real content for the hero preview — actual role titles, Indian
-// companies and cities, each with a concrete next event (not placeholder text).
+// Illustrative sample for the hero preview. Company names are FICTIONAL on purpose —
+// never show a real, unregistered company here (they haven't consented and it invites
+// legal risk). The real brands hiring appear in the brand band below, pulled live from
+// the DB (those employers registered themselves).
 const PREVIEW_ROWS = [
-  { role: "Backend Engineer", company: "Razorpay", city: "Bengaluru", stage: "Interview", next: "Thu 3:00pm", bg: "#FEF3E2", fg: "var(--warn)" },
-  { role: "Product Designer", company: "Zomato", city: "Gurugram", stage: "Screening", next: "In review", bg: "var(--v-accent-soft)", fg: "var(--v-accent)" },
-  { role: "Data Analyst", company: "CRED", city: "Bengaluru", stage: "Offer", next: "Respond by Fri", bg: "var(--v-green-soft)", fg: "var(--v-green)" },
+  { role: "Backend Engineer", company: "Northwind Labs", city: "Zürich", stage: "Interview", next: "Thu 3:00pm", bg: "#FEF3E2", fg: "var(--warn)" },
+  { role: "Product Designer", company: "Lumen Studio", city: "Geneva", stage: "Screening", next: "In review", bg: "var(--v-accent-soft)", fg: "var(--v-accent)" },
+  { role: "Data Analyst", company: "Meridian Analytics", city: "Basel", stage: "Offer", next: "Respond by Fri", bg: "var(--v-green-soft)", fg: "var(--v-green)" },
 ]
 
 const PV: Record<string, any> = {
@@ -65,6 +67,44 @@ const TRUST = [
   { t: "You own your data", d: "Export or delete your profile and applications at any time." },
   { t: "Built in-house", d: "Auth, matching, messaging and payroll are ours — not resold third-party services." },
 ]
+
+/* Circular "fit" gauge — an in-house SVG ring that animates in like a little pop-up.
+   Illustrative of the psychophysical fit score; no external chart library. */
+function FitRing() {
+  const [shown, setShown] = useState(false)
+  useEffect(() => { const t = setTimeout(() => setShown(true), 150); return () => clearTimeout(t) }, [])
+  const pct = 87, R = 34, C = 2 * Math.PI * R
+  const off = shown ? C * (1 - pct / 100) : C
+  return (
+    <div className={`fitPop${shown ? " on" : ""}`}>
+      <div className="fitRing">
+        <svg width="104" height="104" viewBox="0 0 80 80" aria-hidden="true">
+          <circle cx="40" cy="40" r={R} fill="none" stroke="var(--line)" strokeWidth="7" />
+          <circle cx="40" cy="40" r={R} fill="none" stroke="var(--g)" strokeWidth="7" strokeLinecap="round"
+            strokeDasharray={C} strokeDashoffset={off} transform="rotate(-90 40 40)"
+            style={{ transition: "stroke-dashoffset 1.1s cubic-bezier(.22,1,.36,1)" }} />
+          <text x="40" y="37" textAnchor="middle" fontSize="17" fontWeight="700" fill="var(--ink)" style={{ font: "700 17px var(--font-display)" }}>{pct}%</text>
+          <text x="40" y="51" textAnchor="middle" fontSize="8" letterSpacing="1" fill="var(--ink3)">FIT</text>
+        </svg>
+      </div>
+      <div className="fitTxt">
+        <span className="fitBadge"><em />Strong fit</span>
+        <strong>Product &amp; Systems Design</strong>
+        <span className="fitWhy">Analytical temperament · steady energy · deep-focus disposition</span>
+      </div>
+    </div>
+  )
+}
+
+/* Mobile-only "swipe" affordance shown above each card rail. In-house SVG chevrons. */
+function SwipeHint() {
+  return (
+    <p className="railHint">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 6l-5 6 5 6M15 6l5 6-5 6" /></svg>
+      Swipe to explore
+    </p>
+  )
+}
 
 export default function Home() {
   const [s, setS] = useState<Stats | null>(null)
@@ -153,6 +193,7 @@ export default function Home() {
                   </div>
                 ))}
               </div>
+              <p className="sampleNote">Illustrative sample — companies shown are fictional.</p>
             </div>
           </div>
         </div>
@@ -176,6 +217,7 @@ export default function Home() {
           <p className="eyebrow">The candidate journey</p>
           <h2 className="h2">From profile to offer, guided end to end.</h2>
           <p className="sub">Every stage is visible and moves forward — no black boxes, no dead ends, no wondering where your application went.</p>
+          <SwipeHint />
           <div className="grid6">
             {JOURNEY.map((x, i) => (
               <div key={x.t} className="step">
@@ -194,6 +236,7 @@ export default function Home() {
           <p className="eyebrow">The platform</p>
           <h2 className="h2">Everything you need, in one workspace.</h2>
           <p className="sub">Search, scoring, matching and pipeline — every signal in view, for both sides of the table.</p>
+          <SwipeHint />
           <div className="grid2">
             {PLATFORM.map(x => (
               <div key={x.t} className="card">
@@ -211,6 +254,8 @@ export default function Home() {
           <p className="eyebrow">Career clarity</p>
           <h2 className="h2">Know what fits — before you choose.</h2>
           <p className="sub">Beyond skills and experience, Vrittih analyses your psychophysical nature — your temperament, energy and disposition — to point you toward the career directions that genuinely suit you. Guidance to decide with, never a gate.</p>
+          <FitRing />
+          <SwipeHint />
           <div className="grid2">
             <div className="card"><div className="cardT">Best‑fit career direction</div><p className="cardD">Your nature and your experience, blended into clear, best‑fit roles — with the reasoning shown.</p></div>
             <div className="card"><div className="cardT">Guidance for your day</div><p className="cardD">Advanced members get a short daily note — what to lean into, and what to ease off.</p></div>
@@ -236,6 +281,7 @@ export default function Home() {
         <div className="wrap">
           <p className="eyebrow">Trust &amp; security</p>
           <h2 className="h2">Built to be trusted with your career.</h2>
+          <SwipeHint />
           <div className="grid4">
             {TRUST.map(x => (
               <div key={x.t} className="card">
@@ -369,6 +415,24 @@ const CSS = `
 .stepT,.cardT{font-size:18px;font-weight:600;margin-top:10px;letter-spacing:-.01em}
 .stepD,.cardD{font-size:15px;line-height:1.6;color:var(--ink2);margin:8px 0 0}
 
+/* sample caption under the hero mockup */
+.sampleNote{font-size:12px;color:var(--ink3);margin:12px 0 0;text-align:center}
+
+/* "Know what fits" — circular fit gauge that pops in like a little card */
+.fitPop{display:inline-flex;align-items:center;gap:18px;margin:0 0 28px;padding:16px 22px 16px 16px;
+ background:var(--card);border:1px solid var(--line);border-left:3px solid var(--g);border-radius:18px;box-shadow:var(--shH);
+ opacity:0;transform:translateY(10px) scale(.96);transition:opacity .45s var(--e),transform .45s var(--e)}
+.fitPop.on{opacity:1;transform:none}
+.fitRing{flex:none;display:grid;place-items:center}
+.fitTxt{display:flex;flex-direction:column;gap:3px}
+.fitBadge{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--g)}
+.fitBadge em{width:7px;height:7px;border-radius:50%;background:var(--g);font-style:normal}
+.fitTxt strong{font-size:16px;font-weight:600;color:var(--ink);letter-spacing:-.01em}
+.fitWhy{font-size:13px;color:var(--ink2)}
+
+/* mobile swipe rail — cards become flickable, snapping smooth cards with a peek of the next */
+.railHint{display:none}
+
 /* engine */
 .flow{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:26px}
 .node{display:inline-flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:999px;padding:10px 18px;font-size:14.5px;font-weight:600;box-shadow:var(--sh)}
@@ -403,8 +467,26 @@ const CSS = `
   .footIn{grid-template-columns:1fr 1fr}
 }
 @media (max-width:620px){
-  .grid6,.grid4,.grid3,.grid2,.kpis,.footIn{grid-template-columns:1fr}
+  .kpis,.footIn,.grid3{grid-template-columns:1fr}
   .ctaRow .btn{width:100%}
+  .fitPop{width:100%}
+
+  /* Flashable smooth cards: horizontal scroll-snap rail, momentum, hidden scrollbar,
+     and a peek of the next card so it reads as swipeable. (Stats grid3 stays stacked.) */
+  .grid6,.grid4,.grid2{
+    display:flex;grid-template-columns:none;overflow-x:auto;scroll-snap-type:x mandatory;
+    gap:14px;margin-inline:-24px;padding:4px 24px 16px;scroll-padding-left:24px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none;overscroll-behavior-x:contain}
+  .grid6::-webkit-scrollbar,.grid4::-webkit-scrollbar,.grid2::-webkit-scrollbar{display:none}
+  .grid6>*,.grid4>*,.grid2>*{flex:0 0 82%;scroll-snap-align:center;scroll-snap-stop:always}
+  .step:hover,.card:hover{transform:none}   /* no hover-lift on touch */
+
+  /* swipe hint under each rail-bearing section heading */
+  .railHint{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--ink3);margin:-4px 0 14px}
+  .railHint svg{color:var(--g)}
+}
+@media (max-width:380px){
+  .grid6>*,.grid4>*,.grid2>*{flex:0 0 88%}
 }
 @media (prefers-reduced-motion:reduce){.v *{transition:none!important;animation:none!important}}
 `

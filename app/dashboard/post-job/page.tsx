@@ -96,7 +96,7 @@ export default function PostJob() {
               </div>
               <div style={S.row}>
                 <div style={S.fg}><label style={S.label}>Location *</label>
-                  <input value={form.location} onChange={e=>setForm(p=>({...p,location:e.target.value}))} style={S.input} placeholder="e.g. Bengaluru, Delhi, Mumbai" required />
+                  <input value={form.location} onChange={e=>setForm(p=>({...p,location:e.target.value}))} style={S.input} placeholder="e.g. Zürich, Geneva, Remote" required />
                 </div>
                 <div style={S.fg}><label style={S.label}>Experience level</label>
                   <select value={form.experience} onChange={e=>setForm(p=>({...p,experience:e.target.value}))} style={S.input}>
