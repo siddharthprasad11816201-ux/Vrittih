@@ -75,7 +75,10 @@ audit is a follow.
   (research, grants, challenges, research‑assistant); 2 pages (`/research`, `/innovation`);
   8 new Prisma models. Platform total after Phase 3: ~211 API routes, ~100 pages, ~138
   lib modules, ~135 Prisma models.
-- Adversarial review: ERIP (logic / security / integration) — results applied before final GO.
+- Adversarial review: ERIP (logic / security / integration) → **5 confirmed defects fixed**:
+  grant self-apply + challenge self-submit guards, citation anti-inflation (target must be
+  published + no self-citation + dedupe; bibliometrics over published outputs only), and
+  two innovation-page integration gaps (My applications / My submissions surfaced).
 
 ## 10. Technical Debt Register
 

@@ -48,6 +48,7 @@ export default function InnovationPage() {
               ))}
               {(g.open || []).length === 0 && <div style={S.empty}><p style={S.sub}>No open grants right now.</p></div>}
             </div>
+            {(g.myApplications || []).length > 0 && (<><div style={S.sec}>My applications</div>{g.myApplications.map((a: any) => (<div key={a.id} style={S.appRow}><span style={{ flex: 1 }}>{a.grant}{a.funder ? ` · ${a.funder}` : ""}</span><span style={{ color: st(a.status), fontWeight: 700 }}>{a.status}</span></div>))}</>)}
             {g.canPost && (g.posted || []).length > 0 && (<><div style={S.sec}>My grants — applications</div>{g.posted.map((gr: any) => (<div key={gr.id} style={S.card}><div style={S.rowT}>{gr.title}</div>{(gr.applications || []).map((a: any) => (<div key={a.id} style={S.appRow}><span style={{ flex: 1 }}>{a.applicant} <span style={{ color: st(a.status), fontWeight: 700 }}>{a.status}</span></span>{["SHORTLISTED", "AWARDED", "REJECTED"].map(s => <button key={s} style={S.tiny} disabled={busy === a.id} onClick={() => grantDecide(a.id, s)}>{s[0]}</button>)}</div>))}{(gr.applications || []).length === 0 && <div style={S.rowS}>No applications yet.</div>}</div>))}</>)}
           </div>
         )}
@@ -63,6 +64,7 @@ export default function InnovationPage() {
               ))}
               {(c.open || []).length === 0 && <div style={S.empty}><p style={S.sub}>No open challenges right now.</p></div>}
             </div>
+            {(c.mySubmissions || []).length > 0 && (<><div style={S.sec}>My submissions</div>{c.mySubmissions.map((s: any) => (<div key={s.id} style={S.appRow}><span style={{ flex: 1 }}>{s.title} <em style={{ color: "var(--v-ink-3)" }}>{s.challenge}</em></span><span style={{ color: st(s.status), fontWeight: 700 }}>{s.status}</span></div>))}</>)}
             {c.canSponsor && (c.sponsored || []).length > 0 && (<><div style={S.sec}>My challenges — submissions</div>{c.sponsored.map((ch: any) => (<div key={ch.id} style={S.card}><div style={S.rowT}>{ch.title}</div>{(ch.submissions || []).map((s: any) => (<div key={s.id} style={S.appRow}><span style={{ flex: 1 }}>{s.title} <em style={{ color: "var(--v-ink-3)" }}>{s.by}</em> <span style={{ color: st(s.status), fontWeight: 700 }}>{s.status}</span></span>{["SHORTLISTED", "WINNER", "REJECTED"].map(x => <button key={x} style={S.tiny} disabled={busy === s.id} onClick={() => judge(s.id, x)}>{x[0]}</button>)}</div>))}{(ch.submissions || []).length === 0 && <div style={S.rowS}>No submissions yet.</div>}</div>))}</>)}
           </div>
         )}

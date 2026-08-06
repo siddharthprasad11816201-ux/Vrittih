@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
   if (b.action === "apply") {
     const grant = await prisma.grant.findUnique({ where: { id: String(b.grantId || "") }, select: { id: true, status: true, postedById: true, title: true } })
     if (!grant || grant.status !== "OPEN") return NextResponse.json({ error: "Grant not open." }, { status: 409 })
+    if (grant.postedById === ctx.userId) return NextResponse.json({ error: "You cannot apply to your own grant." }, { status: 403 })
     const dupe = await prisma.grantApplication.findFirst({ where: { grantId: grant.id, applicantId: ctx.userId } })
     if (dupe) return NextResponse.json({ error: "You already applied." }, { status: 409 })
     await prisma.grantApplication.create({ data: { grantId: grant.id, applicantId: ctx.userId, projectId: b.projectId || null, summary: b.summary ? String(b.summary).slice(0, 4000) : null, status: "SUBMITTED" } })

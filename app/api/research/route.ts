@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
     prisma.citation.findMany({ select: { fromOutputId: true, toOutputId: true }, take: 50000 }),
   ])
   const counts = citationCounts(citEdges)
-  const myMetrics = citationMetrics(myOutputs.map(o => ({ id: o.id, citations: counts[o.id] || 0 })))
+  // Bibliometrics count PUBLISHED outputs only (drafts don't accrue citation credit).
+  const myMetrics = citationMetrics(myOutputs.filter(o => o.status === "PUBLISHED").map(o => ({ id: o.id, citations: counts[o.id] || 0 })))
 
   const shapeOut = (o: any) => ({
     id: o.id, title: o.title, kind: o.kind, status: o.status, venue: o.venue, url: o.url, doi: o.doi,
@@ -124,8 +125,19 @@ export async function POST(req: NextRequest) {
     const from = String(b.fromOutputId || "")
     const o = await prisma.researchOutput.findUnique({ where: { id: from }, select: { authorId: true } })
     if (!o || o.authorId !== ctx.userId) return NextResponse.json({ error: "You can only add citations from your own output." }, { status: 403 })
-    if (!b.toOutputId && !b.externalRef) return NextResponse.json({ error: "A cited output or reference is required." }, { status: 400 })
-    await prisma.citation.create({ data: { fromOutputId: from, toOutputId: b.toOutputId ? String(b.toOutputId) : null, externalRef: b.externalRef ? String(b.externalRef).slice(0, 500) : null } })
+    const toOutputId = b.toOutputId ? String(b.toOutputId) : null
+    if (!toOutputId && !b.externalRef) return NextResponse.json({ error: "A cited output or reference is required." }, { status: 400 })
+    if (toOutputId) {
+      // The target must be a real, PUBLISHED output, and you can't cite your own work
+      // (anti-inflation: self-citation can't pump your own bibliometrics).
+      const to = await prisma.researchOutput.findUnique({ where: { id: toOutputId }, select: { authorId: true, status: true } })
+      if (!to || to.status !== "PUBLISHED") return NextResponse.json({ error: "You can only cite a published output." }, { status: 409 })
+      if (to.authorId === ctx.userId) return NextResponse.json({ error: "Self-citation isn't counted." }, { status: 409 })
+      // Dedupe: one edge per (from, to).
+      const dupe = await prisma.citation.findFirst({ where: { fromOutputId: from, toOutputId } })
+      if (dupe) return NextResponse.json({ error: "That citation already exists." }, { status: 409 })
+    }
+    await prisma.citation.create({ data: { fromOutputId: from, toOutputId, externalRef: b.externalRef ? String(b.externalRef).slice(0, 500) : null } })
     return NextResponse.json({ success: true }, { status: 201 })
   }
 

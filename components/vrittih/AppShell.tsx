@@ -57,6 +57,7 @@ function buildNav(caps: Set<string>): Section[] {
     const ops: Item[] = []
     if (can("hrms.view")) ops.push({ href: "/hrms", label: "HRMS", icon: <IconClipboard size={18} /> })
     if (can("payroll.view")) ops.push({ href: "/hrms/payroll", label: "Payroll", icon: <IconBanknote size={18} /> })
+    ops.push({ href: "/hrms/performance", label: "Performance", icon: <IconActivity size={18} /> })
     if (can("tasks.view")) ops.push({ href: "/tasks", label: "Tasks", icon: <IconCheckCircle size={18} /> })
     if (can("crm.view")) ops.push({ href: "/contacts", label: "Contacts", icon: <IconTarget size={18} /> })
     if (ops.length) sections.push({ title: "Operations", items: ops })

@@ -33,6 +33,7 @@ export async function POST(req: NextRequest) {
   if (b.action === "submit") {
     const ch = await prisma.innovationChallenge.findUnique({ where: { id: String(b.challengeId || "") }, select: { id: true, status: true, sponsorId: true, title: true } })
     if (!ch || ch.status !== "OPEN") return NextResponse.json({ error: "Challenge not open." }, { status: 409 })
+    if (ch.sponsorId === ctx.userId) return NextResponse.json({ error: "You cannot submit to your own challenge." }, { status: 403 })
     const title = String(b.title || "").trim()
     if (!title) return NextResponse.json({ error: "Submission title required." }, { status: 400 })
     const dupe = await prisma.challengeSubmission.findFirst({ where: { challengeId: ch.id, userId: ctx.userId } })
