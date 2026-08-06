@@ -65,6 +65,8 @@ function buildNav(caps: Set<string>): Section[] {
     if (can("crm.view")) ops.push({ href: "/contacts", label: "Contacts", icon: <IconTarget size={18} /> })
     if (can("crm.view")) ops.push({ href: "/sales", label: "Sales", icon: <IconTrendingUp size={18} /> })   // Phase 7 CRM: pipeline, campaigns, support
     ops.push({ href: "/university", label: "University", icon: <IconLayers size={18} /> })  // Phase 8 University OS
+    ops.push({ href: "/government", label: "Government", icon: <IconShield size={18} /> })   // Phase 11 Government platform
+    ops.push({ href: "/healthcare", label: "Healthcare", icon: <IconActivity size={18} /> }) // Phase 12 Healthcare platform
     if (ops.length) sections.push({ title: "Operations", items: ops })
     const comms: Item[] = [{ href: "/messages", label: "Messages", icon: <IconMessage size={18} /> }]
     // Email (Mail) and the built-in video-call (Interviews) are hidden for all tiers for

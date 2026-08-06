@@ -52,3 +52,45 @@ registerProvider("university.intelligence", async (ctx) => {
   const advice = campusAdvisor({ funnel, seats, placement, gpa, atRisk: risk.length, ratio })
   return { output: { funnel, seats, placement, gpa, atRisk: risk.map(r => r.name), ratio, advice, hasData: true }, explanation: advice.summary, confidence: 0.72, modelId: "campus-intelligence-v1" }
 })
+
+import { deliberate } from "@/lib/intelligence/deliberate"
+import { grievanceSLA, schemeReach, serviceBacklog, policyBrief } from "@/lib/government/policy"
+
+/* Phase 11 — Policy Intelligence. Aggregates the caller's agencies (schemes + citizen
+ * requests), computes SLA/reach/backlog, then routes an evidence Brief through the
+ * Enterprise Brain for an explainable, confidence-scored verdict + recommendations. */
+registerProvider("gov.policy.intelligence", async (ctx) => {
+  const uid = ctx.subjectId as string
+  const agencies = await prisma.govAgency.findMany({ where: { ownerId: uid }, select: { id: true } })
+  const ids = agencies.map(a => a.id)
+  const [schemes, requests] = ids.length ? await Promise.all([
+    prisma.scheme.findMany({ where: { agencyId: { in: ids } }, select: { name: true, budget: true, currency: true, beneficiaries: true, status: true }, take: 2000 }),
+    prisma.citizenRequest.findMany({ where: { agencyId: { in: ids } }, select: { kind: true, status: true, priority: true, category: true, slaDays: true, createdAt: true, resolvedAt: true }, take: 5000 }),
+  ]) : [[], []]
+  const sla = grievanceSLA(requests as any)
+  const reach = schemeReach(schemes as any)
+  const backlog = serviceBacklog(requests as any)
+  const d = deliberate(policyBrief(sla, backlog, reach))
+  return { output: { sla, reach, backlog, deliberation: { verdict: d.decision.verdict, confidence: d.confidence, why: d.explanation, risks: d.risks }, hasData: ids.length > 0 }, explanation: d.explanation, confidence: d.confidence, modelId: "policy-intelligence-v1" }
+})
+
+import { appointmentStats, populationHealth, clinicalOpsBrief } from "@/lib/healthcare/clinical"
+
+/* Phase 12 — Clinical Operations Assistant. Aggregates the caller's facilities (patients,
+ * appointments, records), computes operational metrics, and routes an evidence Brief through
+ * the Enterprise Brain. OPERATIONAL only — never diagnosis or medical advice. */
+registerProvider("health.clinical.assistant", async (ctx) => {
+  const uid = ctx.subjectId as string
+  const facilities = await prisma.healthFacility.findMany({ where: { ownerId: uid }, select: { id: true } })
+  const ids = facilities.map(f => f.id)
+  const [patients, appts, recordCount] = ids.length ? await Promise.all([
+    prisma.patient.findMany({ where: { facilityId: { in: ids } }, select: { dob: true, bloodGroup: true }, take: 20000 }),
+    prisma.appointment.findMany({ where: { facilityId: { in: ids } }, select: { status: true, scheduledAt: true }, take: 20000 }),
+    prisma.medicalRecord.findMany({ where: { facilityId: { in: ids } }, select: { patientId: true }, take: 50000 }).then(rs => new Set(rs.map(r => r.patientId)).size),
+  ]) : [[], [], 0]
+  const stats = appointmentStats(appts as any)
+  const pop = populationHealth(patients as any)
+  const recordsCoverage = pop.patients > 0 ? Math.round(((recordCount as number) / pop.patients) * 100) : 0
+  const d = deliberate(clinicalOpsBrief(stats, pop, recordsCoverage))
+  return { output: { stats, population: pop, recordsCoverage, deliberation: { verdict: d.decision.verdict, confidence: d.confidence, why: d.explanation, risks: d.risks }, hasData: ids.length > 0 }, explanation: d.explanation, confidence: d.confidence, modelId: "clinical-assistant-v1" }
+})
