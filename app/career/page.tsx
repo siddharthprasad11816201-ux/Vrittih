@@ -48,7 +48,10 @@ export default function CareerPage() {
         <div style={S.header}>
           <h1 style={S.h1}>Career Intelligence</h1>
           <p style={S.lede}>Your professional profile, understood — and turned into a plan. All in-house, explainable, and based only on your real evidence.</p>
-          <Link href="/career/coach" style={S.coachCta}>Ask the AI coach →</Link>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 14 }}>
+            <Link href="/career/coach" style={{ ...S.coachCta, marginTop: 0 }}>Ask the AI coach →</Link>
+            <Link href="/career/readiness" style={{ ...S.coachCta, marginTop: 0, background: "var(--v-surface,#fff)", color: "#334EAC", border: "1px solid #cdd6f5", boxShadow: "none" }}>Role readiness &amp; plan →</Link>
+          </div>
           <div style={S.statRow}>
             <Stat n={d.stats.total} label="skills mapped" />
             <Stat n={d.stats.demonstrated} label="demonstrated" />

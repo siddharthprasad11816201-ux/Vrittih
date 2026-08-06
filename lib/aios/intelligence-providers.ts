@@ -106,3 +106,47 @@ registerProvider("candidate.opportunities", async (ctx) => {
   const summary = ranked.length ? `${ranked.length} matching opening(s); ${strong} strong fit(s) for your profile.` : "No open requirements match your profile yet — add more skills/experience to improve matches."
   return { output: { candidate: { name: profile.name, skills: profile.skills, years: profile.years }, opportunities: ranked.slice(0, 25), summary }, explanation: summary, confidence: ranked[0]?.confidence || 0, modelId: "enterprise-brain-v1" }
 })
+
+import { buildReadinessBrief, learningPlan } from "@/lib/career/readiness"
+
+/* AI Career Coach — role readiness. Retrieves the candidate's real profile + the target
+ * role's real market-required skills (aggregated from live jobs), routes an evidence Brief
+ * through the Enterprise Brain, and returns readiness (verdict/confidence/why/risks) + gap +
+ * a concrete learning plan. The Individual Experience: "I want to become X". */
+registerProvider("career.coach.readiness", async (ctx) => {
+  const uid = ctx.subjectId as string
+  const targetRole = String(ctx.input?.targetRole || "").trim()
+  if (!targetRole) return { output: { error: "no_target" }, explanation: "Tell me the role you want to grow into.", confidence: 0, modelId: "enterprise-brain-v1" }
+  const u = await prisma.user.findUnique({ where: { id: uid }, include: { skills: { include: { skill: true } }, experience: true } })
+  const candidateSkills = (u?.skills || []).map((s: any) => s.skill?.name).filter(Boolean)
+  const years = yearsFromExperience((u as any)?.experience || [])
+
+  // Real market-required skills: aggregate from active jobs whose title matches the target
+  // role — SPECIFICALLY (full phrase first, then distinctive words), so generic words like
+  // "engineer"/"manager" don't match everything and dilute the signal.
+  const GENERIC = new Set(["engineer", "developer", "manager", "analyst", "specialist", "associate", "senior", "junior", "lead", "officer", "executive", "consultant", "intern", "the", "and", "for"])
+  const norm = (s: string) => String(s || "").toLowerCase().replace(/\s+/g, " ").trim()
+  const target = norm(targetRole)
+  const distinct = target.split(" ").filter(w => w.length >= 2 && !GENERIC.has(w))
+  const jobs = await prisma.job.findMany({ where: { active: true }, select: { title: true, skills: { include: { skill: true } } }, orderBy: { createdAt: "desc" }, take: 4000 })
+  let matchJobs = jobs.filter(j => norm(j.title).includes(target))                          // 1) full phrase (authoritative if any)
+  if (matchJobs.length === 0 && distinct.length) matchJobs = jobs.filter(j => { const t = norm(j.title); return distinct.some(w => t.includes(w)) })  // 2) distinctive words
+  if (matchJobs.length === 0) matchJobs = jobs.filter(j => { const t = norm(j.title); return target.split(" ").some(w => w.length > 2 && t.includes(w)) })  // 3) last resort: any word
+  const freq = new Map<string, number>()
+  for (const j of matchJobs) for (const s of (j.skills || [])) { const n = s.skill?.name; if (n) freq.set(n, (freq.get(n) || 0) + 1) }
+  const requiredSkills = [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([n]) => n)
+
+  const input = { name: u?.name || "You", candidateSkills, years, targetRole, requiredSkills, minYears: 2 }
+  const d = deliberate(buildReadinessBrief(input))
+  const ov = skillOverlap(candidateSkills, requiredSkills)
+  const plan = learningPlan(ov.missing, targetRole)
+  const readyLabel = d.decision.verdict === "supported" ? "You're largely ready" : d.decision.verdict === "refuted" ? "Notable gaps to close" : "Some gaps to close"
+  return {
+    output: {
+      targetRole, marketJobsAnalysed: matchJobs.length, requiredSkills,
+      readiness: { verdict: d.decision.verdict, label: readyLabel, confidence: d.confidence, why: d.explanation, risks: d.risks },
+      matched: ov.matched, missing: ov.missing, coverage: ov.coverage, plan,
+    },
+    explanation: `${readyLabel} for ${targetRole} — ${plan.summary}`, confidence: d.confidence, modelId: "enterprise-brain-v1",
+  }
+})
