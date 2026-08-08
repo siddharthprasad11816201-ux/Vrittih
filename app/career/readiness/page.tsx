@@ -68,8 +68,14 @@ export default function CareerReadinessPage() {
               <div style={S.list}>
                 {d.plan.items.map((it: any) => (
                   <div key={it.skill} style={S.plan}>
-                    <div style={S.planTop}><span style={S.planSkill}>{it.skill}</span><span style={S.weeks}>~{it.estWeeks}w</span></div>
+                    <div style={S.planTop}>
+                      <span style={S.planSkill}><span style={S.prio}>{it.priority}</span> {it.skill}</span>
+                      <span style={S.weeks}>~{it.estWeeks}w</span>
+                    </div>
                     <p style={S.why}>{it.why}</p>
+                    {it.course
+                      ? <a href="/academy" style={S.courseLink}>Academy course: “{it.course.title}” →</a>
+                      : <span style={S.noCourse}>No Academy course yet — project-based path below</span>}
                     <ul style={S.actions}>{it.actions.map((a: string, i: number) => <li key={i} style={S.action}>{a}</li>)}</ul>
                   </div>
                 ))}

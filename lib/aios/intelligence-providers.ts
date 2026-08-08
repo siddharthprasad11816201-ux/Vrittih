@@ -136,10 +136,28 @@ registerProvider("career.coach.readiness", async (ctx) => {
   for (const j of matchJobs) for (const s of (j.skills || [])) { const n = s.skill?.name; if (n) freq.set(n, (freq.get(n) || 0) + 1) }
   const requiredSkills = [...freq.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([n]) => n)
 
+  // Honesty: if the market has no skill data for this title, don't fabricate a verdict.
+  if (requiredSkills.length === 0) {
+    return {
+      output: {
+        targetRole, marketJobsAnalysed: matchJobs.length, requiredSkills: [], insufficientData: true,
+        readiness: { verdict: "insufficient-evidence", label: "Not enough market data", confidence: 0, why: `We couldn't find enough live postings with listed skills for "${targetRole}" to assess readiness reliably. Try a broader or more common role title.`, risks: [] },
+        matched: [], missing: [], coverage: 0, plan: { items: [], totalWeeks: 0, summary: "No market skill data for this role yet — try a more common title." },
+      },
+      explanation: `Not enough market data for ${targetRole} to assess readiness.`, confidence: 0, modelId: "enterprise-brain-v1",
+    }
+  }
+
   const input = { name: u?.name || "You", candidateSkills, years, targetRole, requiredSkills, minYears: 2 }
   const d = deliberate(buildReadinessBrief(input))
   const ov = skillOverlap(candidateSkills, requiredSkills)
-  const plan = learningPlan(ov.missing, targetRole)
+  // Link each gap to a REAL published Academy course + weight by real market demand.
+  const courses = await prisma.course.findMany({ where: { status: "PUBLISHED" }, select: { slug: true, title: true, skills: true } }).catch(() => [] as any[])
+  const courseSkills = (courses as any[]).map(c => { let sk: string[] = []; try { sk = JSON.parse(c.skills || "[]") } catch {} return { slug: c.slug, title: c.title, skills: sk.map((x: string) => String(x).toLowerCase()) } })
+  const lc = (s: string) => s.toLowerCase()
+  const courseFor = (skill: string) => { const s = lc(skill); const hit = courseSkills.find(c => c.skills.some(k => k === s || k.includes(s) || s.includes(k)) || lc(c.title).includes(s)); return hit ? { slug: hit.slug, title: hit.title } : null }
+  const gaps = ov.missing.map(s => ({ skill: s, demand: freq.get(s) || 0, course: courseFor(s) }))
+  const plan = learningPlan(gaps, targetRole, matchJobs.length)
   const readyLabel = d.decision.verdict === "supported" ? "You're largely ready" : d.decision.verdict === "refuted" ? "Notable gaps to close" : "Some gaps to close"
   return {
     output: {

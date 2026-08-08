@@ -40,23 +40,33 @@ export function buildReadinessBrief(i: ReadinessInput): Brief {
   }
 }
 
-export interface PlanItem { skill: string; why: string; estWeeks: number; actions: string[] }
+export interface Gap { skill: string; demand?: number; course?: { slug: string; title: string } | null }
+export interface PlanItem { skill: string; priority: number; why: string; estWeeks: number; course: { slug: string; title: string } | null; actions: string[] }
 export interface LearningPlan { items: PlanItem[]; totalWeeks: number; summary: string }
 
-/* Deterministic learning plan to close the gap: per-skill actions + a realistic (parallel)
- * timeline estimate. */
-export function learningPlan(missingSkills: string[], targetRole: string): LearningPlan {
-  const items: PlanItem[] = missingSkills.map(s => ({
-    skill: s,
-    why: `Required for ${targetRole} and not yet on your profile.`,
-    estWeeks: 4,
-    actions: [`Take the Academy track for ${s}`, `Ship a portfolio project using ${s}`, `Complete practice exercises + a mock interview on ${s}`],
-  }))
-  // Skills are learned partly in parallel: first two ~4 weeks, each additional adds ~2.
+/* Evidence-based learning plan: gaps prioritised by REAL market demand (how often the skill
+ * appears in the role's live postings), each linked to the ACTUAL Academy course when one
+ * teaches it (honest "no course yet" otherwise), with a focused, front-loaded timeline.
+ * Deterministic; no generic boilerplate — actions/why differ per skill by demand + resource. */
+export function learningPlan(gaps: Gap[], targetRole: string, totalRoles = 0): LearningPlan {
+  // Highest-demand gaps first; focus on the top 6 rather than an overwhelming list.
+  const sorted = [...gaps].sort((a, b) => (b.demand || 0) - (a.demand || 0)).slice(0, 6)
+  const items: PlanItem[] = sorted.map((g, i) => {
+    const est = i < 2 ? 4 : i < 4 ? 3 : 2   // front-load the most in-demand skills
+    const why = (g.demand && totalRoles)
+      ? `Appears in ${g.demand} of ${totalRoles} live ${targetRole} posting${totalRoles > 1 ? "s" : ""} you'd compete for — not yet on your profile.`
+      : `Commonly required for ${targetRole} and not yet on your profile.`
+    const actions = g.course
+      ? [`Start the Academy course “${g.course.title}”`, `Apply it in a portfolio project you can show recruiters`, `Finish with a mock interview focused on ${g.skill}`]
+      : [`No Academy course covers ${g.skill} yet — build a portfolio project centred on it`, `Practise with real exercises and open-source contributions`, `Finish with a mock interview focused on ${g.skill}`]
+    return { skill: g.skill, priority: i + 1, why, estWeeks: est, course: g.course || null, actions }
+  })
   const n = items.length
-  const totalWeeks = n === 0 ? 0 : n <= 2 ? n * 4 : 8 + (n - 2) * 2
+  // Learned partly in parallel: ~4 weeks for the first, +2 per additional focused skill.
+  const totalWeeks = n === 0 ? 0 : 4 + (n - 1) * 2
+  const withCourse = items.filter(it => it.course).length
   const summary = n === 0
-    ? "No skill gaps for this role — focus on depth, projects and interview practice."
-    : `${n} skill gap${n > 1 ? "s" : ""} to close — estimated ~${totalWeeks} weeks with focused, project-based learning.`
+    ? "No skill gaps for this role — focus on depth, a flagship project and interview practice."
+    : `Top ${n} gap${n > 1 ? "s" : ""} to close (by market demand) — ~${totalWeeks} weeks focused; ${withCourse} covered by an Academy course today.`
   return { items, totalWeeks, summary }
 }
