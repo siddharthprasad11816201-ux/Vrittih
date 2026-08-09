@@ -70,6 +70,7 @@ function buildNav(caps: Set<string>): Section[] {
     ops.push({ href: "/healthcare", label: "Healthcare", icon: <IconActivity size={18} /> }) // Phase 12 Healthcare platform
     ops.push({ href: "/marketplace", label: "Marketplace", icon: <IconStar size={18} /> })   // Phase 11 AI Marketplace
     ops.push({ href: "/automation", label: "Automation", icon: <IconZap size={18} /> })       // Phase 13 Automation
+    ops.push({ href: "/twin", label: "Digital Twin", icon: <IconActivity size={18} /> })       // Phase 14 Digital Twin
     if (ops.length) sections.push({ title: "Operations", items: ops })
     const comms: Item[] = [{ href: "/messages", label: "Messages", icon: <IconMessage size={18} /> }]
     // Email (Mail) and the built-in video-call (Interviews) are hidden for all tiers for
@@ -112,6 +113,7 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/tests", label: "Assessments", icon: <IconAward size={18} /> },
       { href: "/marketplace", label: "Marketplace", icon: <IconStar size={18} /> }, // Phase 11 AI Marketplace
       { href: "/automation", label: "Automation", icon: <IconZap size={18} /> }, // Phase 13 Automation
+      { href: "/twin", label: "Digital Twin", icon: <IconActivity size={18} /> }, // Phase 14 Digital Twin
       { href: "/tools", label: "Tools", icon: <IconZap size={18} /> },
     ] })
   }

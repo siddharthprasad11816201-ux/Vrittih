@@ -2,6 +2,15 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (i) — Phase 14: Digital Twin
+- **Digital Twin shipped** — a live model of the organisation + projects computed from REAL data, with pure, honest what-if simulators. Reuses the existing planning primitives (`lib/planning/workforce`) and project forecaster (`lib/project/intelligence`) — no duplicated math.
+  - **Org twin:** live snapshot (active headcount, by-department, annual attrition from exited rows, 12-mo hire rate, avg annual cost parsed from real CHF salaries). Simulation: month-by-month headcount = prev − attrition + hires over N months, with a reused `budgetProjection` (hiring cost + annualised payroll, FX-safe). Honest `costAssumed` flag when no salary data.
+  - **Project twin:** live snapshot (open tasks, measured weekly velocity, forecast ETA, team size). Simulation: add people (velocity scales) / change scope → re-forecast ETA via `forecastCompletion`, with delta vs baseline + honest confidence.
+  - **Scenarios** persist (`TwinScenario`) — save / list / delete, owner-scoped.
+  - **API:** `/api/twin` (live twins + projects + scenarios), `/api/twin/simulate` (run + optional save), `/api/twin/project/[id]`, `/api/twin/scenarios/[id]`. **UI:** `/twin` — org + project tabs, snapshot cards, sliders, projected-headcount sparkline, budget, saved scenarios. Nav wired.
+  - **Verified:** 14/14 simulator unit + 15/15 live E2E (real employees → headcount/attrition/cost; 12-mo projection + budget; project twin from real tasks; save/list/delete + ownership 401). Build clean (151 pages).
+  - **Deploy note:** schema adds TwinScenario — run `prisma db push`/migrate on prod.
+
 ## 2026-08-09 (h) — Phase 13: Automation Platform
 - **Automation Platform shipped** — a real trigger → conditions → action engine over the AIOS event bus, audited per run. No stubs.
   - **Triggers** are REAL platform events only: `application.status_changed` + `job.created` (newly emitted onto the AIOS bus at their genuine call sites) + `ai.executed` (already emitted). The bus gained a wildcard (`*`) handler + event `type` in handler meta; automation registers once at AIOS bootstrap.

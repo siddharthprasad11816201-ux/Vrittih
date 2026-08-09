@@ -2697,6 +2697,22 @@ model AutomationRun {
 }
 
 // ============================================================================
+// Phase 14 — Digital Twin: a saved what-if scenario. The twin itself is computed
+// live from real data; this persists a run so the owner can revisit it.
+// ============================================================================
+model TwinScenario {
+  id        String   @id @default(cuid())
+  ownerId   String
+  kind      String                          // org | project
+  targetId  String?                         // project id for project twins
+  name      String
+  params    String   @default("{}")         // JSON sim inputs
+  result    String   @default("{}")         // JSON sim output (snapshot at save time)
+  createdAt DateTime @default(now())
+  @@index([ownerId, kind])
+}
+
+// ============================================================================
 // Managed Placement (the core business): employers state a requirement, Vrittih's
 // HR team fulfils it from the candidate pool with AI (EAIL brain); candidates ask
 // to be placed (intern/full-time/contract) and HR works it end-to-end.
