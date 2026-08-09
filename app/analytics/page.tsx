@@ -37,8 +37,8 @@ export default function AnalyticsPage() {
               <>
                 <div style={S.statCard}><div style={S.statNum}>{data.jobs?.length||0}</div><div style={S.statLabel}>Total jobs</div></div>
                 <div style={S.statCard}><div style={{...S.statNum,color:"#059669"}}>{data.totalApps||0}</div><div style={S.statLabel}>Total applicants</div></div>
-                <div style={S.statCard}><div style={{...S.statNum,color:"#B45309"}}>{data.statusCounts?.INTERVIEW||0}</div><div style={S.statLabel}>Interviews</div></div>
-                <div style={S.statCard}><div style={{...S.statNum,color:"#047857"}}>{data.statusCounts?.HIRED||0}</div><div style={S.statLabel}>Hired</div></div>
+                <div style={S.statCard}><div style={{...S.statNum,color:"#B45309"}}>{data.reached?.interview||0}</div><div style={S.statLabel}>Interviews</div></div>
+                <div style={S.statCard}><div style={{...S.statNum,color:"#047857"}}>{data.reached?.hired ?? (data.statusCounts?.HIRED || 0)}</div><div style={S.statLabel}>Hired</div></div>
                 <div style={S.statCard}>
                   <div style={{...S.statNum,color:"#6495ED"}}>
                     {data.totalApps > 0 ? Math.round(((data.statusCounts?.HIRED||0)/data.totalApps)*100) : 0}%

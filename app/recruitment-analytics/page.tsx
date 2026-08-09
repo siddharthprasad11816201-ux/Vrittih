@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import AppShell from "@/components/vrittih/AppShell"
-import { IconActivity, IconTarget } from "@/components/ui/Icons"
+import { IconActivity, IconTarget, IconTrendingUp } from "@/components/ui/Icons"
 
 export default function RecruitmentAnalyticsPage() {
   const [state, setState] = useState<"loading" | "ok" | "denied">("loading")
@@ -41,6 +41,16 @@ export default function RecruitmentAnalyticsPage() {
           {funnel.every((f: any) => f.count === 0) && <p style={S.sub}>No application activity yet — the funnel fills as candidates progress.</p>}
         </div>
 
+        {d?.velocity && (
+          <>
+            <h2 style={S.h2}><IconTrendingUp size={16} /> Hiring velocity <span style={S.wk}>last {d.velocity.weeks} weeks · {d.velocity.horizon}-week forecast</span></h2>
+            <div style={S.cols}>
+              <VeloCard title="Applications / week" v={d.velocity.applications} />
+              <VeloCard title="Hires / week" v={d.velocity.hires} />
+            </div>
+          </>
+        )}
+
         <div style={S.cols}>
           <div>
             <h2 style={S.h2}>Conversion rates</h2>
@@ -67,8 +77,45 @@ export default function RecruitmentAnalyticsPage() {
   )
 }
 
+/* Weekly velocity + in-house forecast (honest confidence). Historical bars solid,
+ * the projected weeks dashed. Confidence + basis come straight from forecastSeries. */
+function VeloCard({ title, v }: { title: string; v: any }) {
+  const pts: number[] = v?.points || []
+  const f = v?.forecast || {}
+  const preds: number[] = f.predictions || []
+  const mx = Math.max(1, ...pts, ...preds)
+  const conf = Math.round((f.confidence || 0) * 100)
+  const trendColor = f.trend === "rising" ? "#059669" : f.trend === "falling" ? "#DC2626" : "var(--v-ink-3)"
+  const projAvg = preds.length ? Math.round((preds.reduce((a, b) => a + b, 0) / preds.length) * 10) / 10 : 0
+  return (
+    <div>
+      <h2 style={S.h2}>{title}</h2>
+      <div style={S.card}>
+        <div style={S.spark}>
+          {pts.map((n, i) => <span key={"p" + i} title={`${n}`} style={{ ...S.sparkBar, height: `${Math.max(3, (n / mx) * 100)}%` }} />)}
+          <span style={S.sparkDiv} />
+          {preds.map((n, i) => <span key={"f" + i} title={`forecast ${n}`} style={{ ...S.sparkBar, height: `${Math.max(3, (n / mx) * 100)}%`, background: "var(--v-accent-soft)", border: "1px dashed var(--v-accent)" }} />)}
+        </div>
+        <div style={S.veloMeta}>
+          <span style={{ ...S.trend, color: trendColor }}>{f.trend || "flat"}</span>
+          <span style={S.subS}>next {preds.length}w ≈ {projAvg}/wk</span>
+          <span style={S.subS}>confidence {conf}%</span>
+        </div>
+        {f.basis && <p style={S.basis}>{f.basis}</p>}
+      </div>
+    </div>
+  )
+}
+
 const S: Record<string, any> = {
   page: { padding: "clamp(16px,3vw,28px)", maxWidth: 860, margin: "0 auto", paddingBottom: 60 },
+  wk: { fontFamily: "var(--font-inter)", fontSize: 11.5, fontWeight: 400, color: "var(--v-ink-3)", marginLeft: 2 },
+  spark: { display: "flex", alignItems: "flex-end", gap: 2, height: 60, marginBottom: 10 },
+  sparkBar: { flex: 1, minHeight: 2, background: "var(--v-accent)", borderRadius: 2 },
+  sparkDiv: { width: 1, alignSelf: "stretch", background: "var(--v-line-2)", margin: "0 2px" },
+  veloMeta: { display: "flex", alignItems: "center", gap: 12, fontSize: 12.5 },
+  trend: { fontWeight: 700, textTransform: "capitalize" as const },
+  basis: { fontSize: 11.5, color: "var(--v-ink-3)", margin: "8px 0 0", lineHeight: 1.5 },
   head: { marginBottom: 16 },
   h1: { fontFamily: "var(--font-display)", fontSize: "clamp(20px,3vw,26px)", fontWeight: 600, letterSpacing: "-.02em", color: "var(--v-ink)", margin: 0, display: "flex", alignItems: "center", gap: 9 },
   h2: { fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, color: "var(--v-ink)", margin: "20px 0 10px", display: "flex", alignItems: "center", gap: 8 },

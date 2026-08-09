@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { resolveContext } from "@/lib/capability/context"
+import { forecastSeries, bucketCounts } from "@/lib/intelligence/forecast"
+
+const WEEK = 7 * 86400000
 
 export const dynamic = "force-dynamic"
 export const maxDuration = 60
@@ -51,6 +54,21 @@ export async function GET(req: NextRequest) {
   const offers = groupMap(offersByStatus)
   const offersSent = (offers.SENT || 0) + (offers.ACCEPTED || 0) + (offers.DECLINED || 0)
 
+  // Hiring velocity: bucket real application + hire-event timestamps into 12 weekly
+  // windows and forecast the next 4 weeks with the in-house engine (honest confidence).
+  const now = Date.now()
+  const [appRows, hireRows] = await Promise.all([
+    prisma.application.findMany({ where: appIds ? { id: { in: appIds } } : {}, select: { appliedAt: true }, take: 50000 }).catch(() => [] as any[]),
+    prisma.statusEvent.findMany({ where: seWhere(["HIRED"]), select: { createdAt: true }, take: 50000 }).catch(() => [] as any[]),
+  ])
+  const appPoints = bucketCounts(appRows.map((a: any) => new Date(a.appliedAt).getTime()), WEEK, 12, now)
+  const hirePoints = bucketCounts(hireRows.map((h: any) => new Date(h.createdAt).getTime()), WEEK, 12, now)
+  const velocity = {
+    weeks: 12, horizon: 4,
+    applications: { points: appPoints, forecast: forecastSeries(appPoints, 4) },
+    hires: { points: hirePoints, forecast: forecastSeries(hirePoints, 4) },
+  }
+
   return NextResponse.json({
     scope: isAdmin ? "organization" : "your jobs",
     funnel,
@@ -65,6 +83,7 @@ export async function GET(req: NextRequest) {
     },
     offers: { byStatus: offers, total: (offersByStatus as any[]).reduce((a, x) => a + (x._count?._all || 0), 0) },
     interviews: { byStatus: groupMap(interviewsByStatus), total: (interviewsByStatus as any[]).reduce((a, x) => a + (x._count?._all || 0), 0) },
+    velocity,
     generatedAt: new Date().toISOString(),
   })
 }

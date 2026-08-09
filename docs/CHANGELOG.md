@@ -2,6 +2,13 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (g) — Phase 12: Analytics & BI (complete)
+- Verified the BI layer (4-agent assessment: /analytics, /executive, /recruitment-analytics, /learning-analytics + the intelligence engines) — all compute **real** metrics from live rows with honest confidence. Closed the genuine gaps found:
+  - **Funnel correctness (real bug):** `/analytics` employer funnel was a lossy current-status snapshot (a HIRED app is no longer OFFERED → every upper stage undercounted, non-monotonic). Now derived from the **StatusEvent "ever-reached" timeline** (distinct applicationId), including ASSESSMENT/INTERVIEWING — matching `lib/intelligence/health.ts` and `/api/recruitment/analytics`. The "Interviews" KPI now uses the ever-reached count too.
+  - **Forecasting (top gap):** the proven in-house forecast engine (`lib/intelligence/forecast.ts`) was only wired into `/executive`. Added **hiring-velocity forecasting** to `/api/recruitment/analytics` + `/recruitment-analytics`: real application + HIRED-event timestamps bucketed into 12 weekly windows, forecast 4 weeks ahead with honest confidence + method + basis, rendered as a sparkline (solid history, dashed projection).
+  - **Tests (constitution "prove with real tests"):** added a forecast unit suite (linreg / method-selection / clamping / honest-confidence / bucketing) — 15/15.
+- **Verified:** 15/15 forecast unit + 11/11 live E2E (recruitment velocity forecast on real org data: 12 buckets, 4-week projection, honest confidence; analytics 6-stage ever-reached funnel). Build clean (149 pages). No schema change.
+
 ## 2026-08-09 (f) — Phase 11: AI Marketplace
 - **AI Marketplace shipped** (built on the staged MarketplaceItem/Install/Review models — no new schema). Surfaces the platform's real in-house AIOS capabilities as installable agents, plus user-published prompts/workflows.
   - **Catalog:** 14 in-house agents (Enterprise Brain, Career Coach, Recruiter Copilot, HR Copilot, Project Manager, Financial/Sales/Campus/Policy/Clinical intelligence, Research Assistant, AI Tutor, Opportunity Matcher, Career Frontier) — each mapped to a **real, gateway-executable capId** (integrity-tested: every seeded capId exists in the registry). Idempotent seeder preserves accrued installs/ratings.

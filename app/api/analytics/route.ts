@@ -16,13 +16,14 @@ export async function GET(req: NextRequest) {
         where: { postedById: payload.userId },
         include: {
           applications: {
-            select: { status:true, appliedAt:true }
+            select: { id:true, status:true, appliedAt:true }
           },
           _count: { select: { applications:true } }
         }
       })
 
       const allApps = jobs.flatMap(j => j.applications)
+      const appIds = allApps.map(a => a.id)
       const statusCounts: Record<string,number> = {}
       allApps.forEach(a => { statusCounts[a.status] = (statusCounts[a.status]||0)+1 })
 
@@ -40,17 +41,33 @@ export async function GET(req: NextRequest) {
         }).length
       }))
 
-      // Funnel
+      // Funnel — derived from the StatusEvent timeline ("ever reached" a stage),
+      // never a lossy current-status snapshot (a HIRED app is no longer OFFERED, so
+      // snapshots undercount every upper stage). Mirrors lib/intelligence/health.ts
+      // and /api/recruitment/analytics. ASSESSMENT/INTERVIEWING count as interview.
+      const INTERVIEW_SET = ["INTERVIEW", "INTERVIEWING", "ASSESSMENT"]
+      const OFFER_SET = ["OFFERED", "OFFER", "ACCEPTED"]
+      const everReached = async (statuses: string[]) => appIds.length
+        ? (await prisma.statusEvent.findMany({ where: { status: { in: statuses }, applicationId: { in: appIds } }, distinct: ["applicationId"], select: { applicationId: true }, take: 50000 }).catch(() => [] as any[])).length
+        : 0
+      const [reachedReviewed, reachedShortlisted, reachedInterview, reachedOffer, reachedHired] = await Promise.all([
+        everReached(["REVIEWED", "SCREENING"]),
+        everReached(["SHORTLISTED"]),
+        everReached(INTERVIEW_SET),
+        everReached(OFFER_SET),
+        everReached(["HIRED"]),
+      ])
       const funnel = [
         { stage:"Applied", count: allApps.length },
-        { stage:"Reviewed", count: statusCounts.REVIEWED||0 },
-        { stage:"Shortlisted", count: statusCounts.SHORTLISTED||0 },
-        { stage:"Interview", count: statusCounts.INTERVIEW||0 },
-        { stage:"Offered", count: statusCounts.OFFERED||0 },
-        { stage:"Hired", count: statusCounts.HIRED||0 },
+        { stage:"Reviewed", count: reachedReviewed },
+        { stage:"Shortlisted", count: reachedShortlisted },
+        { stage:"Interview", count: reachedInterview },
+        { stage:"Offered", count: reachedOffer },
+        { stage:"Hired", count: reachedHired },
       ]
+      const reached = { interview: reachedInterview, offer: reachedOffer, hired: reachedHired }
 
-      return NextResponse.json({ isEmployer:true, jobs, funnel, appsByDay, statusCounts, totalApps: allApps.length })
+      return NextResponse.json({ isEmployer:true, jobs, funnel, appsByDay, statusCounts, reached, totalApps: allApps.length })
     } else {
       const apps = await prisma.application.findMany({
         where: { userId: payload.userId },
