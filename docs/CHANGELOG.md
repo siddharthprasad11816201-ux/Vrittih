@@ -2,6 +2,15 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09
+- **Adversarial audit + full remediation** (19 agents; 13 CONFIRMED, 0 plausible, 2 refuted; each finding independently verified):
+  - **SECURITY (HIGH×5):** closed a cross-tenant IDOR/PII leak — `isHr` had keyed off employer-baseline capabilities, letting any employer read/modify other employers' talent/placement requests, candidate PII, and run shortlists. `isHr` is now `admin.access`-only (Vrittih HR = platform staff). Verified employer→403, admin still sees queue (6/6).
+  - Dead/loop CTAs (career coach + /opportunities) → `/profile/edit`.
+  - `/career/readiness` empty-state TypeError guard + route validate/slice trim fix.
+  - Removed fabricated run-level confidence from deterministic providers (sales/campus/project/finance); HR now reports the real mean of per-employee deliberations.
+  - `/hire` now persists + renders the promised salary band + interview plan per candidate.
+  - Deterministic link scan: 0 dead links across 342 routes.
+
 ## 2026-08-07
 - **Managed placement — candidate side** shipped: `/get-placed` + `candidate.opportunities` (brain-matched openings with evidence). Two-sided loop now complete (10/10 E2E).
 - **PRODUCTION LIVE**: pushed to `origin/main`, migrated prod Supabase (all tables synced); www.vrittih.online fully live — all pages 200, new-table APIs 401 (not 500).

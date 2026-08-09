@@ -13,6 +13,16 @@ Running record of verification across dimensions. Every completed capability app
 | Government (Policy Intelligence) | 18 ✅ | 15 ✅ | SLA overdue, FX-safe scheme reach, brain verdict, 403/401 |
 | Healthcare (Clinical Ops) | 19 ✅ | 14 ✅ | no-show rate, triage routing, population health, brain verdict, 403/401 |
 | HCM HR Copilot (Workforce Intel) | 12 ✅ | 9 ✅ | attrition risk + promotion readiness via brain, evidence/confidence, non-HR 403 |
+| Career Coach readiness + plan | 14 ✅ | 10 ✅ | market-demand-prioritised plan, real course links, honest no-data path |
+| Cross-tenant security (post-audit) | — | 6 ✅ | employer→403 on other-tenant read/shortlist; list scoped; admin sees queue |
+
+## Adversarial audit — 2026-08-09
+19 agents · 13 CONFIRMED / 0 plausible / 2 refuted · all independently verified, all remediated:
+- **HIGH×5** cross-tenant IDOR/PII (isHr over-broad) — FIXED (isHr = admin.access only).
+- MEDIUM: fabricated run-level confidence (sales/campus/hr/project/finance) — FIXED (omit / real mean).
+- MEDIUM: /hire unmet salary+interview claim — FIXED (persist + render).
+- MEDIUM/LOW: 2 dead/loop CTAs → /profile/edit; 1 empty-state crash guard.
+- Deterministic link scan: 0 dead links / 342 routes.
 | Managed placement — candidate side | — | 10 ✅ | brain-matched openings, strong-fit verdict, matched skills, runId audit, 401 |
 
 ## Production deployment (2026-08-07)
