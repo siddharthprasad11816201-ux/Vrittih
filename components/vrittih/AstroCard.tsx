@@ -1,7 +1,7 @@
 "use client"
 import Link from "next/link"
 import { analyze, careerFit, ELEMENT_COLOR } from "@/lib/astrology"
-import { IconStar, IconArrowRight, IconCheckCircle, IconTarget } from "@/components/ui/Icons"
+import { IconStar, IconArrowRight, IconCheckCircle } from "@/components/ui/Icons"
 
 export default function AstroCard({ birthDate, experience = [], self = false }: {
   birthDate?: string | null
@@ -32,8 +32,8 @@ export default function AstroCard({ birthDate, experience = [], self = false }: 
       <div style={S.head}>
         <span style={{ ...S.headIc, background: `${eColor}18`, color: eColor }}><IconStar size={16} /></span>
         <div style={{ flex: 1 }}>
-          <h2 style={S.title}>Astrological & career analysis</h2>
-          <p style={S.sub}>In-house Vedic + numerology reading · not a substitute for professional advice</p>
+          <h2 style={S.title}>Astrological reading</h2>
+          <p style={S.sub}>In-house Vedic + numerology · for reflection only — your career guidance above is computed from real evidence</p>
         </div>
       </div>
 
@@ -87,9 +87,10 @@ export default function AstroCard({ birthDate, experience = [], self = false }: 
 
       {/* career fit — blends chart + experience */}
       <div style={{ ...S.block, background: "var(--brand-100)", borderColor: "transparent", padding: "16px 18px", borderRadius: 14 }}>
-        <div style={S.blockLabel}><IconTarget size={14} /> &nbsp;Best-fit career direction <span style={S.synergy}>{fit.synergy}</span></div>
+        <div style={S.blockLabel}><IconStar size={14} /> &nbsp;Astrological temperament <span style={S.synergy}>{fit.synergy}</span></div>
         <p style={{ ...S.note, color: "var(--v-ink)", fontWeight: 600, marginTop: 8 }}>{fit.headline}</p>
         <p style={S.note}>{fit.note}</p>
+        <div style={S.blockLabel2}>Fields traditionally associated with your sign</div>
         <div style={S.roles}>
           {fit.recommended.map(r => (
             <Link key={r} href={`/jobs?q=${encodeURIComponent(r)}`} style={S.roleChip}>{r}</Link>
@@ -130,6 +131,7 @@ const S: Record<string, any> = {
   overview: { fontSize: 14, color: "var(--v-ink-2)", lineHeight: 1.6, marginBottom: 18 },
   block: { border: "1px solid var(--v-line)", borderRadius: 14, padding: "14px 16px", marginBottom: 14 },
   blockLabel: { display: "flex", alignItems: "center", fontSize: 12.5, fontWeight: 700, color: "var(--v-ink)", letterSpacing: ".01em" },
+  blockLabel2: { fontSize: 11, fontWeight: 600, color: "var(--v-ink-3)", marginTop: 12, marginBottom: 2 },
   bars: { display: "flex", flexDirection: "column", gap: 8, margin: "12px 0" },
   barRow: { display: "flex", alignItems: "center", gap: 10 },
   barName: { fontSize: 12.5, color: "var(--v-ink-2)", width: 52, flexShrink: 0 },

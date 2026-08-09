@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
 import AstroCard from "@/components/vrittih/AstroCard"
+import CareerDirectionCard from "@/components/career/CareerDirectionCard"
 import {
   IconMapPin, IconShield, IconGlobe, IconPlus, IconTrash, IconEdit, IconBriefcase,
   IconClipboard, IconMail, IconPhone, IconCheckCircle, IconArrowRight,
@@ -133,7 +134,10 @@ export default function ProfilePage() {
           ) : user.bio ? <p style={S.body}>{user.bio}</p> : <p style={S.empty}>Add a summary so employers understand your strengths at a glance.</p>}
         </section>
 
-        {/* Astrological & career analysis */}
+        {/* PRIMARY: evidence-based career direction (computed from real skills/experience) */}
+        <CareerDirectionCard />
+
+        {/* SECONDARY: astrological reading — kept for reflection only, clearly not the career guidance above */}
         <AstroCard birthDate={user.profile?.birthDate} experience={user.experience || []} self />
 
         {/* Experience */}
