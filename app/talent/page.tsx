@@ -16,8 +16,9 @@ export default function TalentPage() {
   // create pool
   const [np, setNp] = useState({ name: "", kind: "POOL", description: "" })
   const [showNew, setShowNew] = useState(false)
-  // discover
+  // discover (natural-language)
   const [q, setQ] = useState(""); const [results, setResults] = useState<any[] | null>(null)
+  const [interp, setInterp] = useState(""); const [reqEvidence, setReqEvidence] = useState(false)
   // referrals
   const [refs, setRefs] = useState<any>({ mine: [], incoming: [], canManage: false })
   const [refForm, setRefForm] = useState({ candidateEmail: "", candidateName: "", relationship: "", note: "" })
@@ -51,10 +52,14 @@ export default function TalentPage() {
     try { const d = await fetch(`/api/talent/pools/${sel.pool.id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (d.error) setErr(d.error); await openPool(sel.pool.id); await loadPools() } finally { setBusy(null) }
   }
   async function discover() {
-    const skills = q.split(",").map(s => s.trim()).filter(Boolean)
-    if (!skills.length) return
-    setBusy("discover"); setResults(null)
-    try { const d = await fetch("/api/talent/discover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ skills }) }).then(r => r.json()); setResults(d.results || []) } finally { setBusy(null) }
+    if (!q.trim()) return
+    setBusy("discover"); setResults(null); setInterp(""); setErr("")
+    try {
+      const d = await fetch("/api/talent/discover", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ q }) }).then(r => r.json())
+      if (d.error) { setErr(d.error); setInterp(d.interpretation || "") }
+      else { setResults(d.results || []); setInterp(d.interpretation || ""); setReqEvidence(!!d.requireEvidence) }
+    } catch { setErr("Couldn't run that search. Please try again.") }
+    finally { setBusy(null) }
   }
   async function submitReferral() {
     if (!refForm.candidateEmail.trim()) { setErr("Candidate email required."); return }
@@ -115,18 +120,25 @@ export default function TalentPage() {
         {tab === "discover" && (
           <div>
             <div style={S.searchRow}>
-              <input style={{ ...S.input, flex: 1 }} placeholder="Skills to search for, comma-separated (e.g. React, TypeScript, Node.js)" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Enter") discover() }} />
+              <input style={{ ...S.input, flex: 1 }} placeholder="Describe who you need — e.g. Senior Python engineers with real ML deployment experience, preferably research" value={q} onChange={e => setQ(e.target.value)} onKeyDown={e => { if (e.key === "Enter") discover() }} />
               <button style={S.cta} onClick={discover} disabled={busy === "discover"}><IconSearch size={15} /> {busy === "discover" ? "…" : "Search"}</button>
             </div>
-            {results && (results.length === 0 ? <div style={S.empty}><p style={S.sub}>No candidates matched those skills.</p></div> : (
+            {interp && <div style={S.interp}>Interpreted as: <b>{interp}</b></div>}
+            {results && (results.length === 0 ? <div style={S.empty}><p style={S.sub}>No candidates matched.</p></div> : (
               <div style={S.list}>
                 {results.map((r: any) => (
                   <div key={r.id} style={S.candRow}>
                     <span style={{ ...S.healthBadge, color: "#fff", background: r.score >= 70 ? "var(--v-green)" : r.score >= 45 ? "var(--v-accent)" : "var(--v-amber)" }}>{r.score}</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={S.poolName}>{r.name}{r.openToWork ? <span style={S.otw}>open to work</span> : null}</div>
+                      <div style={S.poolName}>{r.name}{r.openToWork ? <span style={S.otw}>open to work</span> : null}{reqEvidence && r.demonstrated?.length ? <span style={S.demoTag}>{r.demonstrated.length} demonstrated</span> : null}</div>
                       <div style={S.poolSub}>{r.headline || "—"}</div>
-                      {r.shared?.length > 0 && <div style={S.chips}>{r.shared.slice(0, 6).map((s: string) => <span key={s} style={S.have}>{s}</span>)}</div>}
+                      {r.shared?.length > 0 && (
+                        <div style={S.chips}>
+                          {r.shared.slice(0, 8).map((s: string) => (
+                            <span key={s} style={r.demonstrated?.includes(s) ? S.shown : S.have} title={r.demonstrated?.includes(s) ? "Demonstrated in their experience" : "Listed skill"}>{s}{r.demonstrated?.includes(s) ? " ✓" : ""}</span>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -239,7 +251,10 @@ const S: Record<string, any> = {
   candRow: { display: "flex", alignItems: "center", gap: 12, background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 12, padding: "12px 15px", boxShadow: "var(--v-shadow-sm)" },
   otw: { fontSize: 10.5, fontWeight: 700, color: "var(--v-green)", background: "var(--v-green-soft)", padding: "1px 7px", borderRadius: 999, marginLeft: 8 },
   chips: { display: "flex", flexWrap: "wrap", gap: 5, marginTop: 7 },
-  have: { fontSize: 11.5, color: "var(--v-green)", background: "var(--v-green-soft)", padding: "2px 8px", borderRadius: 6 },
+  have: { fontSize: 11.5, color: "var(--v-ink-2)", background: "var(--v-surface-2)", padding: "2px 8px", borderRadius: 6 },
+  shown: { fontSize: 11.5, color: "var(--v-green)", background: "var(--v-green-soft)", padding: "2px 8px", borderRadius: 6, fontWeight: 600 },
+  interp: { fontSize: 12.5, color: "var(--v-ink-2)", background: "var(--v-accent-soft)", border: "1px solid var(--v-line)", borderRadius: 10, padding: "8px 12px", marginBottom: 12 },
+  demoTag: { fontSize: 10.5, fontWeight: 700, color: "var(--v-green)", background: "var(--v-green-soft)", padding: "1px 7px", borderRadius: 999, marginLeft: 8 },
   sectionH: { fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 600, color: "var(--v-ink)", margin: "18px 0 10px" },
   refBadge: { fontSize: 11, fontWeight: 700 },
   stageSel: { border: "1px solid var(--v-line)", borderRadius: 8, padding: "6px 9px", fontSize: 12, background: "var(--v-surface)", color: "var(--v-ink)", fontFamily: "inherit" },

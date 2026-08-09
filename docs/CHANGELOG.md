@@ -2,6 +2,13 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (m) — Talent Intelligence §31/§40/§41: natural-language talent search
+- **Recruiters can now search the candidate pool in plain English** on `/talent` → Discover: e.g. *"Senior Python engineers with real ML deployment experience, preferably research."*
+  - `lib/talent/query.ts` `parseTalentQuery()` (in-house, deterministic, no LLM) turns the brief into a structured spec — ontology-detected skills split **must vs preferred** (by intent markers like "preferably"), **seniority**, and a **requireEvidence** flag ("real / production / hands-on / demonstrated").
+  - `POST /api/talent/discover` accepts the NL `q`, ranks job-seekers by in-house skill-graph cover, and — when real experience is asked for — marks which matched skills are actually **demonstrated** in the candidate's experience (spec §40), sorting demonstrated coverage first.
+  - **Explainable (§41):** the UI echoes *"Interpreted as: …"* so the recruiter sees exactly how their words were understood; matched skills render as *listed* vs *demonstrated ✓*, with a "N demonstrated" badge. No black-box score.
+  - **Verified:** 12/12 units (must/preferred split, seniority, evidence intent, comma-skills, honest empty). Build clean (152 pages). No schema change.
+
 ## 2026-08-09 (l) — Talent Intelligence §32: Interview Verification Intelligence
 - **Interview verification brief** for the recruiter/panel, built on the evidence layer. On the interview scorecard (`/interviews/[code]/evaluate`), a host or assessing panelist (never the candidate) now sees, for the linked candidate:
   - **Strongest** — skills actually *demonstrated* in their experience;
