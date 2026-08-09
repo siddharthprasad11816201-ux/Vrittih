@@ -4,6 +4,7 @@ import { verifyToken } from "@/lib/jwt"
 import { computeMatch, candidateFromUser, jobFromRecord } from "@/lib/matching"
 import { ci } from "@/lib/db"
 import { safeExternalUrl } from "@/lib/url"
+import { emit as emitEvent } from "@/lib/aios"   // AIOS event bus — drives Phase 13 automation
 import { z } from "zod"
 
 const jobSchema = z.object({
@@ -193,6 +194,8 @@ export async function POST(req: NextRequest) {
         }
       })
     })
+    // AIOS event → Phase 13 automation rules (fire-and-forget).
+    emitEvent("job.created", { jobId: job.id, title: job.title, industry: job.industry, type: job.type, remote: job.remote }, { actorId: payload.userId }).catch(() => {})
     return NextResponse.json({ success: true, job }, { status: 201 })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })

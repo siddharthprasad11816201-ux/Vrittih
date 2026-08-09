@@ -2665,6 +2665,38 @@ model MarketplaceReview {
 }
 
 // ============================================================================
+// Phase 13 — Automation Platform: trigger (real platform event) -> conditions ->
+// action, executed over the AIOS event bus and audited per run.
+// ============================================================================
+model AutomationRule {
+  id         String   @id @default(cuid())
+  ownerId    String
+  name       String
+  enabled    Boolean  @default(true)
+  trigger    String                          // PlatformEvent type, e.g. "application.status_changed"
+  conditions String   @default("[]")         // JSON [{field,op,value}]
+  actionType String                          // notify | run-capability | webhook
+  actionConfig String @default("{}")         // JSON action params
+  runs       Int      @default(0)
+  lastRunAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  runLog     AutomationRun[]
+  @@index([ownerId])
+  @@index([trigger, enabled])
+}
+
+model AutomationRun {
+  id         String   @id @default(cuid())
+  ruleId     String
+  status     String                          // matched | skipped | ok | error
+  detail     String?
+  createdAt  DateTime @default(now())
+  rule       AutomationRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  @@index([ruleId, createdAt])
+}
+
+// ============================================================================
 // Managed Placement (the core business): employers state a requirement, Vrittih's
 // HR team fulfils it from the candidate pool with AI (EAIL brain); candidates ask
 // to be placed (intern/full-time/contract) and HR works it end-to-end.

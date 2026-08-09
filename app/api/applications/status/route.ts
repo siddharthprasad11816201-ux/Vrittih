@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { createNotification } from "@/lib/notify"
 import { emit } from "@/lib/webhooks"
+import { emit as emitEvent } from "@/lib/aios"   // AIOS event bus — drives Phase 13 automation
 
 const STATUS_MESSAGES: Record<string,{title:string,body:string,sendEmail:boolean}> = {
   REVIEWED:    { title:"Application under review", body:"Your application is being reviewed by the employer.", sendEmail:false },
@@ -49,6 +50,11 @@ export async function PATCH(req: NextRequest) {
       applicationId: application.id, jobId: application.jobId, jobTitle: application.job.title,
       status: application.status, applicant: { name: application.user?.name || null },
     })
+    // AIOS event → Phase 13 automation rules (fire-and-forget, like ai.executed).
+    emitEvent("application.status_changed", {
+      applicationId: application.id, jobId: application.jobId, jobTitle: application.job.title,
+      status: application.status, applicant: { name: application.user?.name || null },
+    }, { actorId: payload.userId, subjectId: application.userId }).catch(() => {})
 
     const msg = STATUS_MESSAGES[status]
     if (msg) {

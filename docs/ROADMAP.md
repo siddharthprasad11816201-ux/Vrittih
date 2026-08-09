@@ -30,7 +30,7 @@ See [PLATFORM_CONSTITUTION.md](PLATFORM_CONSTITUTION.md). In short: one unified 
 | 10 | Healthcare Platform | Patients, appointments, records, triage routing + **Clinical Ops Intelligence** (brain-routed) | ✅ | 100 |
 | 11 | AI Marketplace | Agents/prompts/tools/workflows — install + run in-house agents via the gateway; publish prompts/workflows | ✅ | 100 |
 | 12 | Analytics & BI | Dashboards, KPIs, forecasting (hiring velocity), decision intelligence (/executive) — real metrics, honest confidence | ✅ | 100 |
-| 13 | Automation Platform | Workflow/rules engine, integration hub, no/low-code | ⬜ | 0 |
+| 13 | Automation Platform | Rules engine (trigger→conditions→action) over the AIOS event bus, audited; notify / run-capability / webhook actions | ✅ | 100 |
 | 14 | Digital Twin | Org/employee/project twins, simulation | ⬜ | 0 |
 | 15 | Autonomous Enterprise AI | Autonomous planning, cross-platform intelligence, explainable AI | ⬜ | 0 |
 | 16 | Global Platform & Ecosystem | API/developer platform, plugin framework, white-label, multi-tenancy | ⬜ (partial: partner/white-label shipped) | 20 |

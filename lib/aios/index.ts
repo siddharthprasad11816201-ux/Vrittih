@@ -7,6 +7,9 @@ import "./vertical-providers"
 import "./intelligence-providers"
 import { registerKnowledgeHandlers } from "@/lib/knowledge/handlers"
 registerKnowledgeHandlers()
+// Phase 13 — automation subscribes to the event bus as a wildcard handler.
+import { registerAutomation } from "@/lib/automation/run"
+registerAutomation()
 
 export { execute, registerProvider, providerKeys } from "./execute"
 export type { ExecCtx, ExecResult, Provider, ProviderResult } from "./execute"

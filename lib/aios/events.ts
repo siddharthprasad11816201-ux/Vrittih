@@ -10,7 +10,7 @@ export type PlatformEventType =
   | "promotion" | "performance.review" | "policy.updated" | "document.updated"
   | "recommendation.feedback" | "knowledge.updated" | string
 
-export type Handler = (payload: any, meta: { id: string; actorId?: string | null; subjectId?: string | null }) => Promise<void>
+export type Handler = (payload: any, meta: { id: string; type: string; actorId?: string | null; subjectId?: string | null }) => Promise<void>
 const HANDLERS: Record<string, Handler[]> = {}
 
 export function on(type: PlatformEventType, handler: Handler) {
@@ -36,8 +36,10 @@ export async function process(eventId: string): Promise<boolean> {
   if (!ev || ev.processed) return false
   const payload = safe(ev.payload)
   const log: { handler: string; ok: boolean; error?: string }[] = []
-  for (const h of HANDLERS[ev.type] || []) {
-    try { await h(payload, { id: ev.id, actorId: ev.actorId, subjectId: ev.subjectId }); log.push({ handler: h.name || "anon", ok: true }) }
+  // Type-specific handlers plus wildcard ("*") handlers (Phase 13 automation subscribes here).
+  const meta = { id: ev.id, type: ev.type, actorId: ev.actorId, subjectId: ev.subjectId }
+  for (const h of [...(HANDLERS[ev.type] || []), ...(HANDLERS["*"] || [])]) {
+    try { await h(payload, meta); log.push({ handler: h.name || "anon", ok: true }) }
     catch (e: any) { log.push({ handler: h.name || "anon", ok: false, error: String(e?.message).slice(0, 200) }) }
   }
   await prisma.platformEvent.update({ where: { id: ev.id }, data: { processed: true, processedAt: new Date(), handlers: JSON.stringify(log) } }).catch(() => {})

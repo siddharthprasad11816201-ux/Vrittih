@@ -2,6 +2,15 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (h) — Phase 13: Automation Platform
+- **Automation Platform shipped** — a real trigger → conditions → action engine over the AIOS event bus, audited per run. No stubs.
+  - **Triggers** are REAL platform events only: `application.status_changed` + `job.created` (newly emitted onto the AIOS bus at their genuine call sites) + `ai.executed` (already emitted). The bus gained a wildcard (`*`) handler + event `type` in handler meta; automation registers once at AIOS bootstrap.
+  - **Engine** (`lib/automation/engine.ts`, pure/testable): dot-path field reads, 7 operators (eq/ne/contains/gt/lt/exists/truthy), AND-semantics condition eval, and `{{field}}` interpolation.
+  - **Actions** (`lib/automation/actions.ts`): `notify` (real Notification), `run-capability` (executes an AIOS capability through the gateway — authorized against the **owner's own** capabilities, no escalation, audited), `webhook` (validated + timed-out POST). Honest failures, never faked success.
+  - **API:** `/api/automation` (list + create, catalog-validated), `/api/automation/[id]` (PATCH/DELETE, owner-scoped), `/api/automation/[id]/test` (dry-run that actually runs the action), `/api/automation/runs` (audit log). **UI:** `/automation` — rule builder (trigger + condition rows + action config), enable/disable, test, run history. Nav wired.
+  - **Verified:** 20/20 engine unit + 12/12 live E2E (create → real `ai.executed` run → wildcard handler fires the matching rule → notify writes a real row → audited ok; non-matching rule gated; validation/test/toggle/auth). Build clean (150 pages).
+  - **Deploy note:** schema adds AutomationRule + AutomationRun — run `prisma db push`/migrate on prod.
+
 ## 2026-08-09 (g) — Phase 12: Analytics & BI (complete)
 - Verified the BI layer (4-agent assessment: /analytics, /executive, /recruitment-analytics, /learning-analytics + the intelligence engines) — all compute **real** metrics from live rows with honest confidence. Closed the genuine gaps found:
   - **Funnel correctness (real bug):** `/analytics` employer funnel was a lossy current-status snapshot (a HIRED app is no longer OFFERED → every upper stage undercounted, non-monotonic). Now derived from the **StatusEvent "ever-reached" timeline** (distinct applicationId), including ASSESSMENT/INTERVIEWING — matching `lib/intelligence/health.ts` and `/api/recruitment/analytics`. The "Interviews" KPI now uses the ever-reached count too.
