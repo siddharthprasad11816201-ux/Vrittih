@@ -1,33 +1,36 @@
-/* ICIRE — self-trained semantic skill model. Learns skill<->skill relatedness
- * from Vrittih's OWN live job corpus by measuring how often skills genuinely
- * co-occur in real job descriptions, scored with normalised pointwise mutual
- * information (nPMI). NO external model, NO download, NO LLM — pure statistics
- * over your own data. Writes lib/career/semantic-model.ts, which the in-house
- * semantic layer (lib/career/semantic.ts) blends with the curated ontology.
+/* ICIRE — self-trained semantic skill model, retrained on Vrittih's OWN data.
+ * Learns skill<->skill relatedness (normalised PMI) from how skills co-occur across
+ * THREE in-house sources: live jobs, candidate profiles, and courses. No external
+ * model, no download, no LLM — pure statistics over your own corpus.
  *
- * Run:  TAX_PATH=<compiled taxonomy.js> node scripts/train-semantic.mjs
- * (a wrapper compiles lib/career/taxonomy.ts to CJS first and sets TAX_PATH).
- *
- * Tunables kept conservative so learned edges are trustworthy, not noise. */
+ * Run:  npm run train:semantic
+ * (self-compiles lib/career/taxonomy.ts + train.ts, reads the DB, writes
+ *  lib/career/semantic-model.ts, which the semantic layer blends with the ontology.) */
 import { createRequire } from "module"
-import { writeFileSync } from "fs"
+import { writeFileSync, mkdtempSync } from "fs"
 import { fileURLToPath } from "url"
-import { dirname, resolve } from "path"
+import { dirname, resolve, join } from "path"
+import { tmpdir } from "os"
+import { execSync } from "child_process"
 
 const require = createRequire(import.meta.url)
 const __dirname = dirname(fileURLToPath(import.meta.url))
+const ROOT = resolve(__dirname, "..")
 
-const TAX_PATH = process.env.TAX_PATH
-if (!TAX_PATH) { console.error("Set TAX_PATH to the compiled taxonomy.js"); process.exit(1) }
-const tax = require(resolve(TAX_PATH))
+// --- self-compile the pure TS deps to a temp dir (CJS) so we can require them ---
+const OUT = mkdtempSync(join(tmpdir(), "vrittih-train-"))
+console.log("Compiling taxonomy + trainer…")
+execSync(
+  `node "${join(ROOT, "node_modules/typescript/bin/tsc")}" lib/career/taxonomy.ts lib/career/train.ts ` +
+  `--outDir "${OUT}" --module commonjs --target es2019 --skipLibCheck --moduleResolution node`,
+  { cwd: ROOT, stdio: "inherit" }
+)
+// tsc collapses the common input root (lib/career) so output is flat in OUT.
+const tax = require(join(OUT, "taxonomy.js"))
+const { computeModel, serializeModel } = require(join(OUT, "train.js"))
 const { PrismaClient } = require("@prisma/client")
 
-const MIN_CO = 4        // a pair must co-occur in >= this many jobs to be considered
-const MIN_NPMI = 0.15   // keep only genuinely-associated pairs
-const MAX_NEIGH = 14    // cap neighbours per skill (strongest kept)
-
-// Mirror engine.detect's DIRECT (non-implied) detection so learned co-occurrence
-// reflects skills actually named in the JD, not implication artefacts.
+// --- shared skill detection (mirrors engine.detect's DIRECT detection) ---
 const aliases = tax.allAliases() // [{ alias: normalizedKey, canon }]
 const norm = (s) => String(s || "").toLowerCase().replace(/[-._/]/g, " ").replace(/\s+/g, " ").trim()
 function detect(text) {
@@ -40,85 +43,57 @@ function detect(text) {
   }
   return found
 }
+const canonAll = (arr) => (arr || []).map((s) => tax.canonical(s)).filter(Boolean)
+// Course.skills may be a JSON array string or a CSV — accept both.
+function parseSkillField(v) {
+  if (!v) return []
+  try { const j = JSON.parse(v); if (Array.isArray(j)) return j.map(String) } catch {}
+  return String(v).split(/[,;|]/).map((s) => s.trim()).filter(Boolean)
+}
 
 async function main() {
   const prisma = new PrismaClient()
-  const jobs = await prisma.job.findMany({
-    select: { title: true, description: true, industry: true, skills: { include: { skill: true } } },
-  })
-  await prisma.$disconnect()
+  const docs = []
+  const sources = { jobs: 0, profiles: 0, courses: 0 }
 
-  const docFreq = new Map()
-  const pairFreq = new Map()
-  let docs = 0
+  // 1) JOBS — title/description/industry + tagged skills
+  const jobs = await prisma.job.findMany({ select: { title: true, description: true, industry: true, skills: { include: { skill: true } } } })
   for (const j of jobs) {
     const set = detect([j.title, j.description, j.industry].filter(Boolean).join(". "))
-    for (const s of j.skills || []) { const c = tax.canonical(s.skill?.name || "") ; if (c) set.add(c) }
-    if (set.size < 2) continue
-    docs++
-    const arr = [...set].sort()
-    for (const a of arr) docFreq.set(a, (docFreq.get(a) || 0) + 1)
-    for (let i = 0; i < arr.length; i++) for (let k = i + 1; k < arr.length; k++) {
-      const key = arr[i] + "|" + arr[k]
-      pairFreq.set(key, (pairFreq.get(key) || 0) + 1)
-    }
+    for (const c of canonAll((j.skills || []).map((s) => s.skill?.name))) set.add(c)
+    if (set.size >= 2) { docs.push([...set]); sources.jobs++ }
   }
 
-  // nPMI per co-occurring pair
-  const isSoft = (s) => tax.categoryOf(s) === "soft"
-  const scored = []
-  for (const [key, f] of pairFreq) {
-    if (f < MIN_CO) continue
-    const [a, b] = key.split("|")
-    // Drop mixed soft<->technical edges: soft skills co-occur with almost everything,
-    // so their PMI with specific tech is broad noise (e.g. Python~Mentoring). Keep
-    // soft<->soft (Communication~Problem Solving) and tech<->tech, which are signal.
-    if (isSoft(a) !== isSoft(b)) continue
-    const pab = f / docs, pa = docFreq.get(a) / docs, pb = docFreq.get(b) / docs
-    const pmi = Math.log(pab / (pa * pb))
-    const npmi = pmi / -Math.log(pab) // in [-1, 1]
-    if (npmi >= MIN_NPMI) scored.push({ key, a, b, npmi: Math.min(1, npmi) })
+  // 2) PROFILES — a candidate's own skill-set (tagged skills + skills named in their
+  //    experience/headline/bio). Captures real human skill combinations.
+  const users = await prisma.user.findMany({
+    select: { headline: true, bio: true, skills: { include: { skill: true } }, experience: { select: { title: true, description: true } } },
+  })
+  for (const u of users) {
+    const set = new Set(canonAll((u.skills || []).map((s) => s.skill?.name)))
+    const text = [u.headline, u.bio, ...(u.experience || []).flatMap((e) => [e.title, e.description])].filter(Boolean).join(". ")
+    for (const c of detect(text)) set.add(c)
+    if (set.size >= 2) { docs.push([...set]); sources.profiles++ }
   }
 
-  // cap neighbours per skill by strength, keep the union
-  const perSkill = new Map()
-  for (const s of scored) {
-    ;(perSkill.get(s.a) || perSkill.set(s.a, []).get(s.a)).push(s)
-    ;(perSkill.get(s.b) || perSkill.set(s.b, []).get(s.b)).push(s)
+  // 3) COURSES — declared skills + title/summary + lesson skills
+  const courses = await prisma.course.findMany({ select: { title: true, summary: true, skills: true, lessons: { select: { title: true, skill: true } } } })
+  for (const c of courses) {
+    const set = new Set(canonAll(parseSkillField(c.skills)))
+    for (const d of detect([c.title, c.summary].filter(Boolean).join(". "))) set.add(d)
+    for (const l of c.lessons || []) { const cc = tax.canonical(l.skill || ""); if (cc) set.add(cc); for (const d of detect(l.title || "")) set.add(d) }
+    if (set.size >= 2) { docs.push([...set]); sources.courses++ }
   }
-  const keep = new Set()
-  for (const list of perSkill.values()) {
-    list.sort((x, y) => y.npmi - x.npmi)
-    for (const s of list.slice(0, MAX_NEIGH)) keep.add(s.key)
-  }
-  const pairs = {}
-  for (const s of scored) if (keep.has(s.key)) pairs[s.key] = Math.round(s.npmi * 1000) / 1000
+  await prisma.$disconnect()
 
   const at = new Date().toISOString()
-  const out = `/* AUTO-GENERATED by scripts/train-semantic.mjs — a self-trained skill relatedness
- * model (normalised pointwise mutual information) learned from Vrittih's OWN live
- * job corpus. No external model, no download, no LLM: it is computed from how
- * skills actually co-occur across real job descriptions on this platform.
- *
- * Do NOT edit by hand — re-run \`node scripts/train-semantic.mjs\` to refresh.
- * An empty \`pairs\` map is valid: the semantic layer then falls back cleanly to the
- * curated ontology (IMPLY graph + category co-membership) in taxonomy.ts. */
-export type SemanticModel = {
-  trained: { jobs: number; skills: number; pairs: number; at: string } | null
-  pairs: Record<string, number> // "SkillA|SkillB" (canonical, A<B) -> nPMI in [0,1]
-}
+  const model = computeModel(docs, { isSoft: (s) => tax.categoryOf(s) === "soft", at, sources })
+  const dest = resolve(ROOT, "lib/career/semantic-model.ts")
+  writeFileSync(dest, serializeModel(model))
 
-export const MODEL: SemanticModel = {
-  trained: { jobs: ${docs}, skills: ${docFreq.size}, pairs: ${Object.keys(pairs).length}, at: ${JSON.stringify(at)} },
-  pairs: ${JSON.stringify(pairs, Object.keys(pairs).sort(), 2)},
-}
-`
-  const dest = resolve(__dirname, "../lib/career/semantic-model.ts")
-  writeFileSync(dest, out)
-  console.log(`Trained on ${docs} jobs, ${docFreq.size} skills, kept ${Object.keys(pairs).length} pairs.`)
-  console.log(`Wrote ${dest}`)
-  // Show a few strongest learned edges for a sanity check
-  const top = Object.entries(pairs).sort((a, b) => b[1] - a[1]).slice(0, 12)
+  console.log(`\nTrained on ${model.trained.docs} documents (${sources.jobs} jobs, ${sources.profiles} profiles, ${sources.courses} courses)`)
+  console.log(`${model.trained.skills} skills, kept ${model.trained.pairs} pairs. Wrote ${dest}`)
+  const top = Object.entries(model.pairs).sort((a, b) => b[1] - a[1]).slice(0, 10)
   for (const [k, v] of top) console.log("   ", k.replace("|", " ~ "), v)
 }
 main().catch((e) => { console.error(e); process.exit(1) })
