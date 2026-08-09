@@ -4,7 +4,7 @@ import { resolveContext } from "@/lib/capability/context"
 import { PLACEMENT_STAGES } from "@/lib/recruitment/fulfillment"
 
 export const dynamic = "force-dynamic"
-const isHr = (ctx: any) => ctx.has("admin.access") || ctx.has("candidates.view") || ctx.has("pipeline.manage") || ctx.has("jobs.post")
+const isHr = (ctx: any) => ctx.has("admin.access")   // platform staff only (Vrittih HR) — employers see only their own
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   const ctx = await resolveContext(req)

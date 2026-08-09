@@ -15,7 +15,7 @@ export default function CareerReadinessPage() {
     const r = await fetch("/api/career/coach/readiness", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ targetRole: role }) })
     setBusy(false)
     if (r.status === 401) { setErr("Please sign in."); return }
-    const j = await r.json(); if (!r.ok) { setErr(j.error || "Something went wrong."); return }
+    const j = await r.json(); if (!r.ok || !j.readiness) { setErr(j.error || "Couldn't assess that role — try a more common title."); return }
     setD(j)
   }
 

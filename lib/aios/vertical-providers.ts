@@ -7,6 +7,10 @@ import { ensureWorkspace } from "@/lib/workspace"
 import { pipelineSummary, winRate, campaignPerformance, ticketHealth, salesAdvisor } from "@/lib/crm/revenue"
 import { admissionsFunnel, seatUtilization, placementStats, gpaDistribution, atRiskStudents, facultyRatio, campusAdvisor } from "@/lib/university/campus"
 
+// Rule-based providers report NO run-level confidence (a deterministic aggregation has no
+// model uncertainty). The gateway persists null. Only brain-routed providers (which call
+// deliberate) return a real confidence.
+
 /* Phase 7 — AI Sales Assistant. Reads the caller's CRM workspace (deals/campaigns/tickets)
  * and returns a per-currency pipeline, win rate, forecast, and prioritised next actions. */
 registerProvider("crm.sales.assistant", async (ctx) => {
@@ -22,7 +26,7 @@ registerProvider("crm.sales.assistant", async (ctx) => {
   const camp = campaignPerformance(campaigns)
   const tix = ticketHealth(tickets)
   const advice = salesAdvisor({ deals, pipeline, win, campaigns: camp, tickets: tix })
-  return { output: { advice, pipeline, win, campaigns: camp, tickets: tix }, explanation: advice.summary, confidence: 0.72, modelId: "sales-assistant-v1" }
+  return { output: { advice, pipeline, win, campaigns: camp, tickets: tix }, explanation: advice.summary, modelId: "sales-assistant-v1" }
 })
 
 /* Phase 8 — Campus Intelligence. Aggregates across the caller's institution(s): admissions
@@ -34,7 +38,7 @@ registerProvider("university.intelligence", async (ctx) => {
   if (!ids.length) {
     const empty = { funnel: admissionsFunnel([]), seats: seatUtilization([], 0), placement: placementStats([]), gpa: gpaDistribution([]), atRisk: [], ratio: facultyRatio(0, 0) }
     const advice = campusAdvisor({ ...empty, atRisk: 0 })
-    return { output: { ...empty, advice, hasData: false }, explanation: "No institution yet — create one to see campus intelligence.", confidence: 0.4, modelId: "campus-intelligence-v1" }
+    return { output: { ...empty, advice, hasData: false }, explanation: "No institution yet — create one to see campus intelligence.", modelId: "campus-intelligence-v1" }
   }
   const [apps, programs, students, faculty] = await Promise.all([
     prisma.admissionApplication.findMany({ where: { institutionId: { in: ids } }, select: { status: true, score: true }, take: 5000 }),
@@ -50,7 +54,7 @@ registerProvider("university.intelligence", async (ctx) => {
   const risk = atRiskStudents(students)
   const ratio = facultyRatio(active.length, faculty)
   const advice = campusAdvisor({ funnel, seats, placement, gpa, atRisk: risk.length, ratio })
-  return { output: { funnel, seats, placement, gpa, atRisk: risk.map(r => r.name), ratio, advice, hasData: true }, explanation: advice.summary, confidence: 0.72, modelId: "campus-intelligence-v1" }
+  return { output: { funnel, seats, placement, gpa, atRisk: risk.map(r => r.name), ratio, advice, hasData: true }, explanation: advice.summary, modelId: "campus-intelligence-v1" }
 })
 
 import { deliberate } from "@/lib/intelligence/deliberate"
@@ -105,7 +109,7 @@ registerProvider("hr.copilot", async (ctx) => {
   const uid = ctx.subjectId as string
   const now = Date.now()
   const employees = await prisma.employee.findMany({ where: { employerId: uid, status: { in: ["ACTIVE", "ONBOARDING", "ON_LEAVE"] } }, select: { id: true, userId: true, joinedAt: true, designation: true }, take: 2000 })
-  if (!employees.length) return { output: { attritionRisks: [], promotionReady: [], workforce: 0, summary: "No employees on record yet." }, explanation: "No workforce data yet.", confidence: 0.3, modelId: "hr-copilot-v1" }
+  if (!employees.length) return { output: { attritionRisks: [], promotionReady: [], workforce: 0, summary: "No employees on record yet." }, explanation: "No workforce data yet.", modelId: "hr-copilot-v1" }
 
   const userIds = employees.map(e => e.userId)
   const [users, reviews, goals, recos, oneOnOnes, succession] = await Promise.all([
@@ -145,5 +149,8 @@ registerProvider("hr.copilot", async (ctx) => {
   attritionRisks.sort((x, y) => y.confidence - x.confidence)
   promotionReady.sort((x, y) => y.confidence - x.confidence)
   const summary = `${employees.length} employees analysed — ${attritionRisks.filter(r => r.verdict === "supported").length} flagged attrition risk, ${promotionReady.length} promotion-ready (evidence-based).`
-  return { output: { attritionRisks: attritionRisks.slice(0, 50), promotionReady: promotionReady.slice(0, 50), workforce: employees.length, summary }, explanation: summary, confidence: 0.72, modelId: "hr-copilot-v1" }
+  // Run-level confidence = mean of the real per-employee deliberation confidences (honest), else data-coverage.
+  const conf = [...attritionRisks, ...promotionReady].map((x: any) => x.confidence)
+  const runConfidence = conf.length ? +(conf.reduce((a, b) => a + b, 0) / conf.length).toFixed(2) : undefined  // real mean of deliberations; omitted if none surfaced
+  return { output: { attritionRisks: attritionRisks.slice(0, 50), promotionReady: promotionReady.slice(0, 50), workforce: employees.length, summary }, explanation: summary, confidence: runConfidence, modelId: "hr-copilot-v1" }
 })

@@ -6,7 +6,7 @@ import { ROLE_TYPES } from "@/lib/recruitment/fulfillment"
 export const dynamic = "force-dynamic"
 const str = (v: any, n = 200) => String(v ?? "").slice(0, n)
 const arr = (v: any): string[] => Array.isArray(v) ? v.map(x => str(x, 60)).filter(Boolean).slice(0, 40) : String(v || "").split(",").map(s => s.trim()).filter(Boolean).slice(0, 40)
-const isHr = (ctx: any) => ctx.has("admin.access") || ctx.has("candidates.view") || ctx.has("pipeline.manage")
+const isHr = (ctx: any) => ctx.has("admin.access")   // platform staff only
 
 /* Candidate side of managed placement: "place me as intern/full-time/contract". HR works it
  * end-to-end. Candidates see their own; HR sees the whole queue. */

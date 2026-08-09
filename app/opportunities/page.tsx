@@ -99,7 +99,7 @@ export default function OpportunitiesPage() {
           <div style={S.empty}>
             <h2 style={S.h2}>No matching groups yet</h2>
             <p style={S.sub}>Add skills, projects and experience to your profile so ICAE can find and cluster the roles that fit you.</p>
-            <Link href="/career" style={S.cta}>Build your Career profile <IconArrowRight size={15} /></Link>
+            <Link href="/profile/edit" style={S.cta}>Build your Career profile <IconArrowRight size={15} /></Link>
           </div>
         ) : (
           <div style={S.groups}>

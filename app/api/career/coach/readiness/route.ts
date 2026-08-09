@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   if (!ctx.userId) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   const { targetRole } = await req.json().catch(() => ({}))
   if (!targetRole || !String(targetRole).trim()) return NextResponse.json({ error: "Tell me the role you want to grow into." }, { status: 400 })
-  const r = await execute("career.coach.readiness", { subjectId: ctx.userId, caps: Array.from(ctx.capabilities), input: { targetRole: String(targetRole).slice(0, 120) } })
+  const r = await execute("career.coach.readiness", { subjectId: ctx.userId, caps: Array.from(ctx.capabilities), input: { targetRole: String(targetRole).trim().slice(0, 120) } })
   if (!r.ok) return NextResponse.json({ error: r.error || "Career coach unavailable." }, { status: 500 })
   return NextResponse.json({ ...r.output, runId: r.runId })
 }

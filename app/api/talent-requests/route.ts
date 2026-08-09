@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic"
 const str = (v: any, n = 200) => String(v ?? "").slice(0, n)
 const arr = (v: any): string[] => Array.isArray(v) ? v.map(x => str(x, 60)).filter(Boolean).slice(0, 40) : String(v || "").split(",").map(s => s.trim()).filter(Boolean).slice(0, 40)
 // HR/recruiter operators who fulfil requests across the platform.
-const isHr = (ctx: any) => ctx.has("admin.access") || ctx.has("candidates.view") || ctx.has("pipeline.manage") || ctx.has("jobs.post")
+const isHr = (ctx: any) => ctx.has("admin.access")   // platform staff only (Vrittih HR) — employers see only their own
 
 export async function GET(req: NextRequest) {
   const ctx = await resolveContext(req)

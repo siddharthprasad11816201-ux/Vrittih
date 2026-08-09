@@ -121,6 +121,12 @@ function RequestDetail({ id, onChange }: { id: string; onChange: () => void }) {
                 {(c.rationale?.missing || []).length > 0 && <span style={S.missChip}><IconAlert size={11} /> Missing: {(c.rationale.missing || []).join(", ")}</span>}
                 {(c.rationale?.risks || []).slice(0, 2).map((rk: string, i: number) => <span key={i} style={S.riskChip}>{rk}</span>)}
               </div>
+              {(c.rationale?.salary?.band || c.rationale?.interview?.rounds) && (
+                <div style={S.plan}>
+                  {c.rationale?.salary?.band && <div style={S.planLine}><IconAward size={12} /> Salary band: {c.rationale.salary.currency} {Number(c.rationale.salary.band.min).toLocaleString()}–{Number(c.rationale.salary.band.max).toLocaleString()}</div>}
+                  {(c.rationale?.interview?.rounds || []).length > 0 && <div style={S.planLine}><IconCheckCircle size={12} /> Interview plan: {c.rationale.interview.rounds.map((r: any) => r.name).join(" → ")}</div>}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -170,4 +176,6 @@ const S: Record<string, any> = {
   chips: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 },
   missChip: { display: "inline-flex", alignItems: "center", gap: 4, fontSize: 11, color: "#b7791f", background: "#fff7e6", borderRadius: 999, padding: "2px 9px" },
   riskChip: { fontSize: 11, color: "var(--v-ink-2)", background: "var(--v-surface-2)", borderRadius: 999, padding: "2px 9px" },
+  plan: { display: "flex", flexDirection: "column", gap: 4, marginTop: 8, paddingTop: 8, borderTop: "1px solid var(--v-line)" },
+  planLine: { display: "flex", alignItems: "center", gap: 6, fontSize: 12, color: "var(--v-ink-2)" },
 }

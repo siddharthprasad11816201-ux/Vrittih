@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
           where: { userId: p.userId }, orderBy: { createdAt: "asc" },
           select: { createdAt: true, avgConfidence: true, skillCount: true, explicitCount: true, skillVector: true },
         })
-        if (snaps.length < 2) return reply(intent, "I don't have enough history to show a trend yet — I record a snapshot when your profile content changes (or every 30 days). Keep your skills, experience and résumé current and your growth will show here.", [], { label: "Update your profile", href: "/career" })
+        if (snaps.length < 2) return reply(intent, "I don't have enough history to show a trend yet — I record a snapshot when your profile content changes (or every 30 days). Keep your skills, experience and résumé current and your growth will show here.", [], { label: "Update your profile", href: "/profile/edit" })
         const series: SeriesPoint[] = snaps.map((s) => ({ at: s.createdAt.toISOString(), avgConfidence: s.avgConfidence, skillCount: s.skillCount, explicitCount: s.explicitCount }))
         const m = momentum(series)
         const first = snaps[0], last = snaps[snaps.length - 1]

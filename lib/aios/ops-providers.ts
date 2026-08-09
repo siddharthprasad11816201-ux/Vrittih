@@ -73,7 +73,7 @@ registerProvider("project.manager", async (ctx) => {
   const balance = allocationBalance(loads)
   const standup = projectStandup(insights, balance)
 
-  return { output: { standup, insights, resource: { loads, balance } }, explanation: standup.summary, confidence: 0.75, modelId: "project-manager-v1" }
+  return { output: { standup, insights, resource: { loads, balance } }, explanation: standup.summary, modelId: "project-manager-v1" }
 })
 
 /* Financial Intelligence advisor — AR aging, cash-flow projection, burn/runway, budget
@@ -122,5 +122,5 @@ registerProvider("finance.advisor", async (ctx) => {
   }
 
   const advice = financeAdvisor({ aging, cashflow, runway, budgetForecastByCurrency }, now)
-  return { output: { advice, aging, burn, runway, cashflow, budgetForecastByCurrency }, explanation: advice.summary, confidence: 0.7, modelId: "finance-advisor-v1" }
+  return { output: { advice, aging, burn, runway, cashflow, budgetForecastByCurrency }, explanation: advice.summary, modelId: "finance-advisor-v1" }
 })

@@ -71,8 +71,8 @@ registerProvider("recruit.shortlist", async (ctx) => {
   for (const c of ranked.slice(0, Math.max(req.headcount * 2, 10))) {
     await prisma.placementCandidate.upsert({
       where: { requestId_candidateId: { requestId, candidateId: c.candidateId } },
-      update: { score: c.confidence, verdict: c.verdict, rationale: JSON.stringify({ why: c.why, missing: c.missing, risks: c.risks }) },
-      create: { requestId, candidateId: c.candidateId, stage: "SOURCED", score: c.confidence, verdict: c.verdict, rationale: JSON.stringify({ why: c.why, missing: c.missing, risks: c.risks }), addedById: ctx.subjectId },
+      update: { score: c.confidence, verdict: c.verdict, rationale: JSON.stringify({ why: c.why, missing: c.missing, risks: c.risks, salary: c.salary, interview: c.interview }) },
+      create: { requestId, candidateId: c.candidateId, stage: "SOURCED", score: c.confidence, verdict: c.verdict, rationale: JSON.stringify({ why: c.why, missing: c.missing, risks: c.risks, salary: c.salary, interview: c.interview }), addedById: ctx.subjectId },
     }).catch(() => {})
   }
   const strong = ranked.filter(r => r.verdict === "supported").length
