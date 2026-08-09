@@ -36,7 +36,7 @@ const RULES: [RegExp, Intent][] = [
 // intent whose vocabulary the message overlaps most (still fully deterministic,
 // no LLM). Keeps paraphrases ("point me somewhere I'd do well") on the rails.
 const BAGS: Record<Exclude<Intent, "fallback" | "help">, string[]> = {
-  matches: ["job", "jobs", "role", "roles", "match", "fit", "apply", "opening", "position", "opportunity", "hire", "hiring", "suited", "good"],
+  matches: ["job", "jobs", "role", "roles", "match", "fit", "apply", "opening", "position", "opportunity", "hire", "hiring", "suited"],
   learn: ["learn", "skill", "skills", "study", "course", "improve", "upskill", "gap", "next", "grow"],
   level: ["senior", "junior", "level", "ready", "seniority", "experienced", "enough", "promotion"],
   resume: ["resume", "cv", "ats", "bullet", "cover", "letter", "keyword"],
@@ -55,11 +55,16 @@ export type Slots = { threshold?: number; remote?: boolean; type?: string }
 export function extractSlots(text: string): Slots {
   const t = normI(text)
   const slots: Slots = {}
+  // A number immediately followed by a time/count unit is NOT a match percentage
+  // ("5+ years", "over 3 months", "1000 openings") — mask those spans first so they
+  // never populate the threshold.
+  const masked = t.replace(/\d+\s*(?:\+\s*)?(?:years?|yrs?|months?|mos?|weeks?|days?|hrs?|hours?|openings?|roles?|jobs?|positions?|applicants?|vacanc\w*)\b/g, " ")
+  // \d+ (not \d{1,3}) so an out-of-range value reaches the 0..100 guard and is
+  // rejected, instead of being truncated to a spurious in-range number.
   const m =
-    t.match(/(?:more than|greater than|higher than|over|above|at least|minimum|min|atleast|>=?)\s*(\d{1,3})\s*(?:%|percent|pct)?/) ||
-    t.match(/(\d{1,3})\s*(?:%|percent|pct)?\s*\+/) ||
-    t.match(/(\d{1,3})\s*(?:%|percent|pct)?\s*(?:or more|or above|or higher|and above|and up)/) ||
-    t.match(/(?:above|over)\s*(\d{1,3})/)
+    masked.match(/(?:more than|greater than|higher than|over|above|at least|\bminimum\b|\bmin\b|atleast|>=?)\s*(\d+)\s*(?:%|percent|pct)?/) ||
+    masked.match(/(\d+)\s*(?:%|percent|pct)\s*\+?/) ||
+    masked.match(/(\d+)\s*(?:%|percent|pct)?\s*(?:or more|or above|or higher|and above|and up)/)
   if (m) { const n = parseInt(m[1], 10); if (n >= 0 && n <= 100) slots.threshold = n }
   if (/\bremote\b|work from home|\bwfh\b|from home/.test(t)) slots.remote = true
   if (/\bintern(ship)?s?\b/.test(t)) slots.type = "internship"
@@ -69,10 +74,12 @@ export function extractSlots(text: string): Slots {
 export function classifyIntent(text: string, slots?: Slots): Intent {
   // Lowercase + strip accents so "résumé" -> "resume", etc.
   const t = normI(text)
-  // A match-percentage threshold almost always refers to job fit — route it to
-  // matches even if phrased without an explicit job word ("show me 50%+").
-  if (slots?.threshold != null && !/\b(learn|salary|pay|interview|resume|cv)\b/.test(t)) return "matches"
+  // Explicit intent rules win FIRST — so "am I ready for senior with 5+ years?"
+  // routes to level, not matches, even when a number is present.
   for (const [re, intent] of RULES) if (re.test(t)) return intent
+  // Only a BARE match-percentage with no explicit intent ("50%+", "over 60") falls
+  // through to matches. (The generic RULES 'jobs' rule already caught job-worded ones.)
+  if (slots?.threshold != null) return "matches"
   // Scored fallback: pick the intent whose vocabulary overlaps the message most.
   const toks = new Set(t.split(/[^a-z0-9]+/).filter(Boolean))
   let best: Intent = "help", bestScore = 0
