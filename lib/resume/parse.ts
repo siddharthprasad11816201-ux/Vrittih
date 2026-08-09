@@ -10,6 +10,10 @@ export type ParsedExperience = { title?: string; company?: string; start?: strin
 export type ParsedEducation = { school?: string; degree?: string; year?: string }
 export type SkillStatus = "explicit" | "demonstrated" | "inferred"
 export type ParsedSkill = { skill: string; status: SkillStatus; category: Category; evidence?: string; section?: string }
+// Content the résumé contains that the profile doesn't yet model as a first-class
+// field (projects, certifications, awards, publications, languages). Surfaced so the
+// candidate SEES everything we extracted and can decide to add it — nothing is dropped.
+export type ParsedExtraSection = { kind: string; label: string; items: string[] }
 export type ParsedResume = {
   name?: string
   email?: string
@@ -22,6 +26,7 @@ export type ParsedResume = {
   skillsDetailed: ParsedSkill[]    // each with status + evidence + provenance (spec §8–9)
   experience: ParsedExperience[]
   education: ParsedEducation[]
+  extraSections: ParsedExtraSection[]  // projects/certs/awards/publications/languages
   confidence: number
   fieldsFound: string[]
 }
@@ -62,8 +67,11 @@ const SECTION_HEADERS: Record<string, RegExp> = {
   experience: /^(work\s+experience|professional\s+experience|experience|employment(?:\s+history)?|work\s+history|career\s+history)\b/i,
   education: /^(education|academic(?:\s+background)?|qualifications)\b/i,
   skills: /^(technical\s+skills|core\s+competencies|skills(?:\s*&?\s*(?:tools|technologies))?|competencies|technologies)\b/i,
-  projects: /^(projects|selected\s+projects|personal\s+projects)\b/i,
-  certifications: /^(certifications?|licenses?|courses?)\b/i,
+  projects: /^(projects|selected\s+projects|personal\s+projects|key\s+projects)\b/i,
+  certifications: /^(certifications?|certificates?|licenses?|courses?)\b/i,
+  awards: /^(awards?|honou?rs?|achievements?|accomplishments?)\b/i,
+  publications: /^(publications?|papers?|research\s+papers?)\b/i,
+  languages: /^(languages?(?:\s+known)?)\b/i,
 }
 const ANY_HEADER = /^(professional\s+summary|summary|profile|objective|about|work\s+experience|professional\s+experience|experience|employment|work\s+history|career\s+history|education|academic|qualifications|technical\s+skills|core\s+competencies|skills|competencies|technologies|projects|certifications?|licenses?|courses?|awards|publications|interests|references|languages)\b/i
 
@@ -82,7 +90,7 @@ function normLink(u: string): string { return u.replace(/^https?:\/\//i, "").rep
 export function parseResume(raw: string): ParsedResume {
   const text = (raw || "").replace(/\r\n?/g, "\n")
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean)
-  const out: ParsedResume = { links: {}, skills: [], skillsDetailed: [], experience: [], education: [], confidence: 0, fieldsFound: [] }
+  const out: ParsedResume = { links: {}, skills: [], skillsDetailed: [], experience: [], education: [], extraSections: [], confidence: 0, fieldsFound: [] }
 
   // --- contact ---
   const email = text.match(EMAIL_RE)?.[0]
@@ -247,6 +255,37 @@ export function parseResume(raw: string): ParsedResume {
   }
   if (!out.headline && out.experience[0]?.title) out.headline = out.experience[0].title
 
+  // --- extra sections the profile doesn't model as first-class fields yet ---
+  // We STILL extract them so nothing in the résumé is silently dropped: the review
+  // UI shows them and recommends adding them. (Answers "extract all words" +
+  // "generate new sections if needed automatically or recommend".)
+  const sectionItems = (arr: string[] | undefined, splitInline = false): string[] => {
+    if (!arr?.length) return []
+    const items: string[] = []
+    for (const raw of arr) {
+      const base = clean(raw.replace(/^[-*•·●▪◦]\s*/, ""))
+      if (!base || base.length < 2 || ANY_HEADER.test(base)) continue
+      if (splitInline) {
+        for (const t of base.split(/[,;/|•·]+/).map(clean).filter(Boolean)) if (t.length >= 2 && t.length <= 40) items.push(t)
+      } else {
+        items.push(base.slice(0, 140))
+      }
+      if (items.length >= 14) break
+    }
+    return Array.from(new Set(items)).slice(0, 10)
+  }
+  const EXTRA: [string, string, string[] | undefined, boolean][] = [
+    ["projects", "Projects", sections.projects, false],
+    ["certifications", "Certifications", sections.certifications, false],
+    ["awards", "Awards & achievements", sections.awards, false],
+    ["publications", "Publications", sections.publications, false],
+    ["languages", "Languages", sections.languages, true],
+  ]
+  for (const [kind, label, arr, inline] of EXTRA) {
+    const items = sectionItems(arr, inline)
+    if (items.length) out.extraSections.push({ kind, label, items })
+  }
+
   // --- confidence + fieldsFound ---
   const found: string[] = []
   for (const k of ["name", "email", "phone", "location", "headline", "summary"] as const) if (out[k]) found.push(k)
@@ -254,7 +293,8 @@ export function parseResume(raw: string): ParsedResume {
   if (out.experience.length) found.push("experience")
   if (out.education.length) found.push("education")
   if (Object.keys(out.links).length) found.push("links")
+  for (const s of out.extraSections) found.push(s.kind)
   out.fieldsFound = found
-  out.confidence = Math.min(1, found.length / 8)
+  out.confidence = Math.min(1, (found.length) / 9)
   return out
 }

@@ -70,6 +70,7 @@ export default function EditProfile() {
       if (p.skills?.length) bits.push(`${p.skills.length} skills`)
       if (p.experience?.length) bits.push(`${p.experience.length} experience`)
       if (p.education?.length) bits.push(`${p.education.length} education`)
+      if (p.extraSections?.length) bits.push(`${p.extraSections.map((s: any) => s.label.toLowerCase()).join(", ")}`)
       setParseMsg(bits.length ? `Read your résumé — ${bits.join(" · ")}. Review, add the sections below, then Save.` : "Read the file but couldn't confidently find fields — please fill them in.")
     } catch { setParseMsg("Network error reading the résumé.") }
     finally { setParseBusy(false) }
@@ -85,6 +86,14 @@ export default function EditProfile() {
   async function applyParsedEducation() {
     for (const e of (parsed?.education || [])) await fetch("/api/profile/education", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ school:e.school||"", degree:e.degree||"", field:"", startYear:"", endYear:e.year||"" }) }).catch(()=>{})
     const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user); setParsed((x:any)=> x ? { ...x, education: [] } : x)
+  }
+  // One-click: add everything the profile supports (skills + experience + education).
+  async function applyAll() {
+    for (const name of (parsed?.skills || []).slice(0, 40)) await fetch("/api/profile/skills", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ name }) }).catch(()=>{})
+    for (const e of (parsed?.experience || [])) await fetch("/api/profile/experience", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ company:e.company||"", title:e.title||"", location:"", startDate:e.start||"", endDate:e.end||"", description:"" }) }).catch(()=>{})
+    for (const e of (parsed?.education || [])) await fetch("/api/profile/education", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ school:e.school||"", degree:e.degree||"", field:"", startYear:"", endYear:e.year||"" }) }).catch(()=>{})
+    const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user)
+    setParsed((x:any)=> x ? { ...x, skills: [], experience: [], education: [] } : x)
   }
   // Add a single inferred/suggested skill (evidence panel — spec §8/§21).
   async function addOneSkill(name: string) {
@@ -217,9 +226,25 @@ export default function EditProfile() {
                   {parseMsg && <div style={S.rpMsg}>{parseMsg}</div>}
                   {parsed && (parsed.skills?.length || parsed.experience?.length || parsed.education?.length) ? (
                     <div style={S.rpActions}>
+                      {[parsed.skills?.length, parsed.experience?.length, parsed.education?.length].filter(Boolean).length > 1 ?
+                        <button type="button" onClick={applyAll} style={S.rpBtnPrimary}>Add all to my profile</button> : null}
                       {parsed.skills?.length ? <button type="button" onClick={applyParsedSkills} style={S.rpBtn}>Add {parsed.skills.length} skills</button> : null}
                       {parsed.experience?.length ? <button type="button" onClick={applyParsedExperience} style={S.rpBtn}>Add {parsed.experience.length} experience</button> : null}
                       {parsed.education?.length ? <button type="button" onClick={applyParsedEducation} style={S.rpBtn}>Add {parsed.education.length} education</button> : null}
+                    </div>
+                  ) : null}
+                  {parsed && parsed.extraSections?.length ? (
+                    <div style={S.rpExtra}>
+                      <div style={S.rpEvHead}>Also found in your résumé</div>
+                      <div style={S.rpExtraNote}>We extracted these too. They aren&apos;t profile sections yet — add the strongest points to your summary or experience so employers see them.</div>
+                      {parsed.extraSections.map((sec: any) => (
+                        <div key={sec.kind} style={S.rpExtraSec}>
+                          <div style={S.rpExtraLabel}>{sec.label} <span style={S.rpExtraCount}>{sec.items.length}</span></div>
+                          <ul style={S.rpExtraList}>
+                            {sec.items.map((it: string, i: number) => <li key={i} style={S.rpExtraItem}>{it}</li>)}
+                          </ul>
+                        </div>
+                      ))}
                     </div>
                   ) : null}
                   {parsed && parsed.skillsDetailed?.length ? (
@@ -452,6 +477,14 @@ const S: Record<string,any> = {
   rpMsg: { fontSize:12.5, color:"var(--v-accent-2)", marginTop:8, fontWeight:500, lineHeight:1.5 },
   rpActions: { display:"flex", gap:8, flexWrap:"wrap", marginTop:10 },
   rpBtn: { border:"1px solid var(--v-accent)", background:"var(--v-surface)", color:"var(--v-accent)", borderRadius:9, padding:"6px 12px", fontSize:12.5, fontWeight:600, cursor:"pointer" },
+  rpBtnPrimary: { border:"1px solid var(--v-accent)", background:"var(--v-accent)", color:"#fff", borderRadius:9, padding:"6px 14px", fontSize:12.5, fontWeight:700, cursor:"pointer" },
+  rpExtra: { marginTop:12, padding:"12px 14px", background:"var(--v-surface-2, #F7F9FC)", border:"1px solid var(--v-line-2)", borderRadius:12 },
+  rpExtraNote: { fontSize:12, color:"var(--v-ink-3)", lineHeight:1.5, margin:"6px 0 10px" },
+  rpExtraSec: { marginBottom:10 },
+  rpExtraLabel: { fontSize:12.5, fontWeight:700, color:"var(--v-ink-2)", display:"flex", alignItems:"center", gap:7 },
+  rpExtraCount: { fontSize:10.5, fontWeight:700, color:"var(--v-accent)", background:"var(--brand-100, #EAF1FE)", borderRadius:999, padding:"1px 8px" },
+  rpExtraList: { margin:"5px 0 0", padding:"0 0 0 18px" },
+  rpExtraItem: { fontSize:12.5, color:"var(--v-ink-2)", lineHeight:1.55, marginBottom:2 },
   rpUpload: { flexShrink:0, display:"inline-flex", alignItems:"center", gap:7, background:"var(--v-accent)", color:"#fff", borderRadius:10, padding:"10px 16px", fontSize:13.5, fontWeight:600, cursor:"pointer" },
   rpEv: { marginTop:12, borderTop:"1px solid var(--v-line-2)", paddingTop:10 },
   rpEvHead: { fontSize:12, fontWeight:700, color:"var(--v-ink-3)", textTransform:"uppercase" as const, letterSpacing:".04em" },
