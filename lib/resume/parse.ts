@@ -142,27 +142,33 @@ export function parseResume(raw: string): ParsedResume {
   if (sections.summary?.length) out.summary = clean(sections.summary.join(" ")).slice(0, 600)
 
   // --- skills (ontology-normalized; explicit / demonstrated / inferred) ---
-  const explicit = new Set<string>()
+  // Detect ontology skills across the WHOLE résumé so skills populate even when a
+  // two-column / unusual layout breaks section detection. A skill is "demonstrated"
+  // when it appears in the experience/projects text, otherwise "explicit" (listed).
+  const expText = [
+    ...(sections.experience || []), ...(sections.projects || []),
+    ...Object.entries(sections).filter(([k]) => k.startsWith("_other")).flatMap(([, v]) => v),
+  ].join("\n")
+  const demo = detectSkills(expText)
+  const anywhere = detectSkills(text)
+  // Explicit tokens from a real Skills section (canonicalized) — catches skills the
+  // ontology may not know about.
+  const explicitTokens = new Set<string>()
   if (sections.skills?.length) {
     const toks = sections.skills.join("\n").split(/[,•·|/\n;]+|\s{2,}/).map((s) => clean(s.replace(/^[-*]\s*/, "")))
       .filter((s) => s && s.length >= 2 && s.length <= 32 && !/^\d+$/.test(s) && s.split(" ").length <= 4)
-    for (const t of toks) { const c = canonical(t); explicit.add(c || t) }
+    for (const t of toks) explicitTokens.add(canonical(t) || t)
   }
-  // Demonstrated: ontology skills actually mentioned in experience / projects / summary.
-  const demoText = [
-    ...(sections.experience || []), ...(sections.projects || []), ...(sections.summary || []),
-    ...Object.entries(sections).filter(([k]) => k.startsWith("_other")).flatMap(([, v]) => v),
-  ].join("\n")
-  const demo = detectSkills(demoText)
   const detailed: ParsedSkill[] = []
   const flat = new Set<string>()
-  for (const s of explicit) { detailed.push({ skill: s, status: "explicit", category: catOf(s), evidence: demo.get(s), section: "skills" }); flat.add(s) }
-  for (const [s, ev] of demo) { if (flat.has(s)) continue; detailed.push({ skill: s, status: "demonstrated", category: catOf(s), evidence: ev, section: "experience" }); flat.add(s) }
+  for (const [s, ev] of demo) { flat.add(s); detailed.push({ skill: s, status: "demonstrated", category: catOf(s), evidence: ev, section: "experience" }) }
+  for (const s of explicitTokens) { if (flat.has(s)) continue; flat.add(s); detailed.push({ skill: s, status: "explicit", category: catOf(s), evidence: anywhere.get(s), section: "skills" }) }
+  for (const [s, ev] of anywhere) { if (flat.has(s)) continue; flat.add(s); detailed.push({ skill: s, status: "explicit", category: catOf(s), evidence: ev, section: "resume" }) }
   // Inferred (implied, bounded 1 hop) — surfaced as suggestions, NOT auto-added to the profile.
   const implied = new Set<string>()
   for (const s of flat) for (const imp of (IMPLY[s] || [])) if (!flat.has(imp) && !implied.has(imp)) { implied.add(imp); detailed.push({ skill: imp, status: "inferred", category: catOf(imp), section: "implied" }) }
   out.skills = cap(Array.from(flat), 60)
-  out.skillsDetailed = detailed.slice(0, 120)
+  out.skillsDetailed = detailed.slice(0, 160)
 
   // --- experience (best-effort: date-range lines anchor entries) ---
   const expLines = sections.experience || []
@@ -181,18 +187,47 @@ export function parseResume(raw: string): ParsedResume {
     out.experience.push({ title: title || undefined, company: company || undefined, start, end: /present|current|now|ongoing/i.test(end) ? "Present" : end })
     if (out.experience.length >= 12) break
   }
+  // Fallback: section detection missed the experience block (e.g. two-column layout) —
+  // scan the whole résumé for date-range-anchored roles. The title/role guard keeps
+  // education date-ranges (a degree's "2018–2022") from being mistaken for jobs.
+  if (!out.experience.length) {
+    for (let i = 0; i < lines.length; i++) {
+      const l = lines[i]
+      if (ANY_HEADER.test(l)) continue
+      const dm = l.match(DATE_RANGE_RE); if (!dm) continue
+      const start = (dm[1] ? dm[1].trim() + " " : "") + dm[2]
+      const end = (dm[3] ? dm[3].trim() + " " : "") + dm[4]
+      const stripped = clean(l.replace(dm[0], "").replace(/[|,–—-]\s*$/, ""))
+      const prev = lines[i - 1] && !ANY_HEADER.test(lines[i - 1]) ? clean(lines[i - 1]) : ""
+      const source = stripped.length > 2 ? stripped : prev
+      if (!source) continue
+      if (!TITLE_WORDS.test(source) && !/\s(?:at|@)\s/i.test(l) && !DEGREE_RE.test(l)) continue   // looks like a role
+      if (DEGREE_RE.test(source) || SCHOOL_RE.test(source)) continue                              // skip education entries
+      let title = source, company = ""
+      const sep = source.split(/\s+(?:at|@|[-–—|,])\s+/)
+      if (sep.length >= 2) { title = clean(sep[0]); company = clean(sep.slice(1).join(" ")) }
+      out.experience.push({ title: title || undefined, company: company || undefined, start, end: /present|current|now|ongoing/i.test(end) ? "Present" : end })
+      if (out.experience.length >= 12) break
+    }
+  }
 
-  // --- education ---
-  const eduLines = sections.education || []
+  // --- education (require a real signal + dedupe; a collapsed section otherwise
+  //     over-counts stray "institute"/"academy" mentions) ---
+  const eduLines = sections.education?.length ? sections.education : lines
+  const eduSeen = new Set<string>()
   for (let i = 0; i < eduLines.length; i++) {
     const l = eduLines[i]
-    if (!DEGREE_RE.test(l) && !SCHOOL_RE.test(l)) continue
     const window = [l, eduLines[i + 1] || ""].join(" ")
     const degree = window.match(DEGREE_RE)?.[0]
-    const school = SCHOOL_RE.test(l) ? clean(l) : (SCHOOL_RE.test(eduLines[i + 1] || "") ? clean(eduLines[i + 1]) : undefined)
     const year = window.match(YEAR_RE)?.[0]
-    if (degree || school) out.education.push({ degree: degree || undefined, school, year })
-    if (out.education.length >= 8) break
+    const school = SCHOOL_RE.test(l) ? clean(l) : (SCHOOL_RE.test(eduLines[i + 1] || "") ? clean(eduLines[i + 1]) : undefined)
+    // Real education needs a degree, OR a school named alongside a year.
+    if (!degree && !(school && year)) continue
+    const key = `${(school || "").toLowerCase()}|${(degree || "").toLowerCase()}|${year || ""}`
+    if (eduSeen.has(key)) continue
+    eduSeen.add(key)
+    out.education.push({ degree: degree || undefined, school: school ? school.slice(0, 120) : undefined, year })
+    if (out.education.length >= 6) break
   }
 
   // --- location: a line with "City, State"/"City, Country" near the top ---
