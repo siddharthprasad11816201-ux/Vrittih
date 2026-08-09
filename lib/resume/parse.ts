@@ -1,10 +1,15 @@
 /* In-house résumé field parser — deterministic, no LLM, no third-party libs.
  * Consumes plain text (from lib/career/parseDocument extractText) and returns
  * structured profile fields: identity, contact, links, summary, skills, and
- * best-effort experience + education. Pure + unit-tested. */
+ * best-effort experience + education. Skills are normalized against the in-house
+ * ontology (lib/career/taxonomy) and classified explicit / demonstrated / inferred
+ * with an evidence snippet + provenance (spec §7–9, §20–21). Pure + unit-tested. */
+import { SKILLS, categoryOf, IMPLY, canonical, type Category } from "@/lib/career/taxonomy"
 
 export type ParsedExperience = { title?: string; company?: string; start?: string; end?: string }
 export type ParsedEducation = { school?: string; degree?: string; year?: string }
+export type SkillStatus = "explicit" | "demonstrated" | "inferred"
+export type ParsedSkill = { skill: string; status: SkillStatus; category: Category; evidence?: string; section?: string }
 export type ParsedResume = {
   name?: string
   email?: string
@@ -13,11 +18,38 @@ export type ParsedResume = {
   headline?: string
   summary?: string
   links: { linkedin?: string; github?: string; twitter?: string; website?: string }
-  skills: string[]
+  skills: string[]                 // explicit + demonstrated, ontology-normalized (for the profile)
+  skillsDetailed: ParsedSkill[]    // each with status + evidence + provenance (spec §8–9)
   experience: ParsedExperience[]
   education: ParsedEducation[]
   confidence: number
   fieldsFound: string[]
+}
+
+// Ontology matchers: canonical names + aliases → canonical, longest first so
+// "Node.js" wins over "Node". Word-ish boundaries that tolerate C++, C#, .NET.
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
+const SKILL_MATCHERS: { re: RegExp; canon: string }[] = (() => {
+  const out: { re: RegExp; canon: string }[] = []
+  for (const [canon, def] of Object.entries(SKILLS)) {
+    for (const nm of [canon, ...(def.aliases || [])]) {
+      if (!nm || nm.length < 2) continue
+      out.push({ re: new RegExp("(?<![A-Za-z0-9+#.])" + escapeRe(nm) + "(?![A-Za-z0-9+#])", "i"), canon })
+    }
+  }
+  return out.sort((a, b) => b.re.source.length - a.re.source.length)
+})()
+const catOf = (s: string): Category => { try { return categoryOf(s) } catch { return "domain" } }
+
+/** Detect ontology skills present in free text → canonical skill → first evidence line. */
+function detectSkills(text: string): Map<string, string> {
+  const found = new Map<string, string>()
+  for (const line of text.split("\n")) {
+    const l = line.trim()
+    if (l.length < 2 || l.length > 400) continue
+    for (const { re, canon } of SKILL_MATCHERS) { if (!found.has(canon) && re.test(l)) found.set(canon, l.slice(0, 160)) }
+  }
+  return found
 }
 
 const EMAIL_RE = /[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i
@@ -50,7 +82,7 @@ function normLink(u: string): string { return u.replace(/^https?:\/\//i, "").rep
 export function parseResume(raw: string): ParsedResume {
   const text = (raw || "").replace(/\r\n?/g, "\n")
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean)
-  const out: ParsedResume = { links: {}, skills: [], experience: [], education: [], confidence: 0, fieldsFound: [] }
+  const out: ParsedResume = { links: {}, skills: [], skillsDetailed: [], experience: [], education: [], confidence: 0, fieldsFound: [] }
 
   // --- contact ---
   const email = text.match(EMAIL_RE)?.[0]
@@ -68,7 +100,15 @@ export function parseResume(raw: string): ParsedResume {
     if (/linkedin\.com\/(in|pub)\//.test(l) && !out.links.linkedin) out.links.linkedin = "https://" + normLink(u)
     else if (/github\.com\//.test(l) && !/github\.io/.test(l) && !out.links.github) out.links.github = "https://" + normLink(u)
     else if (/(twitter\.com|x\.com)\//.test(l) && !out.links.twitter) out.links.twitter = "https://" + normLink(u)
-    else if (!/(linkedin|github|twitter|x\.com|gmail|yahoo|outlook|hotmail|example)\./.test(l) && !l.includes("@") && !out.links.website) out.links.website = "https://" + normLink(u)
+    else if (!out.links.website) {
+      // Real website only: a multi-char first label, a plausible alphabetic TLD, not
+      // a provider/handle and not a degree token like "B.Tech" (tech is a real TLD).
+      const host = normLink(u).split("/")[0]
+      const parts = host.split(".")
+      const label = parts[0] || "", tld = parts[parts.length - 1] || ""
+      const bad = /(linkedin|github|twitter|x\.com|gmail|yahoo|outlook|hotmail|example)\./.test(l) || l.includes("@")
+      if (!bad && label.length >= 2 && /^[a-z]{2,24}$/.test(tld) && !DEGREE_RE.test(host)) out.links.website = "https://" + normLink(u)
+    }
   }
 
   // --- phone (avoid matching inside a date range or a year list) ---
@@ -101,12 +141,28 @@ export function parseResume(raw: string): ParsedResume {
   // --- summary ---
   if (sections.summary?.length) out.summary = clean(sections.summary.join(" ")).slice(0, 600)
 
-  // --- skills ---
+  // --- skills (ontology-normalized; explicit / demonstrated / inferred) ---
+  const explicit = new Set<string>()
   if (sections.skills?.length) {
     const toks = sections.skills.join("\n").split(/[,•·|/\n;]+|\s{2,}/).map((s) => clean(s.replace(/^[-*]\s*/, "")))
       .filter((s) => s && s.length >= 2 && s.length <= 32 && !/^\d+$/.test(s) && s.split(" ").length <= 4)
-    out.skills = cap(Array.from(new Set(toks)), 40)
+    for (const t of toks) { const c = canonical(t); explicit.add(c || t) }
   }
+  // Demonstrated: ontology skills actually mentioned in experience / projects / summary.
+  const demoText = [
+    ...(sections.experience || []), ...(sections.projects || []), ...(sections.summary || []),
+    ...Object.entries(sections).filter(([k]) => k.startsWith("_other")).flatMap(([, v]) => v),
+  ].join("\n")
+  const demo = detectSkills(demoText)
+  const detailed: ParsedSkill[] = []
+  const flat = new Set<string>()
+  for (const s of explicit) { detailed.push({ skill: s, status: "explicit", category: catOf(s), evidence: demo.get(s), section: "skills" }); flat.add(s) }
+  for (const [s, ev] of demo) { if (flat.has(s)) continue; detailed.push({ skill: s, status: "demonstrated", category: catOf(s), evidence: ev, section: "experience" }); flat.add(s) }
+  // Inferred (implied, bounded 1 hop) — surfaced as suggestions, NOT auto-added to the profile.
+  const implied = new Set<string>()
+  for (const s of flat) for (const imp of (IMPLY[s] || [])) if (!flat.has(imp) && !implied.has(imp)) { implied.add(imp); detailed.push({ skill: imp, status: "inferred", category: catOf(imp), section: "implied" }) }
+  out.skills = cap(Array.from(flat), 60)
+  out.skillsDetailed = detailed.slice(0, 120)
 
   // --- experience (best-effort: date-range lines anchor entries) ---
   const expLines = sections.experience || []
