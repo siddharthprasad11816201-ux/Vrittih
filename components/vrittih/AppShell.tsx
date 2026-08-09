@@ -71,6 +71,7 @@ function buildNav(caps: Set<string>): Section[] {
     ops.push({ href: "/marketplace", label: "Marketplace", icon: <IconStar size={18} /> })   // Phase 11 AI Marketplace
     ops.push({ href: "/automation", label: "Automation", icon: <IconZap size={18} /> })       // Phase 13 Automation
     ops.push({ href: "/twin", label: "Digital Twin", icon: <IconActivity size={18} /> })       // Phase 14 Digital Twin
+    ops.push({ href: "/autonomy", label: "Autonomous AI", icon: <IconShield size={18} /> })    // Phase 15 Autonomous AI
     if (ops.length) sections.push({ title: "Operations", items: ops })
     const comms: Item[] = [{ href: "/messages", label: "Messages", icon: <IconMessage size={18} /> }]
     // Email (Mail) and the built-in video-call (Interviews) are hidden for all tiers for
@@ -114,6 +115,7 @@ function buildNav(caps: Set<string>): Section[] {
       { href: "/marketplace", label: "Marketplace", icon: <IconStar size={18} /> }, // Phase 11 AI Marketplace
       { href: "/automation", label: "Automation", icon: <IconZap size={18} /> }, // Phase 13 Automation
       { href: "/twin", label: "Digital Twin", icon: <IconActivity size={18} /> }, // Phase 14 Digital Twin
+      { href: "/autonomy", label: "Autonomous AI", icon: <IconShield size={18} /> }, // Phase 15 Autonomous AI
       { href: "/tools", label: "Tools", icon: <IconZap size={18} /> },
     ] })
   }

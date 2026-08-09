@@ -2713,6 +2713,23 @@ model TwinScenario {
 }
 
 // ============================================================================
+// Phase 15 — Autonomous Enterprise AI: a goal is planned into an ordered step
+// sequence (in-house STRIPS planner), executed through the AIOS gateway with
+// human approval gating for sensitive steps. Explainable + audited.
+// ============================================================================
+model AutonomousPlan {
+  id        String   @id @default(cuid())
+  ownerId   String
+  goalKey   String
+  goal      String
+  status    String   @default("planning")  // planning|running|awaiting_approval|done|failed
+  steps     String   @default("[]")         // JSON PlanStepState[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  @@index([ownerId, status])
+}
+
+// ============================================================================
 // Managed Placement (the core business): employers state a requirement, Vrittih's
 // HR team fulfils it from the candidate pool with AI (EAIL brain); candidates ask
 // to be placed (intern/full-time/contract) and HR works it end-to-end.

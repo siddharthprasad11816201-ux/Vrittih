@@ -32,7 +32,7 @@ See [PLATFORM_CONSTITUTION.md](PLATFORM_CONSTITUTION.md). In short: one unified 
 | 12 | Analytics & BI | Dashboards, KPIs, forecasting (hiring velocity), decision intelligence (/executive) — real metrics, honest confidence | ✅ | 100 |
 | 13 | Automation Platform | Rules engine (trigger→conditions→action) over the AIOS event bus, audited; notify / run-capability / webhook actions | ✅ | 100 |
 | 14 | Digital Twin | Org + project twins computed from real data + pure what-if simulators (headcount/budget, ETA), saved scenarios | ✅ | 100 |
-| 15 | Autonomous Enterprise AI | Autonomous planning, cross-platform intelligence, explainable AI | ⬜ | 0 |
+| 15 | Autonomous Enterprise AI | Goal → in-house STRIPS plan → gateway-executed steps (audited) with human-approval gates; cross-domain, explainable | ✅ | 100 |
 | 16 | Global Platform & Ecosystem | API/developer platform, plugin framework, white-label, multi-tenancy | ⬜ (partial: partner/white-label shipped) | 20 |
 
 **Current phase:** EAIL — rebuild AI capabilities to expert grade (per the AI Quality Recovery mandate). New business-module expansion (Phases 9–16) is intentionally paused until copilots pass the expert bar, then they are built on top of the brain.

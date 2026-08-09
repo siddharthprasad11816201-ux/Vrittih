@@ -2,6 +2,15 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (j) — Phase 15: Autonomous Enterprise AI
+- **Autonomous planning shipped** — a goal becomes an ordered, explainable plan that executes through the AIOS gateway with human-in-the-loop approval. Reuses the existing in-house STRIPS planner (`lib/aios/plan`) — goals modelled as facts, capabilities as actions — no new planning math.
+  - **Plan:** each domain (workforce/finance/projects) follows assess (gather real evidence via its capability) → deliberate (reason over that evidence via the Enterprise Brain, fed the prior steps' explanations as context) → decide (human-approved action). The planner finds the minimal ordered sequence with real dependency edges.
+  - **Execute:** a resilient executor auto-runs capability steps through the gateway (authorized against the owner's own caps, audited with a runId, honest confidence), records denied steps as blocked and failures as errors WITHOUT aborting the plan, and PAUSES at every approval gate until the owner approves.
+  - **API:** `/api/autonomy` (plans + goal catalog + create), `/api/autonomy/[id]/run` (advance), `/api/autonomy/[id]/approve` (approve the gate + continue), `/api/autonomy/[id]` (delete) — all owner-scoped. **UI:** `/autonomy` — pick a goal, watch the step-by-step plan execute with per-step evidence/confidence/audited-run, approve gated steps. Nav wired.
+  - Fixed a real wiring bug found by the E2E: the executor imported the bare gateway (`@/lib/aios/execute`) so no capability providers were registered → now imports the index; and it passes a real `question` (+ prior-step context) to deliberate.
+  - **Verified:** 8/8 planner unit + 18/18 live E2E (plan → gateway execution audited → approval gate pauses → approve → done; deliberate returns honest confidence + explanation; ownership/validation guards). Build clean (152 pages).
+  - **Deploy note:** schema adds AutonomousPlan — run `prisma db push`/migrate on prod.
+
 ## 2026-08-09 (i) — Phase 14: Digital Twin
 - **Digital Twin shipped** — a live model of the organisation + projects computed from REAL data, with pure, honest what-if simulators. Reuses the existing planning primitives (`lib/planning/workforce`) and project forecaster (`lib/project/intelligence`) — no duplicated math.
   - **Org twin:** live snapshot (active headcount, by-department, annual attrition from exited rows, 12-mo hire rate, avg annual cost parsed from real CHF salaries). Simulation: month-by-month headcount = prev − attrition + hires over N months, with a reused `budgetProjection` (hiring cost + annualised payroll, FX-safe). Honest `costAssumed` flag when no salary data.
