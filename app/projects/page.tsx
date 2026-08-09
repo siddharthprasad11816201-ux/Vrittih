@@ -314,7 +314,7 @@ const S: Record<string, any> = {
   list: { display: "flex", flexDirection: "column", gap: 8, marginBottom: 10 },
   mRow: { display: "flex", alignItems: "center", gap: 10, fontSize: 13.5, background: "var(--v-surface-2)", borderRadius: 8, padding: "8px 12px" },
   mDot: { width: 9, height: 9, borderRadius: 999, flexShrink: 0 },
-  kanban: { display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 10 },
+  kanban: { display: "grid", gridTemplateColumns: "repeat(3,minmax(140px,1fr))", gap: 10, marginBottom: 10, overflowX: "auto" },
   kcol: { background: "var(--v-surface-2)", borderRadius: 12, padding: 10, minHeight: 80 },
   kcolHead: { fontSize: 12, fontWeight: 700, color: "var(--v-ink-2)", marginBottom: 8, display: "flex", justifyContent: "space-between" },
   kcount: { background: "var(--v-surface)", borderRadius: 999, padding: "0 7px", color: "var(--v-ink-3)" },
