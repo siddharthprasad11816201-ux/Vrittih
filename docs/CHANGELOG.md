@@ -2,6 +2,16 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (l) — Talent Intelligence §32: Interview Verification Intelligence
+- **Interview verification brief** for the recruiter/panel, built on the evidence layer. On the interview scorecard (`/interviews/[code]/evaluate`), a host or assessing panelist (never the candidate) now sees, for the linked candidate:
+  - **Strongest** — skills actually *demonstrated* in their experience;
+  - **Listed but not evidenced** — claimed skills with no supporting evidence, to probe;
+  - **Must-have gaps** — required role skills the candidate neither claims nor shows;
+  - **Honest risk signals** — e.g. many skills listed but few shown (possible keyword stuffing), or senior role with no leadership signal (flags for review, never an accusation);
+  - **Recommended verification questions** — evidence-probing (verify + depth), targeting claims rather than tricking the candidate.
+- In-house + deterministic (no LLM): `lib/talent/verifyIntel.ts` `verificationBrief()` reuses the skill taxonomy (canonical + category) and role requirements (`jobRequirements`); `GET /api/interviews/[id]/intel` is authz'd to `ASSESSING_ROLES`/host/admin and candidate-scoped via the linked application. Empty candidate → empty brief (no fabrication).
+- **Verified:** 11/11 units (strongest/unverified/gaps/risks/questions + canonicalization + no-fabrication). Build clean (152 pages). No schema change.
+
 ## 2026-08-09 (k) — Résumé & Talent Intelligence: robust extraction (fix) + skill ontology
 - **Fixed the /profile/edit résumé upload** ("Read the file but couldn't confidently find fields"). Root cause: the in-house PDF text engine read raw bytes from text operators but never applied each font's **/ToUnicode CMap**, so subsetted / CID (Type0) fonts — what most modern exporters (Word/Canva/LaTeX) use — decoded to glyph-id gibberish, so the parser found nothing. (The endpoint already never stored the PDF; it only extracts + returns fields to review — matching the requirement.)
   - **Rewrote `lib/career/parseDocument.ts` into a structure-aware PDF engine** (still in-house, Node built-ins only): indexes indirect objects **including PDF 1.5+ object streams**, links each page to its content + font resources, parses `/ToUnicode` CMaps (bfchar + both bfrange forms), and applies the right CMap per current font (`Tf`) when decoding `Tj`/`TJ` — plus TJ-kerning spacing so words don't run together. Falls back to the lenient scanner for PDFs it can't structure; standard-encoded fonts and DOCX/HTML/TXT paths unchanged.

@@ -21,6 +21,7 @@ export default function EvaluatePage() {
   const [saving, setSaving] = useState(false)
   const [err, setErr] = useState("")
   const [denied, setDenied] = useState(false)
+  const [intel, setIntel] = useState<any>(null)   // §32 candidate verification intelligence
 
   async function load() {
     setLoading(true)
@@ -33,7 +34,10 @@ export default function EvaluatePage() {
       if (d.myScorecard) { setRatings(d.myScorecard.ratings || {}); setRec(d.myScorecard.recommendation || ""); setNotes(d.myScorecard.notes || "") }
     } catch {} finally { setLoading(false) }
   }
-  useEffect(() => { load() }, [code])
+  useEffect(() => {
+    load()
+    fetch(`/api/interviews/${code}/intel`).then(r => (r.ok ? r.json() : null)).then(d => setIntel(d)).catch(() => {})
+  }, [code])
 
   async function submit() {
     if (!rec) { setErr("Choose an overall recommendation."); return }
@@ -60,6 +64,19 @@ export default function EvaluatePage() {
         <h1 style={S.h1}>Interview scorecard</h1>
         <p style={S.sub}>Rate each competency on the evidence you observed, then give an overall recommendation. Your ratings combine into an explainable panel decision.</p>
         {err && <div style={S.err}>{err}</div>}
+
+        {intel?.available && (
+          <div style={S.card}>
+            <div style={S.cardH}>Candidate intelligence <span style={S.count}>evidence-based</span></div>
+            <p style={S.sub2}>For {intel.jobTitle} · {intel.candidateSkills} skills on file · {intel.seniority} level. Use these to <b>verify</b> claims — never to trick.</p>
+            {intel.strongest?.length ? <div style={S.iSec}><div style={S.iLbl}>Strongest — demonstrated in their experience</div><div style={S.iChips}>{intel.strongest.map((s: string) => <span key={s} style={S.iChipGood}>{s}</span>)}</div></div> : null}
+            {intel.unverified?.length ? <div style={S.iSec}><div style={S.iLbl}>Listed but not evidenced — probe these</div><div style={S.iChips}>{intel.unverified.map((u: any) => <span key={u.skill} style={S.iChipWarn} title={u.reason}>{u.skill}</span>)}</div></div> : null}
+            {intel.gaps?.length ? <div style={S.iSec}><div style={S.iLbl}>Must-have gaps for this role</div><div style={S.iChips}>{intel.gaps.map((g: string) => <span key={g} style={S.iChipGap}>{g}</span>)}</div></div> : null}
+            {intel.risks?.length ? <div style={S.iSec}>{intel.risks.map((r: string, i: number) => <div key={i} style={S.iRisk}><IconAlert size={13} /> <span>{r}</span></div>)}</div> : null}
+            {intel.questions?.length ? <div style={S.iSec}><div style={S.iLbl}>Recommended verification questions</div>{intel.questions.map((q: any, i: number) => <div key={i} style={S.iQ}><span style={S.iQTag}>{q.purpose}</span> {q.question}</div>)}</div> : null}
+          </div>
+        )}
+        {intel && !intel.available && intel.reason ? <div style={S.card}><div style={S.cardH}>Candidate intelligence</div><p style={S.sub2}>{intel.reason}</p></div> : null}
 
         <div style={S.card}>
           <div style={S.cardH}>Your evaluation</div>
@@ -160,4 +177,13 @@ const S: Record<string, any> = {
   raterName: { color: "var(--v-ink-2)" },
   raterRec: { fontWeight: 600, color: "var(--v-ink)", textTransform: "capitalize" },
   back: { display: "inline-flex", alignItems: "center", gap: 6, background: "none", border: "none", color: "var(--v-accent)", fontSize: 13, fontWeight: 600, cursor: "pointer", marginTop: 4 },
+  iSec: { marginTop: 12 },
+  iLbl: { fontSize: 11.5, fontWeight: 700, color: "var(--v-ink-3)", textTransform: "uppercase" as const, letterSpacing: ".04em", marginBottom: 7 },
+  iChips: { display: "flex", flexWrap: "wrap" as const, gap: 6 },
+  iChipGood: { background: "#DCFCE7", color: "#047857", borderRadius: 999, padding: "3px 10px", fontSize: 12.5, fontWeight: 600 },
+  iChipWarn: { background: "#FEF3C7", color: "#B45309", borderRadius: 999, padding: "3px 10px", fontSize: 12.5, fontWeight: 600, cursor: "help" },
+  iChipGap: { background: "#FEE2E2", color: "#B91C1C", borderRadius: 999, padding: "3px 10px", fontSize: 12.5, fontWeight: 600 },
+  iRisk: { display: "flex", gap: 8, alignItems: "flex-start", fontSize: 12.5, color: "var(--v-ink-2)", lineHeight: 1.5, padding: "9px 11px", border: "1px solid var(--v-amber)", borderRadius: 8, background: "var(--v-surface-2)", marginBottom: 6 },
+  iQ: { fontSize: 13, color: "var(--v-ink)", lineHeight: 1.55, padding: "8px 0", borderBottom: "1px solid var(--v-line-2)" },
+  iQTag: { fontSize: 10, fontWeight: 700, textTransform: "uppercase" as const, color: "var(--v-accent)", background: "var(--v-accent-soft)", borderRadius: 5, padding: "1px 6px", marginRight: 7 },
 }
