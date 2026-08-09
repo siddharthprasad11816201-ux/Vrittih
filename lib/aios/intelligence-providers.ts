@@ -89,9 +89,21 @@ registerProvider("candidate.opportunities", async (ctx) => {
   const u = await prisma.user.findUnique({ where: { id: uid }, include: { skills: { include: { skill: true } }, experience: true } })
   if (!u) return { output: { candidate: null, opportunities: [], summary: "No profile found." }, explanation: "No candidate profile.", confidence: 0, modelId: "enterprise-brain-v1" }
   const comps = await prisma.userCompetency.findMany({ where: { userId: uid }, select: { competencyKey: true, proficiency: true } }).catch(() => [] as any[])
+
+  // The candidate's own placement request (from /get-placed) is first-class intent: the
+  // skills/target-roles/type they explicitly asked to be placed for. UNION those skills with
+  // the profile's so an empty-profile candidate still matches, and use the target roles/type
+  // to focus (boost) the openings that fit what they actually want.
+  const pr = await prisma.placementRequest.findFirst({ where: { userId: uid, status: "OPEN" }, orderBy: { createdAt: "desc" } }).catch(() => null)
+  const prSkills = pr ? safeArr(pr.skills) : []
+  const targetRoles = (pr ? safeArr(pr.targetRoles) : []).map(r => r.toLowerCase().trim()).filter(Boolean)
+  const desiredType = pr?.desiredType || ""
+  const profileSkills = (u.skills || []).map((s: any) => s.skill?.name).filter(Boolean)
+  const seen = new Set<string>(); const skills: string[] = []
+  for (const s of [...profileSkills, ...prSkills]) { const k = String(s).toLowerCase().trim(); if (k && !seen.has(k)) { seen.add(k); skills.push(String(s)) } }
   const profile: CandidateProfile = {
     id: uid, name: u.name || u.email || "You", headline: (u as any).headline || undefined,
-    skills: (u.skills || []).map((s: any) => s.skill?.name).filter(Boolean),
+    skills,
     years: yearsFromExperience((u as any).experience || []),
     competencies: (comps as any[]).map(c => ({ key: c.competencyKey, proficiency: c.proficiency })), remoteOk: true,
   }
@@ -100,10 +112,19 @@ registerProvider("candidate.opportunities", async (ctx) => {
     const spec: RequestSpec = { title: r.title, roleType: r.roleType, skills: safeArr(r.skills), minYears: r.minYears, seniority: r.seniority, remote: r.remote, location: r.location, budget: r.budget, currency: r.currency }
     const d = deliberate(buildSuitabilityBrief(profile, spec))
     const ov = skillOverlap(profile.skills, spec.skills)
-    return { requestId: r.id, title: r.title, roleType: r.roleType, remote: r.remote, verdict: d.decision.verdict, confidence: d.confidence, matched: ov.matched, missing: ov.missing, coverage: ov.coverage, why: d.explanation }
-  }).filter(x => x.verdict !== "refuted").sort((a, b) => (verdictRank(b.verdict) - verdictRank(a.verdict)) || b.confidence - a.confidence)
+    const t = r.title.toLowerCase()
+    const roleMatch = targetRoles.some(rn => t.includes(rn) || rn.includes(t))
+    const typeMatch = !!desiredType && r.roleType === desiredType
+    return { requestId: r.id, title: r.title, roleType: r.roleType, remote: r.remote, verdict: d.decision.verdict, confidence: d.confidence, matched: ov.matched, missing: ov.missing, coverage: ov.coverage, why: d.explanation, roleMatch, typeMatch }
+  }).filter(x => x.verdict !== "refuted").sort((a, b) =>
+    (verdictRank(b.verdict) - verdictRank(a.verdict)) ||
+    (Number(b.roleMatch) - Number(a.roleMatch)) ||
+    (Number(b.typeMatch) - Number(a.typeMatch)) ||
+    (b.confidence - a.confidence))
   const strong = ranked.filter(x => x.verdict === "supported").length
-  const summary = ranked.length ? `${ranked.length} matching opening(s); ${strong} strong fit(s) for your profile.` : "No open requirements match your profile yet — add more skills/experience to improve matches."
+  const wanted = ranked.filter(x => x.roleMatch || x.typeMatch).length
+  const focus = pr ? (wanted ? ` ${wanted} match your target ${desiredType ? desiredType.toLowerCase() + " " : ""}role(s).` : "") : ""
+  const summary = ranked.length ? `${ranked.length} matching opening(s); ${strong} strong fit(s) for your profile.${focus}` : "No open requirements match your profile yet — add more skills/experience to improve matches."
   return { output: { candidate: { name: profile.name, skills: profile.skills, years: profile.years }, opportunities: ranked.slice(0, 25), summary }, explanation: summary, confidence: ranked[0]?.confidence || 0, modelId: "enterprise-brain-v1" }
 })
 

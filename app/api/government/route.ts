@@ -54,5 +54,13 @@ export async function POST(req: NextRequest) {
     await prisma.citizenRequest.update({ where: { id }, data: { status, resolvedAt: (status === "RESOLVED" || status === "REJECTED") ? new Date() : null } })
     return NextResponse.json({ success: true })
   }
+  if (action === "update-scheme") {
+    const id = str(b.schemeId, 40); const status = oneOf(b.status, SCHEME_STATUSES, "")
+    if (!status) return NextResponse.json({ error: "Invalid status." }, { status: 400 })
+    const row = await prisma.scheme.findUnique({ where: { id }, select: { agencyId: true } })
+    if (!row || row.agencyId !== agencyId) return NextResponse.json({ error: "Not found" }, { status: 404 })
+    await prisma.scheme.update({ where: { id }, data: { status } })
+    return NextResponse.json({ success: true })
+  }
   return NextResponse.json({ error: "Unknown action." }, { status: 400 })
 }

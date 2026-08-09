@@ -19,8 +19,9 @@ export async function GET(req: NextRequest) {
       prisma.patient.findMany({ where: { facilityId: sel }, orderBy: { createdAt: "desc" }, take: 1000 }),
       prisma.appointment.findMany({ where: { facilityId: sel }, orderBy: { scheduledAt: "desc" }, take: 1000 }),
     ])
-    const recSet = new Set((await prisma.medicalRecord.findMany({ where: { facilityId: sel }, select: { patientId: true }, take: 20000 })).map(r => r.patientId))
-    detail = { facilityId: sel, patients, appointments: appts, stats: { appointments: appointmentStats(appts), population: populationHealth(patients), recordsCoverage: patients.length ? Math.round((recSet.size / patients.length) * 100) : 0 } }
+    const records = await prisma.medicalRecord.findMany({ where: { facilityId: sel }, orderBy: { createdAt: "desc" }, take: 20000 })
+    const recSet = new Set(records.map(r => r.patientId))
+    detail = { facilityId: sel, patients, appointments: appts, records, stats: { appointments: appointmentStats(appts), population: populationHealth(patients), recordsCoverage: patients.length ? Math.round((recSet.size / patients.length) * 100) : 0 } }
   }
   return NextResponse.json({ facilities, selected: sel, detail, meta: { appointmentStatuses: APPOINTMENT_STATUSES, recordKinds: RECORD_KINDS } })
 }

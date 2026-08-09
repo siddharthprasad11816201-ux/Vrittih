@@ -44,6 +44,11 @@ function InterviewsInner() {
     const sc = STATUS_COLORS[interview.status] || STATUS_COLORS.SCHEDULED
     const isHost = interview.hostId === me?.id
     const isNow = Math.abs(new Date(interview.scheduledAt).getTime() - now.getTime()) < 30*60*1000
+    // Assessing panelists (host, panelist, interviewer) can open the scorecard — the
+    // same roles the scorecard API authorises. Surfaced once there's a session to score.
+    const myRole = isHost ? "HOST" : (interview.participants || []).find((pp: any) => pp.user?.id === me?.id)?.role || "OBSERVER"
+    const canEvaluate = ["HOST","PANELIST","INTERVIEWER"].includes(String(myRole).toUpperCase())
+    const showScorecard = canEvaluate && (interview.status === "LIVE" || interview.status === "COMPLETED")
     return (
       <div style={S.card}>
         <div style={S.cardTop}>
@@ -63,6 +68,9 @@ function InterviewsInner() {
           <Link href={`/interviews/${interview.roomCode}`} style={{...S.joinBtn,...(!isNow&&interview.status==="COMPLETED"?S.joinBtnDisabled:{})}}>
             {interview.status==="COMPLETED"?"View room":"Join room"}
           </Link>
+          {showScorecard && (
+            <Link href={`/interviews/${interview.roomCode}/evaluate`} style={S.calBtn}>Scorecard</Link>
+          )}
           {interview.status !== "COMPLETED" && interview.status !== "CANCELLED" && (() => {
             const ev = interviewToEvent(interview, typeof window !== "undefined" ? window.location.origin : "")
             return (

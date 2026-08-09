@@ -19,11 +19,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     let earnedPoints = 0
     const answerRecords: any[] = []
     for (const q of test.questions) {
-      totalPoints += q.points
       const userAnswer = answers[q.id]
+      const autoScorable = q.correctAnswer != null && String(q.correctAnswer).trim() !== ""
+      if (!autoScorable) {
+        // The creator left the expected answer blank ("Leave blank for manual
+        // review"): this SHORT/CODING question can't be auto-graded, so it must NOT
+        // count against the candidate. Keep it out of the auto-scored denominator
+        // and mark the answer pending review (correct: null), never wrong.
+        answerRecords.push({ attemptId, questionId: q.id, value: userAnswer?.toString() || "", correct: null, points: 0 })
+        continue
+      }
+      totalPoints += q.points
       let correct = false
       let pts = 0
-      if (q.correctAnswer && userAnswer) {
+      if (userAnswer) {
         correct = userAnswer.toString().trim().toLowerCase() === q.correctAnswer.toString().trim().toLowerCase()
         if (correct) { pts = q.points; earnedPoints += pts }
       }

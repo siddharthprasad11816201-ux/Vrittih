@@ -28,7 +28,9 @@ export async function GET(req: NextRequest) {
       return { id: s.id, title: s.title, description: s.description, size: s.size, group: s.group, data: null, unavailable: true }
     }
   }))
-  return NextResponse.json({ authenticated: true, widgets })
+  // Echo the persisted hidden set so the client can seed from the server (not just
+  // localStorage) — otherwise a reorder on a fresh device POSTs hidden:[] and wipes it.
+  return NextResponse.json({ authenticated: true, widgets, hidden: (layout?.hidden as string[]) || [] })
 }
 
 export async function POST(req: NextRequest) {

@@ -12,10 +12,13 @@ export default function PerformancePage() {
   const [busy, setBusy] = useState<string | null>(null); const [err, setErr] = useState("")
   const [ng, setNg] = useState({ title: "", period: "", krs: "" })
   const [rec, setRec] = useState({ to: "", message: "", badge: "" })
+  const [nr, setNr] = useState<{ subject: string; period: string; summary: string; ratings: { competencyKey: string; rating: number }[] }>({ subject: "", period: "", summary: "", ratings: [{ competencyKey: "", rating: 3 }] })
+  const [nsp, setNsp] = useState({ positionTitle: "", candidates: "", notes: "" })
 
   async function load() { try { const r = await fetch("/api/hrms/performance"); if (r.status === 401) { setState("denied"); return } const j = await r.json(); setD(j); setState("ok"); if (j.isManager) fetch("/api/hrms/org").then(x => { if (x.ok) x.json().then(setOrg).catch(() => {}) }).catch(() => {}) } catch { setState("denied") } }
   useEffect(() => { load() }, [])
   async function post(body: any) { setBusy("x"); setErr(""); try { const j = await fetch("/api/hrms/performance", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (j.error) setErr(j.error); await load(); return j } finally { setBusy(null) } }
+  async function postOrg(body: any) { setBusy("x"); setErr(""); try { const j = await fetch("/api/hrms/org", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (j.error) setErr(j.error); await load(); return j } finally { setBusy(null) } }
   async function createGoal() {
     if (!ng.title.trim()) { setErr("Goal title required."); return }
     const krs = ng.krs.split("\n").map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^(.*?)\s*:\s*(\d+)\s*\/\s*(\d+)/); return m ? { text: m[1], current: +m[2], target: +m[3] } : { text: l, current: 0, target: 1 } })
@@ -26,6 +29,18 @@ export default function PerformancePage() {
     await post({ action: "update-goal", id: goal.id, keyResults: krs })
   }
   async function recognize() { if (!rec.to.trim() || !rec.message.trim()) { setErr("Recipient + message required."); return } const j = await post({ action: "recognize", ...rec }); if (j?.success) setRec({ to: "", message: "", badge: "" }) }
+  const setRating = (i: number, key: "competencyKey" | "rating", val: any) => setNr(s => ({ ...s, ratings: s.ratings.map((r, j) => j === i ? { ...r, [key]: val } : r) }))
+  async function createReview() {
+    if (!nr.subject.trim()) { setErr("Subject email required."); return }
+    const ratings = nr.ratings.filter(r => r.competencyKey.trim()).map(r => ({ competencyKey: r.competencyKey.trim(), rating: r.rating }))
+    if (!ratings.length) { setErr("Add at least one competency rating."); return }
+    const j = await post({ action: "create-review", subject: nr.subject.trim(), period: nr.period, ratings, summary: nr.summary }); if (j?.success) setNr({ subject: "", period: "", summary: "", ratings: [{ competencyKey: "", rating: 3 }] })
+  }
+  async function createPlan() {
+    if (!nsp.positionTitle.trim()) { setErr("Position title required."); return }
+    const candidates = nsp.candidates.split("\n").map(l => l.trim()).filter(Boolean).map(l => { const m = l.match(/^(.*?)\s*:\s*(\w+)\s*$/); return m ? { name: m[1], readiness: m[2] } : { name: l, readiness: "developing" } })
+    const j = await postOrg({ positionTitle: nsp.positionTitle, candidates, notes: nsp.notes }); if (j?.success) setNsp({ positionTitle: "", candidates: "", notes: "" })
+  }
 
   if (state === "loading") return <AppShell title="Performance"><div style={S.page}><div style={S.empty}><p style={S.sub}>Loading…</p></div></div></AppShell>
   if (state === "denied") return <AppShell title="Performance"><div style={S.page}><div style={S.empty}><h1 style={S.h1}>Sign in</h1></div></div></AppShell>
@@ -67,6 +82,23 @@ export default function PerformancePage() {
 
         {tab === "reviews" && (
           <div>
+            {d?.isManager && (
+              <div style={S.card}>
+                <div style={S.cardH}>Write a review</div>
+                <div style={S.grid2}><input style={S.input} placeholder="Team member email" value={nr.subject} onChange={e => setNr({ ...nr, subject: e.target.value })} /><input style={S.input} placeholder="Period (e.g. H1 2026)" value={nr.period} onChange={e => setNr({ ...nr, period: e.target.value })} /></div>
+                {nr.ratings.map((r, i) => (
+                  <div key={i} style={S.rateRow}>
+                    <input style={{ ...S.input, flex: 1 }} placeholder="Competency (e.g. leadership)" value={r.competencyKey} onChange={e => setRating(i, "competencyKey", e.target.value)} />
+                    <div style={S.rate}>{[1, 2, 3, 4, 5].map(n => <button key={n} type="button" style={{ ...S.ratePick, ...(r.rating === n ? S.ratePickOn : {}) }} onClick={() => setRating(i, "rating", n)}>{n}</button>)}</div>
+                    {nr.ratings.length > 1 && <button type="button" style={S.krBtn} onClick={() => setNr(s => ({ ...s, ratings: s.ratings.filter((_, j) => j !== i) }))}>−</button>}
+                  </div>
+                ))}
+                <div style={{ marginTop: 8 }}><button type="button" style={S.ghost} onClick={() => setNr(s => ({ ...s, ratings: [...s.ratings, { competencyKey: "", rating: 3 }] }))}>+ Add competency</button></div>
+                <textarea style={{ ...S.input, marginTop: 8 }} rows={3} placeholder="Summary" value={nr.summary} onChange={e => setNr({ ...nr, summary: e.target.value })} />
+                <button style={{ ...S.cta, marginTop: 10 }} onClick={createReview} disabled={busy === "x"}>Create draft</button>
+                <p style={{ ...S.sub, marginTop: 8 }}>Saved as a draft — submit it below to share with your team member.</p>
+              </div>
+            )}
             {d?.isManager && (d?.draftReviews || []).length > 0 && (<><div style={S.sec}>Draft reviews (submit to share)</div>{d.draftReviews.map((r: any) => (<div key={r.id} style={S.appRow}><span style={{ flex: 1 }}>{r.subject} · {r.period || "—"} · {r.ratings.length} ratings</span><button style={S.mini} onClick={() => post({ action: "submit-review", id: r.id })}>Submit</button></div>))}</>)}
             <div style={S.sec}>My reviews</div>
             <div style={S.list}>
@@ -104,6 +136,26 @@ export default function PerformancePage() {
             </div>
             {(d?.oneOnOnes || []).length > 0 && (<><div style={S.sec}>1:1s</div>{d.oneOnOnes.map((o: any) => (<div key={o.id} style={S.appRow}><span style={{ flex: 1 }}>{o.asManager ? "With" : "From"} {o.with} {o.scheduledAt ? `· ${new Date(o.scheduledAt).toLocaleDateString()}` : ""}</span></div>))}</>)}
             {org && (<><div style={S.sec}>Org chart</div><div style={S.card}>{(org.employees || []).length === 0 ? <p style={S.sub}>No employees yet.</p> : org.employees.map((e: any) => (<div key={e.id} style={S.orgRow}><span style={{ paddingLeft: e.managerId ? 18 : 0 }}>{e.name} <em style={S.gs}>{e.designation || e.department || ""}</em></span><span style={S.gs}>{e.status}</span></div>))}</div></>)}
+            {org && (<>
+              <div style={S.sec}>Succession plans</div>
+              <div style={S.card}>
+                <div style={S.cardH}>New succession plan</div>
+                <input style={S.input} placeholder="Position title (e.g. Head of Engineering)" value={nsp.positionTitle} onChange={e => setNsp({ ...nsp, positionTitle: e.target.value })} />
+                <textarea style={{ ...S.input, marginTop: 8 }} rows={3} placeholder={"Candidates, one per line:\nAsha Rao: ready\nMarco Bianchi: developing"} value={nsp.candidates} onChange={e => setNsp({ ...nsp, candidates: e.target.value })} />
+                <textarea style={{ ...S.input, marginTop: 8 }} rows={2} placeholder="Notes" value={nsp.notes} onChange={e => setNsp({ ...nsp, notes: e.target.value })} />
+                <button style={{ ...S.cta, marginTop: 10 }} onClick={createPlan} disabled={busy === "x"}>Create plan</button>
+              </div>
+              <div style={S.list}>
+                {(org.succession || []).map((s: any) => (
+                  <div key={s.id} style={S.card}>
+                    <div style={S.rowTop}><div style={S.gt}>{s.positionTitle}</div><span style={S.gs}>{s.candidates.length} candidate{s.candidates.length === 1 ? "" : "s"}</span></div>
+                    {s.notes && <p style={S.sum}>{s.notes}</p>}
+                    <div style={S.chips}>{(s.candidates || []).map((c: any, i: number) => <span key={i} style={S.chip}>{c.name} · {c.readiness}</span>)}</div>
+                  </div>
+                ))}
+                {(org.succession || []).length === 0 && <div style={S.empty}><p style={S.sub}>No succession plans yet.</p></div>}
+              </div>
+            </>)}
           </div>
         )}
       </div>
@@ -134,6 +186,10 @@ const S: Record<string, any> = {
   kr: { display: "flex", alignItems: "center", gap: 8, fontSize: 13, padding: "4px 0", color: "var(--v-ink)" },
   krN: { color: "var(--v-ink-2)", fontVariantNumeric: "tabular-nums" },
   krBtn: { width: 26, height: 26, borderRadius: 7, border: "1px solid var(--v-line)", background: "var(--v-surface)", color: "var(--v-ink)", cursor: "pointer", fontWeight: 700 },
+  rateRow: { display: "flex", alignItems: "center", gap: 8, marginTop: 8, flexWrap: "wrap" },
+  rate: { display: "flex", gap: 4 },
+  ratePick: { width: 30, height: 30, borderRadius: 7, border: "1px solid var(--v-line)", background: "var(--v-surface)", color: "var(--v-ink-2)", cursor: "pointer", fontWeight: 700, fontSize: 13 },
+  ratePickOn: { background: "var(--v-accent)", color: "#fff", borderColor: "var(--v-accent)" },
   band: { fontSize: 12.5, fontWeight: 700 },
   sum: { fontSize: 13, color: "var(--v-ink-2)", lineHeight: 1.5, margin: "8px 0" },
   chips: { display: "flex", flexWrap: "wrap", gap: 5, marginTop: 6 },

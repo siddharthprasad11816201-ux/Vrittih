@@ -385,14 +385,37 @@ function Privacy() {
 }
 
 function Preferences() {
+  // Appearance — a real theme switch. The CSS token system flips on
+  // :root[data-theme]; "system" clears the attribute so the OS preference wins.
+  const [theme, setTheme] = useState<"system" | "light" | "dark">("system")
+  useEffect(() => {
+    const saved = localStorage.getItem("vrittih-theme")
+    if (saved === "light" || saved === "dark") { setTheme(saved); document.documentElement.setAttribute("data-theme", saved) }
+  }, [])
+  const applyTheme = (t: "system" | "light" | "dark") => {
+    setTheme(t)
+    const root = document.documentElement
+    if (t === "system") { root.removeAttribute("data-theme"); localStorage.removeItem("vrittih-theme") }
+    else { root.setAttribute("data-theme", t); localStorage.setItem("vrittih-theme", t) }
+  }
+  const themes: { key: "system" | "light" | "dark"; label: string }[] = [
+    { key: "system", label: "System" }, { key: "light", label: "Light" }, { key: "dark", label: "Dark" },
+  ]
   return (
-    <Card title="Preferences" desc="Notifications, appearance and regional settings">
+    <Card title="Preferences" desc="Notifications and appearance">
       <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
         <PrefRow icon={<IconBell size={17} />} label="Notifications" sub="Email and in-app alerts" href="/notifications" />
-        <PrefRow icon={<IconGlobe size={17} />} label="Language & region" sub="Display language and locale" />
-        <PrefRow icon={<IconSettings size={17} />} label="Appearance" sub="Theme and density" />
+        <div style={S.prefRow}>
+          <span style={{ display: "inline-flex", color: "#6495ED" }}><IconSettings size={17} /></span>
+          <div style={{ flex: 1 }}><div style={S.secLabel}>Appearance</div><div style={S.secSub}>Light, dark, or match your system</div></div>
+          <div style={S.segment} role="group" aria-label="Appearance">
+            {themes.map((t) => (
+              <button key={t.key} onClick={() => applyTheme(t.key)} aria-pressed={theme === t.key} style={{ ...S.segBtn, ...(theme === t.key ? S.segBtnOn : {}) }}>{t.label}</button>
+            ))}
+          </div>
+        </div>
       </div>
-      <p style={{ ...S.note, marginTop: 12, marginBottom: 0 }}>More granular preference controls are being expanded across the platform.</p>
+      <p style={{ ...S.note, marginTop: 12, marginBottom: 0 }}>Your appearance choice applies across Vrittih and is remembered on this device.</p>
     </Card>
   )
 }
@@ -513,6 +536,9 @@ const S: Record<string, any> = {
   logMeta: { font: "400 11.5px var(--font-sans)", color: "#94A3B8", flex: "none" },
 
   prefRow: { display: "flex", alignItems: "center", gap: 12, background: "#F7F9FC", border: "1px solid #E9EDF2", borderRadius: 10, padding: "10px 12px", textDecoration: "none" },
+  segment: { display: "inline-flex", background: "#EEF2F7", border: "1px solid #E1E7EF", borderRadius: 9, padding: 2, gap: 2, flex: "none" },
+  segBtn: { border: "none", background: "none", borderRadius: 7, padding: "5px 11px", font: "600 12px var(--font-sans)", color: "#64748B", cursor: "pointer" },
+  segBtnOn: { background: "#fff", color: "#2F6BE0", boxShadow: "0 1px 2px rgba(16,24,40,.08)" },
   note: { font: "400 13px/1.6 var(--font-sans)", color: "#64748B", margin: "0 0 12px" },
 
   fg: { display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 },

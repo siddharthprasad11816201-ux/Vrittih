@@ -44,6 +44,7 @@ export default function TestsPage() {
             <div style={S.grid}>
               {tests.map(t => {
                 const meta = TYPE_META[t.type] || { label:t.type,color:"#6495ED",bg:"#EAF1FE",icon:<IconFileText size={20} /> }
+                const isOwner = me && (me.id === t.createdBy?.id || ["ADMIN","SUPER_ADMIN"].includes(me.role))
                 return (
                   <div key={t.id} style={S.card}>
                     <div style={S.cardTop}>
@@ -59,6 +60,7 @@ export default function TestsPage() {
                       {t.passingScore > 0 && <span style={{display:"inline-flex",alignItems:"center",gap:4}}><IconCheck size={12} /> Pass: {t.passingScore}%</span>}
                     </div>
                     <Link href={`/tests/${t.id}`} style={S.startBtn}>Start assessment</Link>
+                    {isOwner && <Link href={`/tests/${t.id}/results`} style={S.resultsBtn}>View results</Link>}
                   </div>
                 )
               })}
@@ -92,5 +94,6 @@ const S: Record<string,any> = {
   cardDesc:{ fontSize:13,color:"#7B7B8F",lineHeight:1.6 },
   cardMeta:{ display:"flex",gap:12,fontSize:12,color:"#9ca3af",flexWrap:"wrap" as const },
   startBtn:{ background:"#6495ED",color:"#fff",padding:"10px 0",borderRadius:9,fontSize:14,fontWeight:500,textDecoration:"none",textAlign:"center" as const,marginTop:4 },
+  resultsBtn:{ background:"#fff",color:"#6495ED",border:"1px solid #6495ED",padding:"9px 0",borderRadius:9,fontSize:14,fontWeight:500,textDecoration:"none",textAlign:"center" as const },
   empty:{ display:"flex",flexDirection:"column" as const,alignItems:"center",justifyContent:"center",padding:"4rem",background:"#fff",borderRadius:14,border:"0.5px solid rgba(0,0,0,.07)",textAlign:"center" as const },
 }

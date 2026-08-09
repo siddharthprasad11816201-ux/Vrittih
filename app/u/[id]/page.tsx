@@ -1,6 +1,7 @@
 "use client"
 import { useEffect, useState } from "react"
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import AppShell from "@/components/vrittih/AppShell"
 import AstroCard from "@/components/vrittih/AstroCard"
 import {
@@ -12,9 +13,12 @@ const ACCENT = "#6495ED"
 
 export default function PublicProfilePage({ params }: { params: { id: string } }) {
   const { id } = params
+  const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [isSelf, setIsSelf] = useState(false)
   const [state, setState] = useState<"loading" | "ok" | "gone">("loading")
+  const [msgBusy, setMsgBusy] = useState(false)
+  const [conn, setConn] = useState<"connect" | "sending" | "pending" | "connected">("connect")
 
   useEffect(() => {
     fetch(`/api/users/${id}`).then(r => r.json()).then(d => {
@@ -22,6 +26,36 @@ export default function PublicProfilePage({ params }: { params: { id: string } }
       setUser(d.user); setIsSelf(d.isSelf); setState("ok")
     }).catch(() => setState("gone"))
   }, [id])
+
+  // Reflect any existing connection state so the button shows the truth on load.
+  useEffect(() => {
+    if (state !== "ok" || isSelf) return
+    fetch("/api/network").then(r => r.json()).then(d => {
+      if ((d.connections || []).some((c: any) => c.userId === id || c.connectedId === id)) { setConn("connected"); return }
+      if ((d.sent || []).some((c: any) => c.connectedId === id) || (d.received || []).some((c: any) => c.userId === id)) setConn("pending")
+    }).catch(() => {})
+  }, [state, isSelf, id])
+
+  async function startMessage() {
+    if (msgBusy) return
+    setMsgBusy(true)
+    try {
+      const res = await fetch("/api/messages/conversations", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipientId: id }) })
+      const d = await res.json()
+      if (d.conversation) { router.push("/messages"); return }
+      setMsgBusy(false)
+    } catch { setMsgBusy(false) }
+  }
+
+  async function connect() {
+    if (conn !== "connect") return
+    setConn("sending")
+    try {
+      const res = await fetch("/api/network/connect", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ recipientId: id }) })
+      // 201 = request created, 409 = a connection already exists — both mean "pending" from here.
+      setConn(res.ok || res.status === 409 ? "pending" : "connect")
+    } catch { setConn("connect") }
+  }
 
   if (state === "loading") return <AppShell title="Profile"><div style={S.loading}>Loading…</div></AppShell>
   if (state === "gone") return <AppShell title="Profile"><div style={S.loading}>This profile isn’t available.</div></AppShell>
@@ -65,8 +99,16 @@ export default function PublicProfilePage({ params }: { params: { id: string } }
               {isSelf
                 ? <Link href="/profile" style={S.primary}>Edit your profile</Link>
                 : <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
-                    <Link href="/messages" style={S.primary}><IconMessage size={15} /> Message</Link>
-                    <Link href="/network" style={S.ghost}>Connect</Link>
+                    <button onClick={startMessage} disabled={msgBusy} style={{ ...S.primary, ...S.btn, ...(msgBusy ? S.btnBusy : {}) }}>
+                      <IconMessage size={15} /> {msgBusy ? "Opening…" : "Message"}
+                    </button>
+                    <button onClick={connect} disabled={conn !== "connect"} style={{ ...S.ghost, ...S.btn, ...(conn !== "connect" ? S.btnBusy : {}) }}>
+                      {conn === "connected"
+                        ? <><IconCheckCircle size={14} /> Connected</>
+                        : conn === "pending"
+                          ? <><IconCheckCircle size={14} /> Pending</>
+                          : conn === "sending" ? "Requesting…" : "Connect"}
+                    </button>
                   </div>}
             </div>
           </div>
@@ -139,8 +181,10 @@ const S: Record<string, any> = {
   meta: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--v-ink-3)" },
   linksRow: { display: "flex", flexWrap: "wrap", gap: 14, marginTop: 12 },
   link: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: ACCENT, textDecoration: "none", fontWeight: 500 },
-  primary: { display: "inline-flex", alignItems: "center", gap: 6, background: ACCENT, color: "#fff", borderRadius: 9, padding: "9px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none", flexShrink: 0 },
-  ghost: { display: "inline-flex", alignItems: "center", background: "var(--v-surface)", border: "1px solid var(--v-line-2)", color: "var(--v-ink)", borderRadius: 9, padding: "9px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none" },
+  primary: { display: "inline-flex", alignItems: "center", gap: 6, background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "9px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none", flexShrink: 0 },
+  ghost: { display: "inline-flex", alignItems: "center", gap: 6, background: "var(--v-surface)", border: "1px solid var(--v-line-2)", color: "var(--v-ink)", borderRadius: 9, padding: "9px 16px", fontSize: 13.5, fontWeight: 600, textDecoration: "none" },
+  btn: { cursor: "pointer", fontFamily: "inherit", flexShrink: 0 },
+  btnBusy: { opacity: .6, cursor: "default" },
   h2: { fontSize: 16.5, fontWeight: 700, color: "var(--v-ink)", letterSpacing: "-.01em" },
   body: { fontSize: 14.5, color: "var(--v-ink-2)", lineHeight: 1.7, padding: "10px 1.5rem 1.5rem", whiteSpace: "pre-wrap" },
   item: { display: "flex", gap: 14, padding: "1rem 1.5rem", borderTop: "1px solid var(--v-line)", alignItems: "flex-start" },

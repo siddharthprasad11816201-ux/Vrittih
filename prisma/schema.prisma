@@ -1109,6 +1109,12 @@ model Job {
   type         String
   salary       String?
   remote       Boolean       @default(false)
+  // Core posting fields the employer fills in on /dashboard/post-job. Nullable so
+  // ingested/public-sector listings (which don't carry them) are unaffected.
+  requirements    String?    // what the role needs (skills, must-haves)
+  benefits        String?    // benefits & perks offered
+  experienceLevel String?    // Entry / Mid / Senior / Lead
+  openings        Int        @default(1)   // number of positions open
   // Where a candidate can apply. Vrittih's own tracked flow is always available;
   // these add the official routes for aggregated / public-sector listings.
   applyUrl     String?       // the company's or department's own careers page for this role

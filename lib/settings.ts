@@ -10,7 +10,6 @@ export const SETTING_DEFAULTS = {
   signupsEnabled: "true",
   joiningFee: "1",
   currency: "CHF",
-  allowEmployerFreePost: "true",
 } as const
 
 export type SettingKey = keyof typeof SETTING_DEFAULTS

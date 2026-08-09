@@ -4,11 +4,11 @@ import Link from "next/link"
 import AppShell from "@/components/vrittih/AppShell"
 import { IconBriefcase, IconArrowRight, IconCheck, IconX } from "@/components/ui/Icons"
 
-// The transparent 7-tier hiring pipeline — the product promise made visible.
-const STAGES = ["Applied", "Screening", "Task", "Interview", "HR round", "Team fit", "Offer"]
+// The transparent hiring pipeline — every stage maps to a status a recruiter can actually set.
+const STAGES = ["Applied", "Screening", "Assessment", "Interview", "Offer"]
 const STEP_OF: Record<string, number> = {
-  APPLIED: 0, REVIEWED: 1, SCREENING: 1, SHORTLISTED: 2, ASSESSMENT: 2,
-  INTERVIEW: 3, HR: 4, TEAM: 5, OFFERED: 6, ACCEPTED: 6, HIRED: 6,
+  APPLIED: 0, REVIEWED: 1, SCREENING: 1, SHORTLISTED: 1, ASSESSMENT: 2,
+  INTERVIEW: 3, OFFERED: 4, ACCEPTED: 4, HIRED: 4,
 }
 const fmt = (iso?: string) => iso ? new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"
 
@@ -38,7 +38,7 @@ export default function ApplicationsTracker() {
           <div className="trkEmpty">
             <span className="trkEmptyIc"><IconBriefcase size={24} /></span>
             <h2 className="trkEmptyTitle">Your first application will appear here</h2>
-            <p className="trkEmptyText">Apply to a role and watch it move through all seven stages in real time — nothing hidden, nothing stale.</p>
+            <p className="trkEmptyText">Apply to a role and watch it move through all five stages in real time — nothing hidden, nothing stale.</p>
             <Link href="/jobs" className="trkCta">Find a role</Link>
           </div>
         ) : (
@@ -116,8 +116,8 @@ const CSS = `
 .pHire { background: #DFF3E8; color: #2F6BE0; }
 .pRej { background: #F6ECEC; color: #DC2626; }
 
-/* the 7-step pipeline */
-.trkPipe { display: grid; grid-template-columns: repeat(7, 1fr); margin: 0 6px; }
+/* the 5-step pipeline */
+.trkPipe { display: grid; grid-template-columns: repeat(5, 1fr); margin: 0 6px; }
 .trkStep { position: relative; display: flex; flex-direction: column; align-items: center; gap: 8px; }
 .trkConn { position: absolute; top: 11px; right: 50%; width: 100%; height: 2px; background: var(--v-line-2); z-index: 0; }
 .trkConn.on { background: var(--brand-400); }

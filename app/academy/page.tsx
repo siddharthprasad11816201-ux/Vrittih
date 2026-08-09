@@ -8,6 +8,7 @@ export default function AcademyPage() {
   const [tab, setTab] = useState<"browse" | "learning" | "author" | "path">("browse")
   const [data, setData] = useState<any>(null)
   const [open, setOpen] = useState<any>(null)      // course detail
+  const [openLesson, setOpenLesson] = useState<string | null>(null) // expanded lesson body
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState("")
   // author
@@ -20,8 +21,13 @@ export default function AcademyPage() {
     try { const r = await fetch("/api/courses"); if (r.status === 401) { setState("denied"); return } setData(await r.json()); setState("ok") } catch { setState("denied") }
   }
   useEffect(() => { load() }, [])
+  // Deep-link: /academy?course=<slug> auto-opens that course (e.g. from the career coach).
+  useEffect(() => {
+    const slug = new URLSearchParams(window.location.search).get("course")
+    if (slug) openCourse(slug)
+  }, [])
   async function openCourse(idOrSlug: string) {
-    setOpen(null); setErr("")
+    setOpen(null); setOpenLesson(null); setErr("")
     try {
       const r = await fetch(`/api/courses/${idOrSlug}`); const d = await r.json().catch(() => null)
       if (r.ok && d?.course) setOpen(d); else setErr(d?.error || "Couldn't open that course.")
@@ -159,13 +165,30 @@ export default function AcademyPage() {
             {open.course.summary && <p style={S.sub}>{open.course.summary}</p>}
             {open.enrollment?.certificateCode && <a href={`/verify/cert/${open.enrollment.certificateCode}`} style={S.certLink}><IconAward size={13} /> View certificate</a>}
             <div style={S.lessons}>
-              {(open.lessons || []).map((l: any) => (
-                <div key={l.id} style={S.lesson}>
-                  <span style={{ color: l.done ? "var(--v-green)" : "var(--v-ink-3)", display: "grid", placeItems: "center" }}><IconCheckCircle size={17} /></span>
-                  <div style={{ flex: 1, minWidth: 0 }}><div style={S.lTitle}>{l.title}</div><div style={S.lSub}>{l.type} · {l.durationMin} min{l.section ? ` · ${l.section}` : ""}</div></div>
-                  {open.enrollment && !l.done && <button style={S.miniBtn} disabled={busy === "act"} onClick={() => courseAction(open.course.id, { action: "complete-lesson", lessonId: l.id })}>Mark done</button>}
-                </div>
-              ))}
+              {(open.lessons || []).map((l: any) => {
+                const canRead = !!(open.enrollment || open.course.isAuthor)
+                const isOpen = openLesson === l.id
+                return (
+                  <div key={l.id} style={S.lessonWrap}>
+                    <div style={S.lesson}>
+                      <span style={{ color: l.done ? "var(--v-green)" : "var(--v-ink-3)", display: "grid", placeItems: "center" }}><IconCheckCircle size={17} /></span>
+                      <button style={S.lessonToggle} onClick={() => canRead && setOpenLesson(isOpen ? null : l.id)} disabled={!canRead}>
+                        <div style={S.lTitle}>{l.title}</div>
+                        <div style={S.lSub}>{l.type} · {l.durationMin} min{l.section ? ` · ${l.section}` : ""}{canRead ? (isOpen ? " · Hide" : " · Open") : ""}</div>
+                      </button>
+                      {open.enrollment && !l.done && <button style={S.miniBtn} disabled={busy === "act"} onClick={() => courseAction(open.course.id, { action: "complete-lesson", lessonId: l.id })}>Mark done</button>}
+                    </div>
+                    {isOpen && canRead && (
+                      <div style={S.lessonBody}>
+                        {l.contentMd && <div style={S.lessonContent}>{l.contentMd}</div>}
+                        {l.resourceUrl && <a href={l.resourceUrl} target="_blank" rel="noopener noreferrer" style={S.resourceLink}><IconArrowRight size={13} /> {l.type === "video" ? "Watch" : "Open"} resource</a>}
+                        {!l.contentMd && !l.resourceUrl && <p style={S.lSub}>No content added yet.</p>}
+                        <div style={S.lMeta}>{l.durationMin} min</div>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
               {(open.lessons || []).length === 0 && <p style={S.sub}>No lessons yet.</p>}
             </div>
             {open.course.isAuthor && (
@@ -174,6 +197,11 @@ export default function AcademyPage() {
                 <div style={S.grid2}>
                   <input style={S.input} placeholder="Lesson title" value={nl.title} onChange={e => setNl({ ...nl, title: e.target.value })} />
                   <select style={S.input} value={nl.type} onChange={e => setNl({ ...nl, type: e.target.value })}>{(open.lessonTypes || ["reading"]).map((t: string) => <option key={t} value={t}>{t}</option>)}</select>
+                </div>
+                <textarea style={{ ...S.input, marginTop: 10, minHeight: 96, resize: "vertical", lineHeight: 1.6 }} placeholder="Lesson content (markdown or plain text)" value={nl.contentMd} onChange={e => setNl({ ...nl, contentMd: e.target.value })} />
+                <div style={{ ...S.grid2, marginTop: 10 }}>
+                  {nl.type === "video" && <input style={S.input} placeholder="Resource / video URL" value={nl.resourceUrl} onChange={e => setNl({ ...nl, resourceUrl: e.target.value })} />}
+                  <input style={S.input} type="number" min={1} max={600} placeholder="Duration (min)" value={nl.durationMin} onChange={e => setNl({ ...nl, durationMin: Number(e.target.value) })} />
                 </div>
                 <div style={S.authorActions}>
                   <button style={S.ghost} onClick={() => { if (nl.title.trim()) { courseAction(open.course.id, { action: "add-lesson", ...nl }); setNl({ title: "", type: "reading", durationMin: 10, contentMd: "", resourceUrl: "" }) } }} disabled={busy === "act"}>Add lesson</button>
@@ -227,7 +255,13 @@ const S: Record<string, any> = {
   mTitle: { fontFamily: "var(--font-display)", fontSize: 17, fontWeight: 600, color: "var(--v-ink)" },
   certLink: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--v-green)", textDecoration: "none", fontWeight: 600, margin: "8px 0" },
   lessons: { display: "flex", flexDirection: "column", gap: 6, margin: "12px 0" },
-  lesson: { display: "flex", alignItems: "center", gap: 10, padding: "9px 11px", background: "var(--v-surface-2)", borderRadius: 10 },
+  lessonWrap: { background: "var(--v-surface-2)", borderRadius: 10, overflow: "hidden" },
+  lesson: { display: "flex", alignItems: "center", gap: 10, padding: "9px 11px" },
+  lessonToggle: { flex: 1, minWidth: 0, textAlign: "left", background: "none", border: "none", padding: 0, font: "inherit", cursor: "pointer", color: "inherit" },
+  lessonBody: { padding: "0 11px 12px 38px", display: "flex", flexDirection: "column", gap: 8 },
+  lessonContent: { fontSize: 13, color: "var(--v-ink-2)", lineHeight: 1.7, whiteSpace: "pre-wrap", wordBreak: "break-word" },
+  resourceLink: { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12.5, fontWeight: 600, color: "var(--v-accent)", textDecoration: "none", width: "fit-content" },
+  lMeta: { fontSize: 11.5, color: "var(--v-ink-3)" },
   lTitle: { fontSize: 13.5, fontWeight: 500, color: "var(--v-ink)" },
   lSub: { fontSize: 11.5, color: "var(--v-ink-3)", marginTop: 1 },
   miniBtn: { background: "var(--v-accent)", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", flexShrink: 0 },

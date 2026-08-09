@@ -7,17 +7,19 @@ const statusColor = (s: string) => s === "PUBLISHED" ? "var(--v-green)" : s === 
 
 export default function ResearchPage() {
   const [state, setState] = useState<"loading" | "ok" | "denied">("loading")
-  const [tab, setTab] = useState<"outputs" | "review" | "assistant">("outputs")
+  const [tab, setTab] = useState<"projects" | "outputs" | "review" | "assistant">("projects")
   const [d, setD] = useState<any>(null)
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState("")
   const [no, setNo] = useState({ title: "", kind: "paper", abstract: "", venue: "", competencies: "" })
+  const [np, setNp] = useState({ title: "", field: "", abstract: "", competencies: "" })
   const [q, setQ] = useState(""); const [asst, setAsst] = useState<any>(null)
 
   async function load() { try { const r = await fetch("/api/research"); if (r.status === 401) { setState("denied"); return } setD(await r.json()); setState("ok") } catch { setState("denied") } }
   useEffect(() => { load() }, [])
   async function post(body: any) { setBusy("x"); setErr(""); try { const d = await fetch("/api/research", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) }).then(r => r.json()); if (d.error) setErr(d.error); await load(); return d } finally { setBusy(null) } }
   async function createOutput() { if (!no.title.trim()) { setErr("Title required."); return } const d = await post({ action: "create-output", ...no, competencies: no.competencies.split(",").map(s => s.trim()).filter(Boolean) }); if (d?.success) setNo({ title: "", kind: "paper", abstract: "", venue: "", competencies: "" }) }
+  async function createProject() { if (!np.title.trim()) { setErr("Title required."); return } const d = await post({ action: "create-project", ...np, competencies: np.competencies.split(",").map(s => s.trim()).filter(Boolean) }); if (d?.success) setNp({ title: "", field: "", abstract: "", competencies: "" }) }
   async function review(outputId: string, recommendation: string) { const score = Number(window.prompt("Score 0-10 (optional):") || "") || undefined; await post({ action: "review", outputId, recommendation, score }) }
   async function askAssistant() { if (!q.trim()) return; setBusy("asst"); try { setAsst(await fetch("/api/research-assistant", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ question: q }) }).then(r => r.json())) } finally { setBusy(null) } }
 
@@ -37,10 +39,38 @@ export default function ResearchPage() {
         </div>
 
         <div style={S.tabs}>
+          <button style={{ ...S.tab, ...(tab === "projects" ? S.tabOn : {}) }} onClick={() => setTab("projects")}>Projects ({d?.projects?.length || 0})</button>
           <button style={{ ...S.tab, ...(tab === "outputs" ? S.tabOn : {}) }} onClick={() => setTab("outputs")}>My outputs ({d?.outputs?.length || 0})</button>
           <button style={{ ...S.tab, ...(tab === "review" ? S.tabOn : {}) }} onClick={() => setTab("review")}>Review queue ({d?.reviewQueue?.length || 0})</button>
           <button style={{ ...S.tab, ...(tab === "assistant" ? S.tabOn : {}) }} onClick={() => setTab("assistant")}>Research assistant</button>
         </div>
+
+        {tab === "projects" && (
+          <div>
+            <div style={S.card}>
+              <div style={S.cardH}>New research project</div>
+              <div style={S.grid2}>
+                <input style={S.input} placeholder="Title" value={np.title} onChange={e => setNp({ ...np, title: e.target.value })} />
+                <input style={S.input} placeholder="Field (optional)" value={np.field} onChange={e => setNp({ ...np, field: e.target.value })} />
+                <input style={{ ...S.input, gridColumn: "1 / -1" }} placeholder="Competency keys (comma-sep)" value={np.competencies} onChange={e => setNp({ ...np, competencies: e.target.value })} />
+              </div>
+              <textarea style={{ ...S.input, marginTop: 10 }} rows={2} placeholder="Abstract" value={np.abstract} onChange={e => setNp({ ...np, abstract: e.target.value })} />
+              <button style={{ ...S.cta, marginTop: 10 }} onClick={createProject} disabled={busy === "x"}>Create project</button>
+            </div>
+            <div style={S.list}>
+              {(d?.projects || []).map((p: any) => (
+                <div key={p.id} style={S.row}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={S.rowT}>{p.title} {p.field && <span style={S.kind}>{p.field}</span>}</div>
+                    <div style={S.rowS}>{p.abstract ? `${p.abstract.slice(0, 100)}${p.abstract.length > 100 ? "…" : ""}` : "—"}{p.competencies?.length ? ` · ${p.competencies.join(", ")}` : ""}</div>
+                  </div>
+                  <span style={{ ...S.badge, color: "#fff", background: statusColor(p.status) }}>{String(p.status).replace("_", " ")}</span>
+                </div>
+              ))}
+              {(d?.projects || []).length === 0 && <div style={S.empty}><p style={S.sub}>No projects yet.</p></div>}
+            </div>
+          </div>
+        )}
 
         {tab === "outputs" && (
           <div>

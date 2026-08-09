@@ -108,8 +108,10 @@ function Requests({ detail, meta, post }: any) {
 }
 
 function Schemes({ detail, meta, post }: any) {
-  const [f, setF] = useState({ name: "", category: "", budget: "", currency: "CHF", beneficiaries: "" })
-  const add = async () => { if (!f.name.trim()) return; if (await post({ action: "create-scheme", ...f, budget: Number(f.budget) || 0, beneficiaries: Number(f.beneficiaries) || 0 })) setF({ name: "", category: "", budget: "", currency: "CHF", beneficiaries: "" }) }
+  const [f, setF] = useState({ name: "", category: "", budget: "", currency: "CHF", beneficiaries: "", status: "ACTIVE" })
+  const add = async () => { if (!f.name.trim()) return; if (await post({ action: "create-scheme", ...f, budget: Number(f.budget) || 0, beneficiaries: Number(f.beneficiaries) || 0 })) setF({ name: "", category: "", budget: "", currency: "CHF", beneficiaries: "", status: "ACTIVE" }) }
+  const statuses = meta.schemeStatuses || ["DRAFT", "ACTIVE", "CLOSED"]
+  const badge: any = { DRAFT: { background: "var(--v-surface-2)", color: "var(--v-ink-2)" }, ACTIVE: { background: "var(--v-green-bg,#e9f9ef)", color: "var(--v-green)" }, CLOSED: { background: "var(--v-red-bg,#fee)", color: "var(--v-red)" } }
   return (
     <div>
       <div style={S.card}><div style={S.formRow}>
@@ -118,12 +120,14 @@ function Schemes({ detail, meta, post }: any) {
         <input type="number" value={f.budget} onChange={e => setF({ ...f, budget: e.target.value })} placeholder="Budget" style={{ ...S.input, width: 110 }} />
         <select value={f.currency} onChange={e => setF({ ...f, currency: e.target.value })} style={S.select}>{CURRENCIES.map(c => <option key={c}>{c}</option>)}</select>
         <input type="number" value={f.beneficiaries} onChange={e => setF({ ...f, beneficiaries: e.target.value })} placeholder="Beneficiaries" style={{ ...S.input, width: 120 }} />
+        <select value={f.status} onChange={e => setF({ ...f, status: e.target.value })} style={S.select}>{statuses.map((s: string) => <option key={s}>{s}</option>)}</select>
         <button onClick={add} disabled={!f.name.trim()} style={{ ...S.btnSm, opacity: f.name.trim() ? 1 : 0.6 }}><IconPlus size={13} /> Add</button>
       </div></div>
       {(detail.stats.reach || []).length > 0 && <div style={S.reachRow}>{detail.stats.reach.map((r: any) => <span key={r.currency} style={S.reachChip}>{r.currency}: {r.beneficiaries.toLocaleString()} @ {r.costPerBeneficiary == null ? "—" : `${r.currency} ${r.costPerBeneficiary.toLocaleString()}/head`}</span>)}</div>}
       {detail.schemes.length === 0 ? <div style={S.empty}><p style={S.sub}>No schemes yet.</p></div> : (
         <div style={S.tableWrap}><table style={S.table}><thead><tr>{["Scheme", "Category", "Budget", "Beneficiaries", "Status"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
-          <tbody>{detail.schemes.map((s: any) => <tr key={s.id} style={S.tr}><td style={S.td}>{s.name}</td><td style={S.td}>{s.category || "—"}</td><td style={S.td}>{s.currency} {Number(s.budget).toLocaleString()}</td><td style={S.td}>{s.beneficiaries.toLocaleString()}</td><td style={S.td}>{s.status}</td></tr>)}</tbody>
+          <tbody>{detail.schemes.map((s: any) => <tr key={s.id} style={S.tr}><td style={S.td}>{s.name}</td><td style={S.td}>{s.category || "—"}</td><td style={S.td}>{s.currency} {Number(s.budget).toLocaleString()}</td><td style={S.td}>{s.beneficiaries.toLocaleString()}</td>
+            <td style={S.td}><span style={{ display: "inline-flex", alignItems: "center", gap: 8 }}><span style={{ ...S.tBadge, ...(badge[s.status] || {}) }}>{s.status}</span><select value={s.status} onChange={e => post({ action: "update-scheme", schemeId: s.id, status: e.target.value })} style={S.moveSel}>{statuses.map((st: string) => <option key={st}>{st}</option>)}</select></span></td></tr>)}</tbody>
         </table></div>
       )}
     </div>

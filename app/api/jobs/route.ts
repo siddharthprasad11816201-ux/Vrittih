@@ -19,6 +19,12 @@ const jobSchema = z.object({
   govUrl: z.string().max(500).optional(),     // official government portal listing
   closesAt: z.coerce.date().optional(),       // application deadline (was silently dropped)
   govBody: z.string().max(160).optional(),    // recruiting authority, for public-sector roles
+  // Core posting fields the employer enters — previously stripped by this schema so
+  // they never persisted or reached candidates. Now stored + rendered on job detail.
+  requirements: z.string().max(5000).nullable().optional(),
+  benefits: z.string().max(3000).nullable().optional(),
+  experienceLevel: z.string().max(60).nullable().optional(),
+  openings: z.number().int().min(1).max(9999).optional(),
   skills: z.array(z.string()).optional(),
 })
 

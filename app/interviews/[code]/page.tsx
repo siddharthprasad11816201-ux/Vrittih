@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { io, Socket } from "socket.io-client"
-import { IconMic, IconMicOff, IconCamera, IconCameraOff, IconMonitor, IconHand, IconMessage, IconVideo, IconUser, IconUsers, IconShield, IconX, IconPhoneOff, IconCheck } from "@/components/ui/Icons"
+import { IconMic, IconMicOff, IconCamera, IconCameraOff, IconMonitor, IconHand, IconMessage, IconVideo, IconUser, IconUsers, IconShield, IconX, IconPhoneOff, IconCheck, IconClipboard } from "@/components/ui/Icons"
 import ProctorCapture from "@/components/proctor/ProctorCapture"
 
 // Production sets NEXT_PUBLIC_SIGNAL_URL to an https:// endpoint; dev falls back to localhost.
@@ -35,6 +35,7 @@ export default function InterviewRoom() {
   const [joinReason, setJoinReason] = useState("")
   const [loadError, setLoadError] = useState<string|null>(null)
   const [me, setMe] = useState<any>(null)
+  const [myRole, setMyRole] = useState<string>("")
   const [peers, setPeers] = useState<Peer[]>([])
   const [localStream, setLocalStream] = useState<MediaStream|null>(null)
   const [screenStream, setScreenStream] = useState<MediaStream|null>(null)
@@ -66,6 +67,7 @@ export default function InterviewRoom() {
     ]).then(([meData, intData]) => {
       setMe(meData.user)
       setInterview(intData.interview)
+      setMyRole(String(intData.myRole || ""))
       setCanJoin(intData.canJoin !== false)
       setJoinReason(intData.joinReason || "")
     }).catch(() => setLoadError("This interview could not be loaded. The room code may be invalid, or you may not have access to it."))
@@ -138,6 +140,10 @@ export default function InterviewRoom() {
 
       setJoined(true)
       timerRef.current = setInterval(() => setDuration(d => d+1), 1000)
+      // The host going live flips the interview out of SCHEDULED so the list and
+      // calendar reflect that the session has actually started. Only from SCHEDULED
+      // — a host reopening a COMPLETED/CANCELLED room must not resurrect it to LIVE.
+      if (myRole === "HOST" && interview?.status === "SCHEDULED") setInterviewStatus("LIVE")
     } catch (err: any) {
       alert("Could not access camera/microphone: " + err.message)
     }
@@ -170,6 +176,20 @@ export default function InterviewRoom() {
     screenStream?.getTracks().forEach(t => t.stop())
     peerConnections.current.forEach(pc => pc.close())
     socketRef.current?.disconnect()
+  }
+
+  // Drives the interview lifecycle (SCHEDULED → LIVE → COMPLETED) via the host-only
+  // PATCH. Only the host may transition status; the endpoint is scoped by hostId, so
+  // a non-host call is a no-op — we still gate on role to avoid pointless requests.
+  async function setInterviewStatus(status: "LIVE" | "COMPLETED") {
+    if (!interview?.id || myRole !== "HOST") return
+    try {
+      await fetch(`/api/interviews/${interview.id}`, {
+        method:"PATCH",
+        headers:{ "Content-Type":"application/json" },
+        body:JSON.stringify({ status }),
+      })
+    } catch {}
   }
 
   function toggleAudio() {
@@ -221,7 +241,10 @@ export default function InterviewRoom() {
     setHandRaised(prev => !prev)
   }
 
-  function endCall() {
+  async function endCall() {
+    // Host ending the call closes out the interview; awaited so the status lands
+    // before we navigate away and tear the page down.
+    if (myRole === "HOST") await setInterviewStatus("COMPLETED")
     leaveRoom()
     router.push("/interviews")
   }
@@ -391,6 +414,9 @@ export default function InterviewRoom() {
 
   /* ─────────────────────────── ROOM ─────────────────────────── */
   const amCandidateInRoom = !!(me && interview && (interview.participants || []).find((pp: any) => pp.user?.id === me.id)?.role === "CANDIDATE")
+  // Only assessing panelists (host, panelist, interviewer) may open the scorecard —
+  // mirrors ASSESSING_ROLES enforced by the scorecard API.
+  const canEvaluate = ["HOST", "PANELIST", "INTERVIEWER"].includes(myRole.toUpperCase())
   return (
     <div className="mRoot">
       {/* Integrity monitoring persists through the live interview (consent carries over
@@ -490,6 +516,11 @@ export default function InterviewRoom() {
         <button onClick={() => setPanel(p => p === "people" ? null : "people")} className={"mCtl" + (panel === "people" ? " on" : "")} data-tip="People · P">
           <IconUsers size={18} />
         </button>
+        {canEvaluate && (
+          <button onClick={() => router.push(`/interviews/${code}/evaluate`)} className="mCtl" data-tip="Scorecard">
+            <IconClipboard size={18} />
+          </button>
+        )}
         <span className="mDockSep" />
         <button onClick={endCall} className="mLeave" data-tip="Leave"><IconPhoneOff size={17} /> <span>Leave</span></button>
       </div>

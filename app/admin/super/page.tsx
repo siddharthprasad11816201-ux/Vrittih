@@ -213,9 +213,8 @@ function BroadcastPanel() {
 
 /* ---------------------------- Settings --------------------------- */
 const TOGGLES: [string, string, string][] = [
-  ["maintenanceMode", "Maintenance mode", "Stored flag for putting the platform into maintenance."],
+  ["maintenanceMode", "Maintenance mode", "When on, non-admins are locked out to a maintenance screen; admins keep full access."],
   ["signupsEnabled", "Sign-ups enabled", "When off, the registration endpoint rejects new accounts."],
-  ["allowEmployerFreePost", "Employer free post", "Allow employers one free job post per verified ID."],
 ]
 function SettingsPanel() {
   const [settings, setSettings] = useState<Record<string, string> | null>(null)

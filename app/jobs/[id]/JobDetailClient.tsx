@@ -104,6 +104,8 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
           <div className={styles.tags}>
             {job.remote && <span className={styles.tag}>Remote</span>}
             <span className={styles.tag}>{job.industry}</span>
+            {job.experienceLevel && <span className={styles.tag}>{job.experienceLevel}</span>}
+            {job.openings > 1 && <span className={styles.tag}>{job.openings} openings</span>}
             <span className={styles.tag}>{job._count.applications} applicants</span>
           </div>
 
@@ -111,6 +113,20 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
             <h2>About this role</h2>
             <p className={styles.desc}>{job.description}</p>
           </div>
+
+          {job.requirements && (
+            <div className={styles.section}>
+              <h2>Requirements</h2>
+              <p className={styles.desc} style={{ whiteSpace: "pre-line" }}>{job.requirements}</p>
+            </div>
+          )}
+
+          {job.benefits && (
+            <div className={styles.section}>
+              <h2>Benefits &amp; perks</h2>
+              <p className={styles.desc} style={{ whiteSpace: "pre-line" }}>{job.benefits}</p>
+            </div>
+          )}
 
           {job.skills?.length > 0 && (
             <div className={styles.section}>

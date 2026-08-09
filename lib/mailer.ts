@@ -7,6 +7,7 @@
 import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { signMessage } from "@/lib/dkim"
+import { smtpSend } from "@/lib/smtp"
 
 export interface OutboundMail {
   fromName: string
@@ -60,4 +61,41 @@ export async function buildSignedEmail(userId: string, mail: OutboundMail): Prom
   const headerLines = headers.map((h) => `${h.name}: ${h.value}`)
   const raw = [...(dkimHeader ? [dkimHeader] : []), ...headerLines, "", body].join("\r\n")
   return { raw, fromAddress, dkim: canSign }
+}
+
+export interface DeliveryResult extends SignedMessage {
+  delivered: boolean
+  detail: string     // relay's final response text
+}
+
+/**
+ * Sign a message with the sender's *verified* domain key and hand the raw,
+ * DKIM-signed message to the configured SMTP relay for real delivery. Throws
+ * — never silently succeeds — if the domain can't be signed for or if no relay
+ * is configured, so callers can only report success when a real send ran.
+ */
+export async function sendSignedEmail(userId: string, mail: OutboundMail): Promise<DeliveryResult> {
+  const signed = await buildSignedEmail(userId, mail)
+  if (!signed.dkim) {
+    throw new Error(`${mail.domain} is not a verified sending domain you own — add and verify it in Settings → Email domains before sending from it.`)
+  }
+
+  const host = process.env.SMTP_HOST
+  const user = process.env.SMTP_USER
+  const pass = process.env.SMTP_PASS
+  if (!host || !user || !pass) {
+    throw new Error("Outbound email is not configured — set SMTP_HOST, SMTP_PORT, SMTP_USER and SMTP_PASS to send from your domain.")
+  }
+
+  const port = Number(process.env.SMTP_PORT || 465)
+  const res = await smtpSend({
+    host,
+    port,
+    secure: port === 465 ? "tls" : "starttls",
+    auth: { user, pass },
+    from: signed.fromAddress,   // envelope MAIL FROM = the verified domain address
+    to: mail.toEmail,
+    raw: signed.raw,
+  })
+  return { ...signed, delivered: res.code === 250, detail: res.text }
 }

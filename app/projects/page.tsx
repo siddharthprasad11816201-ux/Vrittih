@@ -116,6 +116,7 @@ function ProjectDetail({ id, statuses, onChange, onClose }: { id: string; status
 
   const post = async (body: any) => { const r = await fetch("/api/projects", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, projectId: id }) }); if (r.ok) { load(); onChange() } }
   const setStatus = async (status: string) => { await fetch(`/api/projects/${id}`, { method: "PATCH", headers: { "content-type": "application/json" }, body: JSON.stringify({ status }) }); load(); onChange() }
+  const remove = async () => { if (!confirm(`Delete "${d?.project?.name || "this project"}"? This can't be undone.`)) return; const r = await fetch(`/api/projects/${id}`, { method: "DELETE" }); if (r.ok) { onChange(); onClose() } }
 
   const openWiki = async (pageId: string) => { const r = await fetch(`/api/wiki?id=${pageId}`); const j = await r.json(); if (j.page) { setWOpen(j.page); setWBody(j.page.contentMd || "") } }
   const saveWiki = async () => {
@@ -137,6 +138,7 @@ function ProjectDetail({ id, statuses, onChange, onClose }: { id: string; status
           <select value={d.project.status} onChange={e => setStatus(e.target.value)} style={S.select}>
             {statuses.map(s => <option key={s} value={s}>{s.replace("_", " ")}</option>)}
           </select>
+          <button onClick={remove} style={{ ...S.btnGhost, color: "var(--v-red)", borderColor: "var(--v-red)" }}>Delete</button>
           <button onClick={onClose} style={S.btnGhost}>Close</button>
         </div>
       </div>

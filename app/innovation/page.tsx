@@ -10,6 +10,8 @@ export default function InnovationPage() {
   const [tab, setTab] = useState<"grants" | "challenges">("grants")
   const [g, setG] = useState<any>(null); const [c, setC] = useState<any>(null)
   const [busy, setBusy] = useState<string | null>(null); const [err, setErr] = useState("")
+  const [showGf, setShowGf] = useState(false); const [gf, setGf] = useState<any>({ title: "", funder: "", amount: "", currency: "CHF", field: "", description: "", deadline: "" })
+  const [showCf, setShowCf] = useState(false); const [cf, setCf] = useState<any>({ title: "", description: "", prize: "", deadline: "" })
 
   async function load() {
     try {
@@ -23,6 +25,8 @@ export default function InnovationPage() {
   async function grantDecide(id: string, status: string) { setBusy(id); try { await fetch("/api/grants", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }); await load() } finally { setBusy(null) } }
   async function submitChallenge(challengeId: string) { const title = window.prompt("Submission title:") || ""; if (!title) return; const url = window.prompt("Link (optional):") || ""; setBusy(challengeId); setErr(""); try { const d = await fetch("/api/challenges", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "submit", challengeId, title, url }) }).then(r => r.json()); if (d.error) setErr(d.error); await load() } finally { setBusy(null) } }
   async function judge(id: string, status: string) { setBusy(id); try { await fetch("/api/challenges", { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ id, status }) }); await load() } finally { setBusy(null) } }
+  async function postGrant() { if (!gf.title.trim()) { setErr("Grant title required."); return } setBusy("newGrant"); setErr(""); try { const d = await fetch("/api/grants", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: gf.title, funder: gf.funder, amount: gf.amount, currency: gf.currency, field: gf.field, description: gf.description, deadline: gf.deadline || null }) }).then(r => r.json()); if (d.error) { setErr(d.error); return } setGf({ title: "", funder: "", amount: "", currency: "CHF", field: "", description: "", deadline: "" }); setShowGf(false); await load() } finally { setBusy(null) } }
+  async function createChallenge() { if (!cf.title.trim()) { setErr("Challenge title required."); return } setBusy("newChallenge"); setErr(""); try { const d = await fetch("/api/challenges", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: cf.title, description: cf.description, prize: cf.prize, deadline: cf.deadline || null }) }).then(r => r.json()); if (d.error) { setErr(d.error); return } setCf({ title: "", description: "", prize: "", deadline: "" }); setShowCf(false); await load() } finally { setBusy(null) } }
 
   if (state === "loading") return <AppShell title="Innovation"><div style={S.page}><div style={S.empty}><p style={S.sub}>Loading…</p></div></div></AppShell>
   if (state === "denied") return <AppShell title="Innovation"><div style={S.page}><div style={S.empty}><h1 style={S.h1}>Sign in</h1></div></div></AppShell>
@@ -39,6 +43,23 @@ export default function InnovationPage() {
 
         {tab === "grants" && g && (
           <div>
+            {g.canPost && (!showGf
+              ? <button style={S.ghost} onClick={() => { setErr(""); setShowGf(true) }}>+ Post a grant</button>
+              : <div style={S.formWrap}>
+                  <div style={S.formHead}><div style={S.rowT}><IconBanknote size={14} /> Post a grant</div><button style={S.tiny} onClick={() => setShowGf(false)}>Cancel</button></div>
+                  <div style={S.formGrid}>
+                    <div style={S.field}><label style={S.label}>Title</label><input style={S.input} value={gf.title} onChange={e => setGf({ ...gf, title: e.target.value })} placeholder="Grant title" /></div>
+                    <div style={S.field}><label style={S.label}>Funder</label><input style={S.input} value={gf.funder} onChange={e => setGf({ ...gf, funder: e.target.value })} placeholder="Organization" /></div>
+                    <div style={S.field}><label style={S.label}>Amount</label><input style={S.input} type="number" value={gf.amount} onChange={e => setGf({ ...gf, amount: e.target.value })} placeholder="0" /></div>
+                    <div style={S.field}><label style={S.label}>Currency</label><input style={S.input} value={gf.currency} onChange={e => setGf({ ...gf, currency: e.target.value })} placeholder="CHF" /></div>
+                    <div style={S.field}><label style={S.label}>Field</label><input style={S.input} value={gf.field} onChange={e => setGf({ ...gf, field: e.target.value })} placeholder="Research field" /></div>
+                    <div style={S.field}><label style={S.label}>Deadline</label><input style={S.input} type="date" value={gf.deadline} onChange={e => setGf({ ...gf, deadline: e.target.value })} /></div>
+                  </div>
+                  <label style={S.label}>Description</label>
+                  <textarea style={S.textarea} value={gf.description} onChange={e => setGf({ ...gf, description: e.target.value })} placeholder="What the grant funds…" />
+                  <div style={{ marginTop: 10 }}><button style={S.cta} disabled={busy === "newGrant" || !gf.title.trim()} onClick={postGrant}>{busy === "newGrant" ? "Posting…" : "Post grant"}</button></div>
+                </div>
+            )}
             <div style={S.list}>
               {(g.open || []).map((x: any) => (
                 <div key={x.id} style={S.row}>
@@ -55,6 +76,20 @@ export default function InnovationPage() {
 
         {tab === "challenges" && c && (
           <div>
+            {c.canSponsor && (!showCf
+              ? <button style={S.ghost} onClick={() => { setErr(""); setShowCf(true) }}>+ Create a challenge</button>
+              : <div style={S.formWrap}>
+                  <div style={S.formHead}><div style={S.rowT}><IconZap size={14} /> Create a challenge</div><button style={S.tiny} onClick={() => setShowCf(false)}>Cancel</button></div>
+                  <div style={S.formGrid}>
+                    <div style={S.field}><label style={S.label}>Title</label><input style={S.input} value={cf.title} onChange={e => setCf({ ...cf, title: e.target.value })} placeholder="Challenge title" /></div>
+                    <div style={S.field}><label style={S.label}>Prize</label><input style={S.input} value={cf.prize} onChange={e => setCf({ ...cf, prize: e.target.value })} placeholder="e.g. CHF 5,000" /></div>
+                    <div style={S.field}><label style={S.label}>Deadline</label><input style={S.input} type="date" value={cf.deadline} onChange={e => setCf({ ...cf, deadline: e.target.value })} /></div>
+                  </div>
+                  <label style={S.label}>Description</label>
+                  <textarea style={S.textarea} value={cf.description} onChange={e => setCf({ ...cf, description: e.target.value })} placeholder="What entrants must build or solve…" />
+                  <div style={{ marginTop: 10 }}><button style={S.cta} disabled={busy === "newChallenge" || !cf.title.trim()} onClick={createChallenge}>{busy === "newChallenge" ? "Creating…" : "Create challenge"}</button></div>
+                </div>
+            )}
             <div style={S.list}>
               {(c.open || []).map((x: any) => (
                 <div key={x.id} style={S.row}>
@@ -92,4 +127,12 @@ const S: Record<string, any> = {
   card: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 12, padding: 14, marginBottom: 8 },
   appRow: { display: "flex", alignItems: "center", gap: 6, fontSize: 12.5, color: "var(--v-ink-2)", marginTop: 8 },
   tiny: { background: "var(--v-surface-2)", color: "var(--v-ink)", border: "1px solid var(--v-line)", borderRadius: 7, padding: "4px 9px", fontSize: 11.5, fontWeight: 700, cursor: "pointer" },
+  ghost: { background: "var(--v-surface-2)", color: "var(--v-ink)", border: "1px solid var(--v-line)", borderRadius: 10, padding: "9px 15px", fontSize: 13, fontWeight: 600, cursor: "pointer", marginBottom: 12 },
+  formWrap: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 12, padding: 14, marginBottom: 12, boxShadow: "var(--v-shadow-sm)" },
+  formHead: { display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  formGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 10, marginBottom: 10 },
+  field: { minWidth: 0 },
+  label: { display: "block", fontSize: 11.5, fontWeight: 600, color: "var(--v-ink-2)", marginBottom: 4 },
+  input: { width: "100%", padding: "8px 10px", border: "1px solid var(--v-line)", borderRadius: 9, font: "inherit", fontSize: 13, color: "var(--v-ink)", background: "var(--v-surface)", boxSizing: "border-box" },
+  textarea: { width: "100%", padding: "8px 10px", border: "1px solid var(--v-line)", borderRadius: 9, font: "inherit", fontSize: 13, color: "var(--v-ink)", background: "var(--v-surface)", boxSizing: "border-box", minHeight: 64, resize: "vertical" },
 }

@@ -1,7 +1,7 @@
 "use client"
 import { useEffect, useState, type ReactNode } from "react"
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import CommandPalette from "@/components/vrittih/CommandPalette"
 import {
   IconActivity, IconBriefcase, IconTarget, IconFileText, IconUsers, IconTrendingUp,
@@ -144,6 +144,7 @@ function bottomTabs(caps: Set<string>): Item[] {
 
 export default function AppShell({ children, title }: { children: ReactNode; title?: string }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [caps, setCaps] = useState<Set<string>>(new Set())
   const [authLoaded, setAuthLoaded] = useState(false)
@@ -160,6 +161,13 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
     m.addEventListener("change", on); return () => m.removeEventListener("change", on)
   }, [])
   useEffect(() => { setDrawerOpen(false) }, [pathname])
+  // Maintenance mode: when a super-admin turns it on, non-admins are sent to the
+  // maintenance screen. Fail-open — a status-check error never blocks the app.
+  useEffect(() => {
+    fetch("/api/system/status").then(r => (r.ok ? r.json() : null)).then(d => {
+      if (d && d.blocked) router.replace("/maintenance")
+    }).catch(() => {})
+  }, [pathname, router])
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => { if (e.key === "Escape") setDrawerOpen(false) }
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey)

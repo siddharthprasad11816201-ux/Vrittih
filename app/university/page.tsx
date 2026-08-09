@@ -8,7 +8,7 @@ export default function UniversityPage() {
   const [d, setD] = useState<any>(null)
   const [ai, setAi] = useState<any>(null)
   const [sel, setSel] = useState<string>("")
-  const [tab, setTab] = useState<"programs" | "admissions" | "students" | "faculty">("programs")
+  const [tab, setTab] = useState<"programs" | "admissions" | "students" | "faculty" | "exams">("programs")
   const [newInst, setNewInst] = useState("")
 
   const loadAi = useCallback(() => { fetch("/api/university/intelligence").then(r => r.ok ? r.json() : null).then(x => x && setAi(x)).catch(() => {}) }, [])
@@ -68,7 +68,7 @@ export default function UniversityPage() {
             )}
 
             <div style={S.tabs}>
-              {(["programs", "admissions", "students", "faculty"] as const).map(t => (
+              {(["programs", "admissions", "students", "faculty", "exams"] as const).map(t => (
                 <button key={t} onClick={() => setTab(t)} style={{ ...S.tab, ...(tab === t ? S.tabOn : {}) }}>{t[0].toUpperCase() + t.slice(1)}</button>
               ))}
             </div>
@@ -77,6 +77,7 @@ export default function UniversityPage() {
             {detail && tab === "admissions" && <Admissions detail={detail} meta={meta} post={post} />}
             {detail && tab === "students" && <Students detail={detail} meta={meta} post={post} />}
             {detail && tab === "faculty" && <Faculty detail={detail} post={post} />}
+            {detail && tab === "exams" && <Exams detail={detail} post={post} />}
           </>
         )}
       </div>
@@ -182,6 +183,36 @@ function Faculty({ detail, post }: any) {
         <button onClick={add} disabled={!f.name.trim()} style={{ ...S.btnSm, opacity: f.name.trim() ? 1 : 0.6 }}><IconPlus size={13} /> Add</button>
       </div></div>
       <Table rows={detail.faculty} cols={[["name", "Name"], ["department", "Dept"], ["designation", "Designation"]]} />
+    </div>
+  )
+}
+
+function Exams({ detail, post }: any) {
+  const [f, setF] = useState({ course: "", term: "", studentId: "", score: "", maxScore: "100" })
+  const add = async () => { if (!f.course.trim()) return; if (await post({ action: "create-exam", ...f, score: Number(f.score) || 0, maxScore: Number(f.maxScore) || 100 })) setF({ course: "", term: "", studentId: "", score: "", maxScore: "100" }) }
+  const names: Record<string, string> = {}; detail.students.forEach((s: any) => { names[s.id] = s.name })
+  return (
+    <div>
+      <div style={S.card}><div style={S.formRow}>
+        <input value={f.course} onChange={e => setF({ ...f, course: e.target.value })} placeholder="Course" style={{ ...S.input, flex: 1.6 }} />
+        <input value={f.term} onChange={e => setF({ ...f, term: e.target.value })} placeholder="Term (e.g. Fall 2026)" style={{ ...S.input, flex: 1 }} />
+        <select value={f.studentId} onChange={e => setF({ ...f, studentId: e.target.value })} style={S.select}><option value="">Student…</option>{detail.students.map((s: any) => <option key={s.id} value={s.id}>{s.name}</option>)}</select>
+        <input type="number" value={f.score} onChange={e => setF({ ...f, score: e.target.value })} placeholder="Score" style={{ ...S.input, width: 80 }} />
+        <input type="number" value={f.maxScore} onChange={e => setF({ ...f, maxScore: e.target.value })} placeholder="Max" style={{ ...S.input, width: 80 }} />
+        <button onClick={add} disabled={!f.course.trim()} style={{ ...S.btnSm, opacity: f.course.trim() ? 1 : 0.6 }}><IconPlus size={13} /> Add</button>
+      </div></div>
+      {detail.exams.length === 0 ? <div style={S.empty}><p style={S.sub}>No exam results yet.</p></div> : (
+        <div style={S.tableWrap}><table style={S.table}>
+          <thead><tr>{["Course", "Term", "Student", "Score"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+          <tbody>{detail.exams.map((x: any) => (
+            <tr key={x.id} style={S.tr}>
+              <td style={S.td}>{x.course}</td><td style={S.td}>{x.term ?? "—"}</td>
+              <td style={S.td}>{x.studentId ? (names[x.studentId] ?? "—") : "—"}</td>
+              <td style={S.td}>{x.score}/{x.maxScore}</td>
+            </tr>
+          ))}</tbody>
+        </table></div>
+      )}
     </div>
   )
 }

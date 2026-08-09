@@ -74,7 +74,7 @@ export default function CareerReadinessPage() {
                     </div>
                     <p style={S.why}>{it.why}</p>
                     {it.course
-                      ? <a href="/academy" style={S.courseLink}>Academy course: “{it.course.title}” →</a>
+                      ? <a href={`/academy?course=${encodeURIComponent(it.course.slug)}`} style={S.courseLink}>Academy course: “{it.course.title}” →</a>
                       : <span style={S.noCourse}>No Academy course yet — project-based path below</span>}
                     <ul style={S.actions}>{it.actions.map((a: string, i: number) => <li key={i} style={S.action}>{a}</li>)}</ul>
                   </div>

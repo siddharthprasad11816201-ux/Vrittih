@@ -22,6 +22,9 @@ export default function SettingsPage() {
   const [passkeyName, setPasskeyName] = useState("")
   const [domains, setDomains] = useState<any[]>([])
   const [newDomain, setNewDomain] = useState("")
+  const [catalogue, setCatalogue] = useState<any[]>([])
+  const [planId, setPlanId] = useState<string|null>(null)
+  const [billingLoaded, setBillingLoaded] = useState(false)
 
   useEffect(() => {
     fetch("/api/settings").then(r => r.json()).then(d => {
@@ -141,9 +144,24 @@ export default function SettingsPage() {
     else flash(d.error || "Failed", false)
   }
 
+  // Billing is plan-based and monthly. Load the live plan catalogue (admin prices
+  // applied) and the user's actual plan id, then resolve one to the other so the
+  // tab shows the real plan and price — never a hardcoded amount.
+  async function loadBilling() {
+    const [pl, meRes] = await Promise.all([
+      fetch("/api/plans").then(r => r.json()).catch(() => null),
+      fetch("/api/auth/me").then(r => r.json()).catch(() => null),
+    ])
+    if (pl?.plans?.length) setCatalogue(pl.plans)
+    setPlanId(meRes?.user?.plan ?? null)
+    setBillingLoaded(true)
+  }
+  useEffect(() => { if (tab === "billing" && !billingLoaded) loadBilling() }, [tab])
+
   if (loading) return <AppShell><div style={S.loading}>Loading...</div></AppShell>
 
   const isEmployer = user && ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(user.role)
+  const billingPlan = planId ? catalogue.find(p => p.id === planId) : null
   const TABS: [string, string][] = [
     ["account","Account"], ["password","Password"], ["security","Security"],
     ...(isEmployer ? [["domains","Email domains"] as [string, string]] : []),
@@ -373,22 +391,37 @@ export default function SettingsPage() {
           {tab === "billing" && (
             <div style={S.card}>
               <h3 style={S.cardTitle}>Billing</h3>
-              <div style={S.billingCard}>
-                <div style={S.billingTop}>
-                  <div style={S.billingPlan}>{user.paid ? "Active" : "Unpaid"}</div>
-                  <div style={S.billingPrice}>1 CHF <span style={{fontSize:14,fontWeight:400,color:"rgba(255,255,255,.6)"}}>one-time</span></div>
-                </div>
-                <div style={S.billingFeatures}>
-                  {["Full platform access","All job applications","Video interviews","Real-time chat","Community channels","Lifetime — no renewal"].map(f => (
-                    <div key={f} style={S.billingFeature}>✓ {f}</div>
-                  ))}
-                </div>
-              </div>
-              {!user.paid && (
-                <a href="/pay" style={S.payBtn}>Complete payment — 1 CHF</a>
-              )}
-              {user.paid && (
-                <div style={{...S.msg,...S.msgOk,marginTop:"1rem"}}>Your account is active. No further payments required.</div>
+              {!billingLoaded ? (
+                <p style={S.hint}>Loading your plan...</p>
+              ) : billingPlan ? (
+                <>
+                  <div style={S.billingCard}>
+                    <div style={S.billingTop}>
+                      <div style={S.billingPlan}>{billingPlan.name} · {user.paid ? "Active" : "Payment pending"}</div>
+                      <div style={S.billingPrice}>{billingPlan.priceCHF} CHF <span style={{fontSize:14,fontWeight:400,color:"rgba(255,255,255,.6)"}}>/ month</span></div>
+                    </div>
+                    <div style={S.billingFeatures}>
+                      {billingPlan.features.map((f: string) => (
+                        <div key={f} style={S.billingFeature}>✓ {f}</div>
+                      ))}
+                    </div>
+                  </div>
+                  {user.paid ? (
+                    <div style={{...S.msg,...S.msgOk,marginTop:"1rem"}}>Your {billingPlan.name} plan is active, billed monthly. Manage or change it from Pricing any time.</div>
+                  ) : (
+                    <a href="/pay" style={S.payBtn}>Complete payment — {billingPlan.priceCHF} CHF / month</a>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div style={S.billingCard}>
+                    <div style={S.billingTop}>
+                      <div style={S.billingPlan}>No active plan</div>
+                    </div>
+                    <div style={S.billingFeature}>You don&apos;t have a subscription yet. Choose a plan to unlock full access — billed monthly, cancel any time.</div>
+                  </div>
+                  <a href="/pricing" style={S.payBtn}>Choose a plan</a>
+                </>
               )}
             </div>
           )}

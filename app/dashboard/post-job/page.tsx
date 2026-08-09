@@ -34,9 +34,11 @@ export default function PostJob() {
       return
     }
     setLoading(true); setError("")
+    // Swiss grouping (1'200'000) — this is a CHF-first product, never INR/lakh grouping.
+    const fmt = (n: string) => Number(n).toLocaleString("de-CH")
     const salary = form.salaryMin && form.salaryMax
-      ? `${form.salaryCurrency} ${Number(form.salaryMin).toLocaleString("en-IN")} - ${Number(form.salaryMax).toLocaleString("en-IN")} / ${form.salaryPeriod}`
-      : form.salaryMin ? `${form.salaryCurrency} ${Number(form.salaryMin).toLocaleString("en-IN")} / ${form.salaryPeriod}` : null
+      ? `${form.salaryCurrency} ${fmt(form.salaryMin)} - ${fmt(form.salaryMax)} / ${form.salaryPeriod}`
+      : form.salaryMin ? `${form.salaryCurrency} ${fmt(form.salaryMin)} / ${form.salaryPeriod}` : null
     try {
       const res = await fetch("/api/jobs", {
         method: "POST",
@@ -49,7 +51,7 @@ export default function PostJob() {
           govUrl: form.govUrl || undefined,
           requirements: form.requirements || null,
           benefits: form.benefits || null,
-          experience: form.experience || null,
+          experienceLevel: form.experience || null,
           openings: parseInt(form.openings) || 1,
           closesAt: form.deadline || undefined,
           skills,

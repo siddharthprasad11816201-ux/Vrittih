@@ -1,7 +1,7 @@
 "use client"
-import { useCallback, useEffect, useState } from "react"
+import { Fragment, useCallback, useEffect, useState } from "react"
 import AppShell from "@/components/vrittih/AppShell"
-import { IconActivity, IconPlus, IconZap, IconAlert } from "@/components/ui/Icons"
+import { IconActivity, IconPlus, IconZap, IconAlert, IconFileText } from "@/components/ui/Icons"
 
 export default function HealthcarePage() {
   const [state, setState] = useState<"loading" | "ok" | "denied">("loading")
@@ -57,7 +57,7 @@ export default function HealthcarePage() {
 
             <div style={S.tabs}>{(["appointments", "patients", "triage"] as const).map(t => <button key={t} onClick={() => setTab(t)} style={{ ...S.tab, ...(tab === t ? S.tabOn : {}) }}>{t[0].toUpperCase() + t.slice(1)}</button>)}</div>
             {detail && tab === "appointments" && <Appointments detail={detail} meta={meta} post={post} />}
-            {detail && tab === "patients" && <Patients detail={detail} post={post} />}
+            {detail && tab === "patients" && <Patients detail={detail} meta={meta} records={detail.records || d.records || []} post={post} />}
             {tab === "triage" && <Triage />}
           </>
         )}
@@ -106,9 +106,11 @@ function Appointments({ detail, meta, post }: any) {
   )
 }
 
-function Patients({ detail, post }: any) {
+function Patients({ detail, meta, records, post }: any) {
   const [f, setF] = useState({ name: "", dob: "", sex: "", bloodGroup: "", phone: "" })
+  const [open, setOpen] = useState("")
   const add = async () => { if (!f.name.trim()) return; if (await post({ action: "create-patient", ...f })) setF({ name: "", dob: "", sex: "", bloodGroup: "", phone: "" }) }
+  const recsFor = (id: string) => (records || []).filter((r: any) => r.patientId === id)
   return (
     <div>
       <div style={S.card}><div style={S.formRow}>
@@ -119,9 +121,46 @@ function Patients({ detail, post }: any) {
         <button onClick={add} disabled={!f.name.trim()} style={{ ...S.btnSm, opacity: f.name.trim() ? 1 : 0.6 }}><IconPlus size={13} /> Add</button>
       </div></div>
       {detail.patients.length === 0 ? <div style={S.empty}><p style={S.sub}>No patients yet.</p></div> : (
-        <div style={S.tableWrap}><table style={S.table}><thead><tr>{["Name", "MRN", "Sex", "Blood", "Add record"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
-          <tbody>{detail.patients.map((p: any) => <tr key={p.id} style={S.tr}><td style={S.td}>{p.name}</td><td style={S.td}>{p.mrn}</td><td style={S.td}>{p.sex || "—"}</td><td style={S.td}>{p.bloodGroup || "—"}</td><td style={S.td}><button onClick={() => post({ action: "create-record", patientId: p.id, kind: "VISIT", summary: "Visit logged" })} style={S.miniBtn}>+ Visit</button></td></tr>)}</tbody>
+        <div style={S.tableWrap}><table style={S.table}><thead><tr>{["Name", "MRN", "Sex", "Blood", "Records"].map(h => <th key={h} style={S.th}>{h}</th>)}</tr></thead>
+          <tbody>{detail.patients.map((p: any) => {
+            const recs = recsFor(p.id); const isOpen = open === p.id
+            return (
+              <Fragment key={p.id}>
+                <tr style={S.tr}>
+                  <td style={S.td}>{p.name}</td><td style={S.td}>{p.mrn}</td><td style={S.td}>{p.sex || "—"}</td><td style={S.td}>{p.bloodGroup || "—"}</td>
+                  <td style={S.td}><button onClick={() => setOpen(isOpen ? "" : p.id)} style={{ ...S.miniBtn, ...(isOpen ? S.miniBtnOn : {}) }}><IconFileText size={12} /> {recs.length} record{recs.length === 1 ? "" : "s"}</button></td>
+                </tr>
+                {isOpen && <tr><td colSpan={5} style={S.recCell}><PatientRecords patient={p} records={recs} kinds={meta.recordKinds || []} post={post} /></td></tr>}
+              </Fragment>
+            )
+          })}</tbody>
         </table></div>
+      )}
+    </div>
+  )
+}
+
+function PatientRecords({ patient, records, kinds, post }: any) {
+  const [kind, setKind] = useState<string>(kinds[0] || "VISIT")
+  const [summary, setSummary] = useState("")
+  const add = async () => { if (!summary.trim()) return; if (await post({ action: "create-record", patientId: patient.id, kind, summary: summary.trim() })) setSummary("") }
+  const kName = (k: string) => k[0] + k.slice(1).toLowerCase()
+  const sorted = [...records].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+  return (
+    <div style={S.recPanel}>
+      <div style={S.formRow}>
+        <select value={kind} onChange={e => setKind(e.target.value)} style={S.select}>{kinds.map((k: string) => <option key={k} value={k}>{kName(k)}</option>)}</select>
+        <input value={summary} onChange={e => setSummary(e.target.value)} placeholder={`Record summary for ${patient.name}…`} style={{ ...S.input, flex: 1 }} onKeyDown={e => e.key === "Enter" && add()} />
+        <button onClick={add} disabled={!summary.trim()} style={{ ...S.btnSm, opacity: summary.trim() ? 1 : 0.6 }}><IconPlus size={13} /> Add record</button>
+      </div>
+      {sorted.length === 0 ? <p style={{ ...S.sub, marginTop: 10 }}>No records yet for {patient.name}.</p> : (
+        <div style={{ ...S.list, marginTop: 12 }}>{sorted.map((r: any) => (
+          <div key={r.id} style={S.recItem}>
+            <span style={S.kindBadge}>{kName(r.kind)}</span>
+            <span style={{ flex: 1, fontSize: 13, color: "var(--v-ink)" }}>{r.summary || "—"}</span>
+            <span style={S.itemMeta}>{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : "—"}</span>
+          </div>
+        ))}</div>
       )}
     </div>
   )
@@ -175,7 +214,12 @@ const S: Record<string, any> = {
   select: { border: "1px solid var(--v-line)", borderRadius: 8, padding: "9px 10px", fontSize: 13, fontFamily: "inherit", color: "var(--v-ink)", background: "var(--v-surface)" },
   btnSm: { display: "inline-flex", alignItems: "center", gap: 5, background: "var(--v-accent)", color: "#fff", border: "none", borderRadius: 8, padding: "9px 14px", fontSize: 12.5, fontWeight: 600, cursor: "pointer", fontFamily: "inherit", whiteSpace: "nowrap" },
   btnGhost: { display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", color: "var(--v-ink-2)", border: "1px solid var(--v-line)", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, cursor: "pointer", fontFamily: "inherit" },
-  miniBtn: { background: "var(--v-surface-2)", border: "1px solid var(--v-line)", borderRadius: 7, padding: "4px 10px", fontSize: 11.5, cursor: "pointer", color: "var(--v-ink-2)", fontFamily: "inherit" },
+  miniBtn: { display: "inline-flex", alignItems: "center", gap: 5, background: "var(--v-surface-2)", border: "1px solid var(--v-line)", borderRadius: 7, padding: "4px 10px", fontSize: 11.5, cursor: "pointer", color: "var(--v-ink-2)", fontFamily: "inherit" },
+  miniBtnOn: { background: "var(--v-accent-bg,#eef0fb)", borderColor: "var(--v-accent)", color: "var(--v-accent)" },
+  recCell: { padding: 0, background: "var(--v-surface-2)", borderBottom: "1px solid var(--v-line)" },
+  recPanel: { padding: "14px 16px" },
+  recItem: { display: "flex", alignItems: "center", gap: 12, background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 10, padding: "9px 13px" },
+  kindBadge: { fontSize: 10.5, fontWeight: 700, letterSpacing: ".02em", padding: "3px 9px", borderRadius: 999, background: "var(--v-accent-bg,#eef0fb)", color: "var(--v-accent)", whiteSpace: "nowrap" },
   list: { display: "flex", flexDirection: "column", gap: 8 },
   item: { display: "flex", alignItems: "center", gap: 12, background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 10, padding: "10px 14px" },
   itemMeta: { fontSize: 12, color: "var(--v-ink-3)" },
