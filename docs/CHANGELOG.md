@@ -2,6 +2,16 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (e) — foundation completeness remediation (pre-Phase-11 gate)
+- **Whole-product completeness/authenticity audit** before advancing to new phases: a deterministic 100%-file scan (111 pages / 231 routes / 156 libs → 0 no-op handlers, 0 dead anchors, only 1 borderline marker, all correct) **plus** a 38-agent semantic audit of every shipped module (Phases 1–10 + copilots + platform), each finding adversarially verified → **27 CONFIRMED** (8 high / 13 med / 6 low; 0 refuted). A 23-check verify pass then caught 1 BROKEN + 3 CONCERN. **All 31 fixed; build clean (148 pages).**
+  - **Jobs (HIGH):** requirements/benefits/experienceLevel/openings were silently dropped by the API schema — now persisted (new nullable Job columns) + rendered on job detail. Salary now Swiss `de-CH` grouping, not INR lakh.
+  - **Assessments (HIGH):** blank-answer (manual-review) SHORT/CODING questions no longer score the candidate 0; new employer results view (`GET /api/tests/[id]/attempts`, owner/admin-scoped).
+  - **Wiring gaps (HIGH×5):** funders can post grants + sponsors create challenges (Innovation); managers can write performance reviews + succession plans (HRMS); verified sending domains now do real DKIM-signed outbound (honest failure when unconfigured, never fake "sent").
+  - **False data (HIGH):** Settings billing driven by the real plan (was hardcoded "1 CHF one-time / Lifetime").
+  - **Med/low:** honest application-tracker stages; interview scorecard reachable + status transitions (guarded); Academy lesson content + authoring + `?course=` deep-link; research projects UI; workspace widget hide/reorder (server-seeded); university exams tab; government scheme status control; `/get-placed` uses the candidate's own input; public-profile Message/Connect wired; project delete; healthcare records viewer; career-plan deep links; account theme toggle persisted app-wide (global restore, no FOUC); removed inert preference rows.
+  - **Admin:** maintenance mode now genuinely enforced (status API + AppShell guard, admin bypass, fail-open); removed the no-op "employer free post" toggle.
+  - **Deploy note:** schema adds nullable Job columns — run `prisma db push`/migrate on prod.
+
 ## 2026-08-09 (d) — AI Constitution-compliance audit (honest confidence)
 - **Dedicated AI-honesty audit** across every AI provider, Enterprise-Brain engine, intelligence lib, and AI-facing route (6 finder areas → adversarial per-finding verify; 4 CONFIRMED = 2 distinct bugs, 0 refuted). The AI layer is otherwise honest — sibling decision rules derive confidence from real coverage/R², `confidence: 0` returns are genuine insufficient-evidence, and deterministic providers correctly omit confidence.
   - **Fabricated confidence (MED):** `lib/intelligence/health.ts` `darkDomainRule` hardcoded `confidence: 0.9` on "…intelligence is dark" cards, rendered to executives as "Confidence: 90%". "0 of N metrics have data" is a *certain* coverage fact, so it now reports `confidence: 1` — consistent with the sibling rules and no longer an invented mid-range AI estimate.
