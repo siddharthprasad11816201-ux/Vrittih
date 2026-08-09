@@ -2,6 +2,14 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (b) — core-flow audit
+- **Second adversarial audit** over the core candidate/employer journeys (21 agents; 14 CONFIRMED, 1 plausible, 2 refuted) — all fixed:
+  - **AUTHZ:** HRMS `create-review`/`schedule-1on1` accepted an arbitrary subject (any employer could write reviews/1:1s onto any user, poisoning competency evidence) → added `isMyEmployee` guard. Verified non-employee→403, employee→201.
+  - **Dead/mislabeled links (×3):** pipeline "Import candidates"→/dashboard/post-job; dashboard Applications tile label/href; account "View public profile"→/u/{id}.
+  - **False metrics (×2):** offer-acceptance single-source + clamp; trial cap via constant.
+  - **Stuck-loading crashes (×7):** jobs list/detail/match, dashboard, career, profile, profile/edit now clear loading + show fallback on network/5xx.
+- Mobile: projects kanban columns min-width + horizontal scroll.
+
 ## 2026-08-09
 - **Adversarial audit + full remediation** (19 agents; 13 CONFIRMED, 0 plausible, 2 refuted; each finding independently verified):
   - **SECURITY (HIGH×5):** closed a cross-tenant IDOR/PII leak — `isHr` had keyed off employer-baseline capabilities, letting any employer read/modify other employers' talent/placement requests, candidate PII, and run shortlists. `isHr` is now `admin.access`-only (Vrittih HR = platform staff). Verified employer→403, admin still sees queue (6/6).
