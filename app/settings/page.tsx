@@ -29,7 +29,7 @@ export default function SettingsPage() {
       setUser(d.user)
       setForm({ name: d.user.name||"", phone: d.user.phone||"", location: d.user.location||"" })
       setLoading(false)
-    })
+    }).catch(() => router.push("/login"))
   }, [])
 
   function flash(text: string, ok = true) {

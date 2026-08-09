@@ -32,7 +32,7 @@ export default function ResearchPage() {
         {err && <div style={S.err}>{err}</div>}
 
         <div style={S.kpis}>
-          <Kpi n={m.outputs} l="Outputs" /><Kpi n={m.totalCitations} l="Citations" /><Kpi n={m.hIndex} l="h-index" /><Kpi n={m.i10Index} l="i10" />
+          <Kpi n={m.outputs} l="Published" /><Kpi n={m.totalCitations} l="Citations" /><Kpi n={m.hIndex} l="h-index" /><Kpi n={m.i10Index} l="i10" />
           {d?.org && <><Kpi n={d.org.published} l="Org published" /><Kpi n={d.org.hIndex} l="Org h-index" /></>}
         </div>
 

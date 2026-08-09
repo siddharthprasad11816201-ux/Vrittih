@@ -10,9 +10,15 @@ export default function AdminPartnersPage() {
   const [err, setErr] = useState("")
 
   async function load() {
-    const r = await fetch("/api/admin/partners")
-    if (!r.ok) { setErr(r.status === 403 ? "Admins only." : "Failed to load."); setLoading(false); return }
-    const d = await r.json(); setPartners(d.partners || []); setLoading(false)
+    try {
+      const r = await fetch("/api/admin/partners")
+      if (!r.ok) { setErr(r.status === 403 ? "Admins only." : "Failed to load."); return }
+      const d = await r.json(); setPartners(d.partners || [])
+    } catch {
+      setErr("Failed to load.")
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { load() }, [])
 

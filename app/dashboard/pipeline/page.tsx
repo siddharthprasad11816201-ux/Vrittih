@@ -30,8 +30,14 @@ export default function ApplicantPipeline() {
   }, [])
 
   const load = useCallback(async () => {
-    const d = await fetch("/api/applications?employer=true").then(r => r.json())
-    setApps(d.applications || []); setLoading(false)
+    try {
+      const d = await fetch("/api/applications?employer=true").then(r => r.json())
+      setApps(d.applications || [])
+    } catch {
+      setApps([])
+    } finally {
+      setLoading(false)
+    }
   }, [])
   useEffect(() => { load() }, [load])
 

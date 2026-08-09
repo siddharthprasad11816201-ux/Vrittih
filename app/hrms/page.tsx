@@ -33,15 +33,20 @@ export default function HRMS() {
   const [att, setAtt] = useState<any>({ roster: [], counts: {} })
 
   const load = useCallback(async () => {
-    const [d, l, a] = await Promise.all([
-      fetch("/api/hrms/employees").then(r => r.json()),
-      fetch("/api/hrms/leave").then(r => r.json()),
-      fetch("/api/hrms/attendance").then(r => r.json()),
-    ])
-    if (!d.error) setData(d)
-    if (!l.error) setLeaves(l.leaves || [])
-    if (!a.error) setAtt(a)
-    setLoading(false)
+    try {
+      const [d, l, a] = await Promise.all([
+        fetch("/api/hrms/employees").then(r => r.json()),
+        fetch("/api/hrms/leave").then(r => r.json()),
+        fetch("/api/hrms/attendance").then(r => r.json()),
+      ])
+      if (!d.error) setData(d)
+      if (!l.error) setLeaves(l.leaves || [])
+      if (!a.error) setAtt(a)
+    } catch {
+      // keep defaults; just clear loading
+    } finally {
+      setLoading(false)
+    }
   }, [])
   useEffect(() => { load() }, [load])
 

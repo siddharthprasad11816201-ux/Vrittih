@@ -17,6 +17,18 @@ async function resolveUser(idOrEmail: string): Promise<string | null> {
 async function isMyEmployee(userId: string, employerId: string): Promise<boolean> {
   return !!(await prisma.employee.findUnique({ where: { employerId_userId: { employerId, userId } }, select: { userId: true } }).catch(() => null))
 }
+// Two users share a company if one employs the other, or both work for the same employer.
+// Gates peer recognition so it can't be used to spam arbitrary/cross-tenant accounts.
+async function shareCompany(a: string, b: string): Promise<boolean> {
+  const [ea, eb] = await Promise.all([
+    prisma.employee.findMany({ where: { userId: a }, select: { employerId: true } }),
+    prisma.employee.findMany({ where: { userId: b }, select: { employerId: true } }),
+  ])
+  const setA = new Set<string>([a, ...ea.map(e => e.employerId)]) // a's own id (as employer) + a's companies
+  const setB = new Set<string>([b, ...eb.map(e => e.employerId)])
+  for (const x of setA) if (setB.has(x)) return true
+  return false
+}
 
 export async function GET(req: NextRequest) {
   const ctx = await resolveContext(req)
@@ -71,6 +83,7 @@ export async function POST(req: NextRequest) {
     const toId = await resolveUser(String(b.to || ""))
     if (!toId) return NextResponse.json({ error: "Recipient not found." }, { status: 404 })
     if (toId === ctx.userId) return NextResponse.json({ error: "You can't recognize yourself." }, { status: 400 })
+    if (!(await shareCompany(ctx.userId, toId))) return NextResponse.json({ error: "You can only recognize colleagues." }, { status: 403 })
     const message = String(b.message || "").trim()
     if (!message) return NextResponse.json({ error: "A message is required." }, { status: 400 })
     await prisma.recognition.create({ data: { fromId: ctx.userId, toId, message: message.slice(0, 1000), badge: b.badge ? String(b.badge).slice(0, 40) : null } })

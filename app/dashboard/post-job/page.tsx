@@ -37,27 +37,32 @@ export default function PostJob() {
     const salary = form.salaryMin && form.salaryMax
       ? `${form.salaryCurrency} ${Number(form.salaryMin).toLocaleString("en-IN")} - ${Number(form.salaryMax).toLocaleString("en-IN")} / ${form.salaryPeriod}`
       : form.salaryMin ? `${form.salaryCurrency} ${Number(form.salaryMin).toLocaleString("en-IN")} / ${form.salaryPeriod}` : null
-    const res = await fetch("/api/jobs", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        title: form.title, company: form.company, industry: form.industry,
-        location: form.location, type: form.type, remote: form.remote,
-        description: form.description, salary,
-        applyUrl: form.applyUrl || undefined,
-        govUrl: form.govUrl || undefined,
-        requirements: form.requirements || null,
-        benefits: form.benefits || null,
-        experience: form.experience || null,
-        openings: parseInt(form.openings) || 1,
-        closesAt: form.deadline || undefined,
-        skills,
+    try {
+      const res = await fetch("/api/jobs", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          title: form.title, company: form.company, industry: form.industry,
+          location: form.location, type: form.type, remote: form.remote,
+          description: form.description, salary,
+          applyUrl: form.applyUrl || undefined,
+          govUrl: form.govUrl || undefined,
+          requirements: form.requirements || null,
+          benefits: form.benefits || null,
+          experience: form.experience || null,
+          openings: parseInt(form.openings) || 1,
+          closesAt: form.deadline || undefined,
+          skills,
+        })
       })
-    })
-    const data = await res.json()
-    setLoading(false)
-    if (data.success) router.push(`/jobs/${data.job.id}`)
-    else setError(data.error || "Failed to post job")
+      const data = await res.json().catch(() => ({}))
+      if (data.success) router.push(`/jobs/${data.job.id}`)
+      else setError(data.error || "Failed to post job")
+    } catch {
+      setError("Failed to post job. Please check your connection and try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

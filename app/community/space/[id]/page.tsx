@@ -35,7 +35,7 @@ export default function SpacePage() {
       setMe(meData.user)
       setData(spaceData)
       setLoading(false)
-    })
+    }).catch(() => setLoading(false))
   }, [id])
 
   async function toggleJoin() {

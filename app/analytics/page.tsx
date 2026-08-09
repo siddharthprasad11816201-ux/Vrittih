@@ -8,7 +8,7 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/analytics").then(r=>r.json()).then(d => { setData(d); setLoading(false) })
+    fetch("/api/analytics").then(r=>r.json()).then(d => { setData(d); setLoading(false) }).catch(() => setLoading(false))
   }, [])
 
   if (loading) return <AppShell><div style={S.loading}>Loading analytics...</div></AppShell>

@@ -11,7 +11,7 @@ export default function AdminGateway() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch("/api/admin/gateway").then(r=>r.json()).then(d=>{ setGateways(d.gateways||[]); setLoading(false) })
+    fetch("/api/admin/gateway").then(r=>r.json()).then(d=>{ setGateways(d.gateways||[]); setLoading(false) }).catch(() => setLoading(false))
   }, [])
 
   async function gatewayAction(id: string, action: string) {

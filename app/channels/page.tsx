@@ -24,9 +24,14 @@ export default function ChannelsPage() {
 
   async function loadChannels() {
     setLoading(true)
-    const d = await fetch("/api/channels").then(r => r.json())
-    setChannels(d.channels || [])
-    setLoading(false)
+    try {
+      const d = await fetch("/api/channels").then(r => r.json())
+      setChannels(d.channels || [])
+    } catch {
+      setChannels([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function openChannel(ch: any) {
@@ -45,10 +50,15 @@ export default function ChannelsPage() {
   async function sendPost() {
     if (!input.trim() || !active || posting) return
     setPosting(true)
-    const res = await fetch(`/api/channels/${active.id}/post`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ content:input.trim() }) })
-    const d = await res.json()
-    if (d.success) { setPosts(prev => [...prev, d.post]); setInput("") }
-    setPosting(false)
+    try {
+      const res = await fetch(`/api/channels/${active.id}/post`, { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ content:input.trim() }) })
+      const d = await res.json().catch(() => ({}))
+      if (d.success) { setPosts(prev => [...prev, d.post]); setInput("") }
+    } catch {
+      // leave the input intact; finally re-enables the button so the user can retry
+    } finally {
+      setPosting(false)
+    }
   }
 
   async function sendReply(postId: string) {
@@ -63,10 +73,14 @@ export default function ChannelsPage() {
 
   async function createChannel(e: any) {
     e.preventDefault(); setCreateErr("")
-    const res = await fetch("/api/channels", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(newChannel) })
-    const d = await res.json()
-    if (d.success) { setShowCreate(false); setNewChannel({ name:"", description:"" }); loadChannels() }
-    else setCreateErr(d.error || "Failed")
+    try {
+      const res = await fetch("/api/channels", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(newChannel) })
+      const d = await res.json().catch(() => ({}))
+      if (d.success) { setShowCreate(false); setNewChannel({ name:"", description:"" }); loadChannels() }
+      else setCreateErr(d.error || "Failed")
+    } catch {
+      setCreateErr("Couldn't create the channel — please try again.")
+    }
   }
 
   const initials = (name: string) => name?.split(" ").map((n:string)=>n[0]).join("").slice(0,2).toUpperCase()||"?"

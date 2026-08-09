@@ -36,8 +36,7 @@ function CommunityInner() {
       setMe(meData.user)
       setSpaces(spacesData.spaces || [])
       setJobs(jobsData.jobs || [])
-      setLoading(false)
-    })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   async function toggleJoin(spaceId: string) {

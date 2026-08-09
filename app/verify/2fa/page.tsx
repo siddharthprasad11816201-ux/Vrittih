@@ -30,21 +30,26 @@ function TwoFAContent() {
 
   async function sendOTP() {
     setSending(true); setError("")
-    const res = await fetch("/api/auth/otp-request", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ userId, note: mode === "injury" ? "Face recognition fallback — please verify with OTP" : undefined })
-    })
-    const data = await res.json()
-    setSending(false)
-    if (data.success) {
-      setSent(true)
-      setMaskedEmail(data.email)
-      setCountdown(60)
-      timerRef.current = setInterval(() => {
-        setCountdown(c => { if (c <= 1) { clearInterval(timerRef.current); return 0 } return c - 1 })
-      }, 1000)
-    } else setError(data.error || "Failed to send OTP")
+    try {
+      const res = await fetch("/api/auth/otp-request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, note: mode === "injury" ? "Face recognition fallback — please verify with OTP" : undefined })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data.success) {
+        setSent(true)
+        setMaskedEmail(data.email)
+        setCountdown(60)
+        timerRef.current = setInterval(() => {
+          setCountdown(c => { if (c <= 1) { clearInterval(timerRef.current); return 0 } return c - 1 })
+        }, 1000)
+      } else setError(data.error || "Failed to send OTP")
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.")
+    } finally {
+      setSending(false)
+    }
   }
 
   function handleInput(i: number, val: string) {
@@ -65,20 +70,25 @@ function TwoFAContent() {
     const finalCode = code || otp.join("")
     if (finalCode.length !== 6) { setError("Please enter the 6-digit code"); return }
     setLoading(true); setError("")
-    const res = await fetch(method === "totp" ? "/api/auth/totp/verify" : "/api/auth/otp-verify", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(method === "totp" ? { userId, code: finalCode } : { userId, otp: finalCode, mode })
-    })
-    const data = await res.json()
-    setLoading(false)
-    if (data.success) {
-      if (data.requiresReenroll) router.push("/verify/face-setup?update=true")
-      else router.push(nextPath)
-    } else {
-      setError(data.error || "Incorrect code")
-      setOtp(["","","","","",""])
-      inputs.current[0]?.focus()
+    try {
+      const res = await fetch(method === "totp" ? "/api/auth/totp/verify" : "/api/auth/otp-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(method === "totp" ? { userId, code: finalCode } : { userId, otp: finalCode, mode })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data.success) {
+        if (data.requiresReenroll) router.push("/verify/face-setup?update=true")
+        else router.push(nextPath)
+      } else {
+        setError(data.error || "Incorrect code")
+        setOtp(["","","","","",""])
+        inputs.current[0]?.focus()
+      }
+    } catch {
+      setError("Couldn't reach the server. Check your connection and try again.")
+    } finally {
+      setLoading(false)
     }
   }
 

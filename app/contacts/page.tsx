@@ -21,10 +21,16 @@ export default function ContactsPage() {
     if (q) params.set("q", q)
     if (stage) params.set("stage", stage)
     params.set("sort", sort)
-    const d = await fetch("/api/crm/contacts?" + params).then(r => r.json())
-    setContacts(d.contacts || [])
-    setPipeline(d.pipeline || {})
-    setLoading(false)
+    try {
+      const d = await fetch("/api/crm/contacts?" + params).then(r => r.json())
+      setContacts(d.contacts || [])
+      setPipeline(d.pipeline || {})
+    } catch {
+      setContacts([])
+      setPipeline({})
+    } finally {
+      setLoading(false)
+    }
   }, [q, stage, sort])
 
   useEffect(() => { const t = setTimeout(load, q ? 250 : 0); return () => clearTimeout(t) }, [load, q])

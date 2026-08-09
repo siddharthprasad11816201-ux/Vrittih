@@ -19,11 +19,16 @@ export default function NewContactPage() {
     setSaving(true); setError("")
     const body: any = { ...form, value: form.value ? Number(form.value) : 0, tags: tagsText.split(",").map(t => t.trim()).filter(Boolean) }
     if (!body.email) delete body.email
-    const res = await fetch("/api/crm/contacts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
-    const d = await res.json()
-    setSaving(false)
-    if (d.success) router.push(`/contacts/${d.contact.id}`)
-    else setError(d.error || "Could not save contact")
+    try {
+      const res = await fetch("/api/crm/contacts", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) })
+      const d = await res.json().catch(() => ({}))
+      if (d.success) router.push(`/contacts/${d.contact.id}`)
+      else setError(d.error || "Could not save contact")
+    } catch {
+      setError("Could not save contact — please try again")
+    } finally {
+      setSaving(false)
+    }
   }
 
   const field = (label: string, key: string, opts: any = {}) => (

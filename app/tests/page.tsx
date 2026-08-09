@@ -23,8 +23,7 @@ export default function TestsPage() {
     ]).then(([meData, testsData]) => {
       setMe(meData.user)
       setTests(testsData.tests || [])
-      setLoading(false)
-    })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const canCreate = me && ["EMPLOYER","ADMIN","SUPER_ADMIN"].includes(me.role)

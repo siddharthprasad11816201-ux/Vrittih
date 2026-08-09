@@ -20,9 +20,14 @@ export default function CompaniesPage() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const r = await fetch(`/api/companies?q=${encodeURIComponent(q)}&sort=${sort}&page=${page}`)
-    if (r.ok) setData(await r.json())
-    setLoading(false)
+    try {
+      const r = await fetch(`/api/companies?q=${encodeURIComponent(q)}&sort=${sort}&page=${page}`)
+      if (r.ok) setData(await r.json())
+    } catch {
+      // keep last data; just clear the spinner below
+    } finally {
+      setLoading(false)
+    }
   }, [q, sort, page])
 
   useEffect(() => { const t = setTimeout(load, q ? 250 : 0); return () => clearTimeout(t) }, [load, q])

@@ -2,6 +2,16 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (c) — remaining-surfaces audit + resilience sweep
+- **Third adversarial audit** over the remaining surfaces (learning/research/admin/messaging/offers/interviews/tests/network/community/contacts/settings/notifications; 29 agents, 21 CONFIRMED, 0 plausible, 4 refuted), then an 8-agent adversarial **verification** pass (0 BROKEN, 0 CONCERN) before commit — all fixed:
+  - **SECURITY — IDOR (HIGH):** `POST /api/tests/[id]/submit` updated a `TestAttempt` by client-supplied `attemptId` alone (no owner/test/state check) — any candidate could overwrite another's attempt or re-score their own after seeing results. Now an **atomic status-conditional** `updateMany` scoped to `{id, userId, testId, status: IN_PROGRESS}` (+ separate `answer.createMany`), closing the cross-candidate IDOR, the re-submit bypass, and a self-race in one write. Added an `attemptId` input guard (400).
+  - **SECURITY — cross-tenant read (MED):** `GET /api/learning/analytics` org rollup was gated by `hrms.view` (held by every Growth+ employer) but computed platform-wide totals + competency heatmap. Now scoped to the caller's own workforce; platform-wide totals stay behind `ai.ops.view`/`admin.access`.
+  - **SECURITY — unauthenticated abuse (LOW):** HRMS `recognize` accepted any target user (cross-tenant recognition/notification spam). Added a shared-company gate (employer↔employee and same-employer colleagues only) mirroring `isMyEmployee`.
+  - **Stuck-loading crashes (×19 pages):** notifications, network, settings, contacts (list/detail/new), interviews (list/room), tests (list/take/create), community (hub/space/job/pages hub+detail+create) now clear their loading/saving flag on network/5xx failure (try/finally or .catch/.finally, `res.json().catch(()=>({}))`), with error/retry or safe empty states — no more permanent spinners or stuck submit buttons.
+  - **Resilience sweep (Group C, ×17 pages):** admin (dashboard/gateway/jobs/partners/payments/users), analytics, channels, companies (list/detail), dashboard (pipeline/post-job), forms, hrms, jobs/saved, mail, pipeline hardened to the same pattern. Bonus pre-existing same-class fixes: channels `sendPost`/`createChannel`, tests/[id] `startTest`/`handleSubmit` (now surface a retry instead of a broken result screen).
+  - **Auth lockout guards:** login, register, and 2FA (verify + OTP resend) no longer strand the button on a network failure.
+  - **False label (LOW):** research "Outputs" KPI (published-only count) relabelled "Published" to match the all-status "My outputs (N)" tab.
+
 ## 2026-08-09 (b) — core-flow audit
 - **Second adversarial audit** over the core candidate/employer journeys (21 agents; 14 CONFIRMED, 1 plausible, 2 refuted) — all fixed:
   - **AUTHZ:** HRMS `create-review`/`schedule-1on1` accepted an arbitrary subject (any employer could write reviews/1:1s onto any user, poisoning competency evidence) → added `isMyEmployee` guard. Verified non-employee→403, employee→201.

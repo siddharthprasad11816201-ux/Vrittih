@@ -14,8 +14,14 @@ export default function PipelinePage() {
   const [overStage, setOverStage] = useState<string | null>(null)
 
   const load = useCallback(async () => {
-    const d = await fetch("/api/crm/contacts?limit=100&sort=value").then(r => r.json())
-    setContacts(d.contacts || []); setLoading(false)
+    try {
+      const d = await fetch("/api/crm/contacts?limit=100&sort=value").then(r => r.json())
+      setContacts(d.contacts || [])
+    } catch {
+      setContacts([])
+    } finally {
+      setLoading(false)
+    }
   }, [])
   useEffect(() => { load() }, [load])
 

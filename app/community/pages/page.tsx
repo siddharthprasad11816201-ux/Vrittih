@@ -19,8 +19,7 @@ export default function ProfessionalPagesHub() {
       setPages(pagesData.pages || [])
       const mine = pagesData.pages?.find((p: any) => p.userId === meData.user?.id)
       setMyPage(mine || null)
-      setLoading(false)
-    })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   async function follow(pageId: string) {

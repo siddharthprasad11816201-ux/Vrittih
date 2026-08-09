@@ -33,6 +33,7 @@ export default function InterviewRoom() {
   const [interview, setInterview] = useState<any>(null)
   const [canJoin, setCanJoin] = useState(true)
   const [joinReason, setJoinReason] = useState("")
+  const [loadError, setLoadError] = useState<string|null>(null)
   const [me, setMe] = useState<any>(null)
   const [peers, setPeers] = useState<Peer[]>([])
   const [localStream, setLocalStream] = useState<MediaStream|null>(null)
@@ -60,14 +61,14 @@ export default function InterviewRoom() {
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/auth/me").then(r=>r.json()),
-      fetch(`/api/interviews/${code}`).then(r=>r.json()),
+      fetch("/api/auth/me").then(async r => { const d = await r.json().catch(() => ({})); if (!r.ok || !d.user) throw new Error("auth"); return d }),
+      fetch(`/api/interviews/${code}`).then(async r => { const d = await r.json().catch(() => ({})); if (!r.ok || !d.interview) throw new Error("interview"); return d }),
     ]).then(([meData, intData]) => {
       setMe(meData.user)
       setInterview(intData.interview)
       setCanJoin(intData.canJoin !== false)
       setJoinReason(intData.joinReason || "")
-    })
+    }).catch(() => setLoadError("This interview could not be loaded. The room code may be invalid, or you may not have access to it."))
     return () => {
       leaveRoom()
       clearInterval(timerRef.current)
@@ -309,6 +310,18 @@ export default function InterviewRoom() {
     if (panel === "chat") { setUnread(0); chatEndRef.current?.scrollIntoView({ behavior: "smooth" }) }
     else if (messages.length) setUnread(u => u + 1)
   }, [messages]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (loadError) return (
+    <div className="mRoot mLobby">
+      <div className="mLobbyCard">
+        <div className="mLobbyIcon"><IconShield size={26} /></div>
+        <h1 className="mLobbyTitle">Can&apos;t open this room</h1>
+        <p className="mLobbyNotes" style={{ marginTop: 8 }}>{loadError}</p>
+        <button onClick={() => router.push("/interviews")} className="mBack">Back to interviews</button>
+      </div>
+      <style dangerouslySetInnerHTML={{ __html: CSS }} />
+    </div>
+  )
 
   if (!interview || !me) return <div className="mLoad">Loading room…</div>
 

@@ -22,8 +22,14 @@ export default function AdminUsers() {
     if (role) params.set("role", role)
     if (paid) params.set("paid", paid)
     params.set("page", String(page))
-    const d = await fetch("/api/admin/users?" + params).then(r => r.json())
-    setUsers(d.users || []); setTotal(d.total || 0); setLoading(false)
+    try {
+      const d = await fetch("/api/admin/users?" + params).then(r => r.json())
+      setUsers(d.users || []); setTotal(d.total || 0)
+    } catch {
+      setUsers([]); setTotal(0)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function action(userId: string, act: string) {

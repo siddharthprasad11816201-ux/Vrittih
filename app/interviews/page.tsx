@@ -25,8 +25,7 @@ function InterviewsInner() {
     ]).then(([meData, intData]) => {
       setMe(meData.user)
       setInterviews(intData.interviews || [])
-      setLoading(false)
-    })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const now = new Date()

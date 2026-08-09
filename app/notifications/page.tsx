@@ -14,10 +14,16 @@ export default function NotificationsPage() {
 
   async function load() {
     setLoading(true)
-    const d = await fetch("/api/notifications").then(r => r.json())
-    setNotifications(d.notifications || [])
-    setUnread(d.unread || 0)
-    setLoading(false)
+    try {
+      const d = await fetch("/api/notifications").then(r => r.json())
+      setNotifications(d.notifications || [])
+      setUnread(d.unread || 0)
+    } catch {
+      setNotifications([])
+      setUnread(0)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function markRead(id: string) {

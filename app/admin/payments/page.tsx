@@ -16,9 +16,15 @@ export default function AdminPayments() {
     const params = new URLSearchParams()
     if (q) params.set("q", q)
     params.set("page", String(page))
-    const d = await fetch("/api/admin/payments?" + params).then(r => r.json())
-    if (d.error) { setError(d.error); setLoading(false); return }
-    setData(d); setLoading(false)
+    try {
+      const d = await fetch("/api/admin/payments?" + params).then(r => r.json())
+      if (d.error) { setError(d.error); return }
+      setData(d)
+    } catch {
+      setError("Failed to load payments")
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function refund(userId: string) {

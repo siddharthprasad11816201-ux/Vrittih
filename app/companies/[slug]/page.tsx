@@ -18,9 +18,15 @@ export default function CompanyPage() {
   const [saving, setSaving] = useState(false)
 
   async function load() {
-    const r = await fetch(`/api/companies/${slug}`)
-    if (r.status === 404) { setNotFound(true); setLoading(false); return }
-    const j = await r.json(); setD(j); setForm(j.company); setLoading(false)
+    try {
+      const r = await fetch(`/api/companies/${slug}`)
+      if (r.status === 404) { setNotFound(true); return }
+      const j = await r.json(); setD(j); setForm(j.company)
+    } catch {
+      setNotFound(true)
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { if (slug) load() }, [slug]) // eslint-disable-line
 

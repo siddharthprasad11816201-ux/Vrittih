@@ -17,6 +17,7 @@ export default function TakeTest() {
   const [tabSwitches, setTabSwitches] = useState(0)
   const [result, setResult] = useState<any>(null)
   const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState("")
   const [loading, setLoading] = useState(true)
   const timerRef = useRef<any>(null)
   const tabRef = useRef(0)
@@ -27,7 +28,7 @@ export default function TakeTest() {
       setTest(d.test)
       setTimeLeft((d.test?.duration || 30) * 60)
       setLoading(false)
-    })
+    }).catch(() => setLoading(false))
   }, [testId])
 
   useEffect(() => {
@@ -58,28 +59,49 @@ export default function TakeTest() {
   }, [phase])
 
   async function startTest() {
-    const res = await fetch(`/api/tests/${testId}/attempt`, { method: "POST" })
-    const data = await res.json()
-    setAttempt(data.attempt)
-    setPhase("taking")
+    setSubmitError("")
+    try {
+      const res = await fetch(`/api/tests/${testId}/attempt`, { method: "POST" })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.attempt) { setSubmitError(data.error || "Couldn't start the test. Please try again."); return }
+      setAttempt(data.attempt)
+      setPhase("taking")
+    } catch {
+      setSubmitError("Couldn't start the test — check your connection and try again.")
+    }
   }
 
   async function handleSubmit() {
     if (submittingRef.current) return
     submittingRef.current = true
     setSubmitting(true)
+    setSubmitError("")
     clearInterval(timerRef.current)
     const currentAttempt = attempt
     if (!currentAttempt) { setSubmitting(false); submittingRef.current = false; return }
-    const res = await fetch(`/api/tests/${testId}/submit`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ attemptId: currentAttempt.id, answers, tabSwitches: tabRef.current })
-    })
-    const data = await res.json()
-    setResult(data)
-    setPhase("result")
-    setSubmitting(false)
+    try {
+      const res = await fetch(`/api/tests/${testId}/submit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ attemptId: currentAttempt.id, answers, tabSwitches: tabRef.current })
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok || !data.success) {
+        // Failed submit (network, non-JSON 5xx, or a rejected attempt): keep the
+        // candidate on the test with a retry path instead of a stuck "Submitting…"
+        // button or a broken result screen.
+        setSubmitError(data.error || "Couldn't submit your test. Please try again.")
+        submittingRef.current = false
+        return
+      }
+      setResult(data)
+      setPhase("result")
+    } catch {
+      setSubmitError("Couldn't submit — check your connection and try again.")
+      submittingRef.current = false
+    } finally {
+      setSubmitting(false)
+    }
   }
 
   function formatTime(s: number) {
@@ -146,6 +168,7 @@ export default function TakeTest() {
               <div key={r} style={{fontSize:13,color:"#3D3D4E",marginBottom:4}}>• {r}</div>
             ))}
           </div>
+          {submitError && <div style={S.submitErr}>{submitError}</div>}
           <button onClick={startTest} style={S.startBtn}>Start test — {test.duration} minutes</button>
           <button onClick={() => router.back()} style={S.cancelBtn}>Cancel</button>
         </div>
@@ -166,6 +189,7 @@ export default function TakeTest() {
           {submitting ? "Submitting..." : "Submit"}
         </button>
       </div>
+      {submitError && <div style={S.submitErrBar}>{submitError}</div>}
 
       <div style={S.progressWrap}>
         <div style={{...S.progressFill, width:`${progress}%`}} />
@@ -294,6 +318,8 @@ const S: Record<string,any> = {
   rules:{ background:"#F9F9FC",borderRadius:10,padding:"1rem",marginBottom:"1.5rem",textAlign:"left" as const },
   startBtn:{ width:"100%",background:"#6495ED",color:"#fff",border:"none",borderRadius:10,padding:"12px",fontSize:15,fontWeight:600,cursor:"pointer",marginBottom:8 },
   cancelBtn:{ width:"100%",background:"none",border:"0.5px solid rgba(0,0,0,.1)",color:"#6b7280",borderRadius:10,padding:"11px",fontSize:13,cursor:"pointer" },
+  submitErr:{ background:"#FEF2F2",border:"0.5px solid #FCA5A5",color:"#B91C1C",borderRadius:9,padding:"10px 12px",fontSize:13,marginBottom:10,textAlign:"center" as const },
+  submitErrBar:{ background:"#FEF2F2",borderBottom:"0.5px solid #FCA5A5",color:"#B91C1C",padding:"8px 1.5rem",fontSize:13,textAlign:"center" as const },
   testShell:{ display:"flex",flexDirection:"column" as const,minHeight: "100dvh",background:"#F7F9FC",overflow: "visible" },
   testHead:{ display:"flex", flexWrap: "wrap" as const, gap: 8,alignItems:"center",justifyContent:"space-between",padding:"12px 2rem",background:"#fff",borderBottom:"0.5px solid rgba(0,0,0,.07)",flexShrink:0 },
   testTitle:{ fontSize:15,fontWeight:600,color:"#0A0A0F",flex:1 },

@@ -11,14 +11,19 @@ export default function CreatePage() {
   async function submit(e: any) {
     e.preventDefault()
     setLoading(true); setError("")
-    const res = await fetch("/api/community/pages", {
-      method: "POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify(form)
-    })
-    const data = await res.json()
-    setLoading(false)
-    if (data.success) router.push(`/community/pages/${data.page.id}`)
-    else setError(data.error || "Failed to create page")
+    try {
+      const res = await fetch("/api/community/pages", {
+        method: "POST", headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(form)
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data.success) router.push(`/community/pages/${data.page.id}`)
+      else setError(data.error || "Failed to create page")
+    } catch {
+      setError("Failed to create page. Please try again.")
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (

@@ -44,18 +44,20 @@ export default function LoginPage() {
     e.preventDefault()
     if (!pwOpen) { setPwOpen(true); return }
     setLoading(true); setError("")
-    const res = await fetch("/api/auth/login", {
-      method: "POST", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    })
-    const data = await res.json()
-    setLoading(false)
-    if (!res.ok) { setError(data.error || "Invalid credentials"); return }
-    if (data.requiresFaceVerify && data.userId) { router.push(`/verify/face-login?uid=${data.userId}`); return }
-    if (data.requires2FA && data.userId) {
-      router.push(`/verify/2fa?uid=${data.userId}${data.method === "totp" ? "&method=totp" : ""}`); return
-    }
-    succeed()
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) { setError(data.error || "Invalid credentials"); return }
+      if (data.requiresFaceVerify && data.userId) { router.push(`/verify/face-login?uid=${data.userId}`); return }
+      if (data.requires2FA && data.userId) {
+        router.push(`/verify/2fa?uid=${data.userId}${data.method === "totp" ? "&method=totp" : ""}`); return
+      }
+      succeed()
+    } catch { setError("Couldn't reach the server. Check your connection and try again.") }
+    finally { setLoading(false) }
   }
 
   return (

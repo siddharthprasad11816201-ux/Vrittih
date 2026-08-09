@@ -11,16 +11,27 @@ export default function FormsPage() {
   const [creating, setCreating] = useState(false)
 
   async function load() {
-    const d = await fetch("/api/crm/forms").then(r => r.json())
-    setForms(d.forms || []); setLoading(false)
+    try {
+      const d = await fetch("/api/crm/forms").then(r => r.json())
+      setForms(d.forms || [])
+    } catch {
+      setForms([])
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { load() }, [])
 
   async function create() {
     setCreating(true)
-    const d = await fetch("/api/crm/forms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "Untitled form" }) }).then(r => r.json())
-    setCreating(false)
-    if (d.success) router.push(`/forms/builder/${d.form.id}`)
+    try {
+      const d = await fetch("/api/crm/forms", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: "Untitled form" }) }).then(r => r.json())
+      if (d.success) router.push(`/forms/builder/${d.form.id}`)
+    } catch {
+      // allow retry
+    } finally {
+      setCreating(false)
+    }
   }
 
   return (

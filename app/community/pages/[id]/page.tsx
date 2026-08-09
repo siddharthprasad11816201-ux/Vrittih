@@ -24,8 +24,7 @@ export default function ProfessionalPageView() {
     ]).then(([meData, pageData]) => {
       setMe(meData.user)
       setData(pageData)
-      setLoading(false)
-    })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [id])
 
   async function follow() {

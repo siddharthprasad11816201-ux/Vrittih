@@ -29,9 +29,15 @@ export default function AdminJobs() {
     const params = new URLSearchParams()
     if (q) params.set("q", q)
     params.set("page", String(page))
-    const d = await fetch("/api/admin/jobs?" + params).then(r => r.json())
-    if (d.error) { setError(d.error); setLoading(false); return }
-    setJobs(d.jobs || []); setTotal(d.total || 0); setLoading(false); setSel(new Set())
+    try {
+      const d = await fetch("/api/admin/jobs?" + params).then(r => r.json())
+      if (d.error) { setError(d.error); return }
+      setJobs(d.jobs || []); setTotal(d.total || 0); setSel(new Set())
+    } catch {
+      setError("Failed to load jobs")
+    } finally {
+      setLoading(false)
+    }
   }, [q, page])
   useEffect(() => { load() }, [load])
 

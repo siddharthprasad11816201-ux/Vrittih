@@ -23,20 +23,22 @@ export default function RegisterPage() {
     const failed = rules.find(r => !r.ok)
     if (failed) { setError(failed.label + " is required in your password"); return }
     setLoading(true); setError("")
-    const res = await fetch("/api/auth/register", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    })
-    const data = await res.json()
-    setLoading(false)
-    if (!res.ok) {
-      const issues = data.issues as Record<string, string[]> | undefined
-      const first = issues && Object.values(issues).flat()[0]
-      setError(first || data.error || "Registration failed")
-      return
-    }
-    router.push("/pay")
+    try {
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      })
+      const data = await res.json().catch(() => ({}))
+      if (!res.ok) {
+        const issues = data.issues as Record<string, string[]> | undefined
+        const first = issues && Object.values(issues).flat()[0]
+        setError(first || data.error || "Registration failed")
+        return
+      }
+      router.push("/pay")
+    } catch { setError("Couldn't reach the server. Check your connection and try again.") }
+    finally { setLoading(false) }
   }
 
   const roles: [string, string, string, any][] = [

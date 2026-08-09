@@ -24,8 +24,7 @@ export default function JobCommunityPage() {
     ]).then(([meData, comData]) => {
       setMe(meData.user)
       setData(comData)
-      setLoading(false)
-    })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [id])
 
   async function join() {

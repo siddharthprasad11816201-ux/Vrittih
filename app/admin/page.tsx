@@ -14,7 +14,7 @@ export default function AdminDashboard() {
       if (d.error) setError(d.error)
       else setStats(d)
       setLoading(false)
-    })
+    }).catch(() => { setError("Failed to load admin panel"); setLoading(false) })
   }, [])
 
   if (loading) return <div style={S.loading}>Loading admin panel...</div>

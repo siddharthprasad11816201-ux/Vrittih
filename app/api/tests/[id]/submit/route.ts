@@ -9,6 +9,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     const payload = verifyToken(token)
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
     const { attemptId, answers, tabSwitches } = await req.json()
+    if (!attemptId || typeof attemptId !== "string") return NextResponse.json({ error: "attemptId is required" }, { status: 400 })
     const test = await (prisma as any).test.findUnique({
       where: { id: params.id },
       include: { questions: true }
@@ -30,17 +31,22 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     }
     const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0
     const passed = score >= test.passingScore
-    const attempt = await (prisma as any).testAttempt.update({
-      where: { id: attemptId },
+    // Atomic, status-conditional flip scoped to the caller + this test + an OPEN
+    // attempt. Putting userId/testId/status in the WHERE of the UPDATE itself
+    // (not a separate read-then-write) closes both the cross-candidate IDOR and
+    // a self-race: two concurrent submits of the same attempt can't both match.
+    const flip = await (prisma as any).testAttempt.updateMany({
+      where: { id: attemptId, userId: payload.userId, testId: params.id, status: "IN_PROGRESS" },
       data: {
         status: "COMPLETED",
         score,
         passed,
         completedAt: new Date(),
-        tabSwitches: tabSwitches || 0,
-        answers: { create: answerRecords }
+        tabSwitches: tabSwitches || 0
       }
     })
+    if (flip.count === 0) return NextResponse.json({ error: "Attempt not found or already submitted" }, { status: 404 })
+    await (prisma as any).answer.createMany({ data: answerRecords })
     await prisma.notification.create({
       data: {
         userId: payload.userId,
@@ -49,7 +55,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         link: `/tests/${params.id}`
       }
     })
-    return NextResponse.json({ success: true, score, passed, earnedPoints, totalPoints, attempt })
+    return NextResponse.json({ success: true, score, passed, earnedPoints, totalPoints })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

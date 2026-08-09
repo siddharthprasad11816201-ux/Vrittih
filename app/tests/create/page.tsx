@@ -75,15 +75,20 @@ export default function CreateTest() {
         points: q.points,
       }))
     }
-    const res = await fetch("/api/tests", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    })
-    const data = await res.json()
-    setSaving(false)
-    if (data.success) router.push(`/tests/${data.test.id}`)
-    else setError(data.error || "Failed to create test")
+    try {
+      const res = await fetch("/api/tests", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload)
+      })
+      const data = await res.json().catch(() => ({}))
+      if (data.success) router.push(`/tests/${data.test.id}`)
+      else setError(data.error || "Failed to create test")
+    } catch {
+      setError("Failed to create test. Please check your connection and try again.")
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (

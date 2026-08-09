@@ -29,14 +29,24 @@ export async function GET(req: NextRequest) {
 
   let org: any = null
   if (canOrg(ctx)) {
+    // Platform operators (ai.ops.view / admin.access) see cross-tenant totals.
+    // An hrms.view employer is NOT an operator — every Growth+ employer holds
+    // hrms.view — so scope their rollup to their OWN workforce, or they'd read
+    // platform-wide learning/competency intelligence across all tenants.
+    const isOps = ctx.has("ai.ops.view") || ctx.has("admin.access")
+    let scope: any = {}
+    if (!isOps) {
+      const emps = await prisma.employee.findMany({ where: { employerId: ctx.userId }, select: { userId: true } })
+      scope = { userId: { in: emps.map(e => e.userId) } }
+    }
     const [enrollAgg, completedAgg, coursesPub, certs30, compRows, comps, learners] = await Promise.all([
-      prisma.enrollment.count(),
-      prisma.enrollment.count({ where: { status: "COMPLETED" } }),
+      prisma.enrollment.count({ where: scope }),
+      prisma.enrollment.count({ where: { status: "COMPLETED", ...scope } }),
       prisma.course.count({ where: { status: "PUBLISHED" } }),
-      prisma.certificate.count({ where: { kind: "course", issuedAt: { gte: new Date(Date.now() - 30 * 864e5) } } }).catch(() => 0),
-      prisma.userCompetency.findMany({ select: { competencyKey: true, proficiency: true }, take: 50000 }),
+      prisma.certificate.count({ where: { kind: "course", issuedAt: { gte: new Date(Date.now() - 30 * 864e5) }, ...scope } }).catch(() => 0),
+      prisma.userCompetency.findMany({ where: scope, select: { competencyKey: true, proficiency: true }, take: 50000 }),
       prisma.competency.findMany({ where: { published: true }, select: { key: true, label: true } }),
-      prisma.userCompetency.findMany({ distinct: ["userId"], select: { userId: true } }).then(r => r.length).catch(() => 0),
+      prisma.userCompetency.findMany({ where: scope, distinct: ["userId"], select: { userId: true } }).then(r => r.length).catch(() => 0),
     ])
     const labelByKey = new Map(comps.map(c => [c.key, c.label]))
     const heat = orgHeatmap(compRows)

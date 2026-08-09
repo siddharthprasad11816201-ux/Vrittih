@@ -27,10 +27,16 @@ export default function MailPage() {
     setSelected(null)
     const params = new URLSearchParams({ folder })
     if (q) params.set("q", q)
-    const d = await fetch("/api/mail?" + params).then(r => r.json())
-    setMails(d.mails || [])
-    setUnread(d.unread || 0)
-    setLoading(false)
+    try {
+      const d = await fetch("/api/mail?" + params).then(r => r.json())
+      setMails(d.mails || [])
+      setUnread(d.unread || 0)
+    } catch {
+      setMails([])
+      setUnread(0)
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function openMail(mail: any) {
@@ -52,11 +58,16 @@ export default function MailPage() {
   async function sendMail(e: any) {
     e.preventDefault()
     setSending(true); setSendMsg("")
-    const res = await fetch("/api/mail/send", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(compose) })
-    const d = await res.json()
-    setSending(false)
-    if (d.success) { setSendMsg("Mail sent successfully"); setCompose({ toEmail:"", subject:"", body:"" }); setTimeout(() => { setComposing(false); setSendMsg("") }, 1500) }
-    else setSendMsg(d.error || "Failed to send")
+    try {
+      const res = await fetch("/api/mail/send", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(compose) })
+      const d = await res.json().catch(() => ({}))
+      if (d.success) { setSendMsg("Mail sent successfully"); setCompose({ toEmail:"", subject:"", body:"" }); setTimeout(() => { setComposing(false); setSendMsg("") }, 1500) }
+      else setSendMsg(d.error || "Failed to send")
+    } catch {
+      setSendMsg("Failed to send")
+    } finally {
+      setSending(false)
+    }
   }
 
   const initials = (name: string) => name?.split(" ").map((n:string)=>n[0]).join("").slice(0,2).toUpperCase()||"?"

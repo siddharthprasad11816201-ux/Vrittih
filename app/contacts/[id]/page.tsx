@@ -23,12 +23,20 @@ export default function ContactDetail() {
   const [msg, setMsg] = useState("")
   const [notes, setNotes] = useState("")
   const [sending, setSending] = useState(false)
+  const [err, setErr] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
 
   const load = useCallback(async () => {
-    const d = await fetch(`/api/crm/contacts/${id}`).then(r => r.json())
-    if (d.error) { router.push("/contacts"); return }
-    setData(d); setNotes(d.contact.notes || "")
+    setErr(false)
+    try {
+      const res = await fetch(`/api/crm/contacts/${id}`)
+      if (res.status === 404) { router.push("/contacts"); return }
+      const d = await res.json().catch(() => ({}))
+      if (d.error) { router.push("/contacts"); return }
+      setData(d); setNotes(d.contact.notes || "")
+    } catch {
+      setErr(true)
+    }
   }, [id, router])
   useEffect(() => { load() }, [load])
   useEffect(() => { if (tab === "messages") setTimeout(() => bottomRef.current?.scrollIntoView(), 50) }, [tab, data])
@@ -48,6 +56,14 @@ export default function ContactDetail() {
     await fetch(`/api/crm/contacts/${id}`, { method: "DELETE" }); router.push("/contacts")
   }
 
+  if (err) return (
+    <CrmShell>
+      <div style={{ padding: "3rem", textAlign: "center", color: "#8A8595" }}>
+        <p style={{ marginBottom: 14 }}>Couldn&apos;t load this contact — please check your connection and try again.</p>
+        <button onClick={load} style={{ background: "#6495ED", color: "#fff", border: "none", borderRadius: 9, padding: "10px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" }}>Retry</button>
+      </div>
+    </CrmShell>
+  )
   if (!data) return <CrmShell><div style={{ padding: "3rem", color: "#8A8595" }}>Loading…</div></CrmShell>
   const c = data.contact
   const m = STAGE_META[c.stage] || STAGE_META.LEAD

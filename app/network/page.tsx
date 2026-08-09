@@ -18,16 +18,23 @@ function NetworkInner() {
 
   async function load() {
     setLoading(true)
-    const [netData, sugData] = await Promise.all([
-      fetch("/api/network").then(r => r.json()),
-      fetch("/api/network/suggestions").then(r => r.json()),
-    ])
-    const pending = (netData.received || []).filter((c: any) => c.status === "PENDING")
-    const accepted = (netData.connections || [])
-    setReceived(pending)
-    setConnections(accepted)
-    setSuggestions(sugData.suggestions || [])
-    setLoading(false)
+    try {
+      const [netData, sugData] = await Promise.all([
+        fetch("/api/network").then(r => r.json()),
+        fetch("/api/network/suggestions").then(r => r.json()),
+      ])
+      const pending = (netData.received || []).filter((c: any) => c.status === "PENDING")
+      const accepted = (netData.connections || [])
+      setReceived(pending)
+      setConnections(accepted)
+      setSuggestions(sugData.suggestions || [])
+    } catch {
+      setReceived([])
+      setConnections([])
+      setSuggestions([])
+    } finally {
+      setLoading(false)
+    }
   }
 
   async function connect(userId: string) {

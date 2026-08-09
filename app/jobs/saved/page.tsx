@@ -14,8 +14,14 @@ export default function SavedJobs() {
   const [loading, setLoading] = useState(true)
 
   async function load() {
-    const d = await fetch("/api/jobs/save").then(r => r.ok ? r.json() : { jobs: [] })
-    setJobs(d.jobs || []); setLoading(false)
+    try {
+      const d = await fetch("/api/jobs/save").then(r => r.ok ? r.json() : { jobs: [] })
+      setJobs(d.jobs || [])
+    } catch {
+      setJobs([])
+    } finally {
+      setLoading(false)
+    }
   }
   useEffect(() => { load() }, [])
 
