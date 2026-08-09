@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { verifyToken } from "@/lib/jwt"
+import { prisma } from "@/lib/prisma"
 import { getRazorpay, razorpayConfigured } from "@/lib/razorpay"
 import { getRates, convertFromCHF, meta } from "@/lib/fx"
 import { JOINING_FEE_CHF } from "@/lib/payment"
@@ -16,8 +17,24 @@ export async function POST(req: NextRequest) {
     const payload = token ? verifyToken(token) : null
     if (!payload) return NextResponse.json({ error: "Please sign in to continue." }, { status: 401 })
 
-    const { currency = "CHF", type = "jobseeker", planId, couponCode } = await req.json()
+    const { currency = "CHF", type = "jobseeker", planId, couponCode, courseId } = await req.json()
     if (!meta(currency)) return NextResponse.json({ error: "Unsupported currency." }, { status: 400 })
+
+    // ---- Paid-course purchase (full price; scholarships go through redeem-waiver).
+    // A separate branch from platform-plan checkout — never mixes the two. ----
+    if (courseId) {
+      const course = await prisma.course.findUnique({ where: { id: String(courseId) }, select: { id: true, title: true, accessType: true, priceCHF: true, status: true } })
+      if (!course || course.accessType !== "PAID" || (course.priceCHF || 0) <= 0) return NextResponse.json({ error: "This course isn't a paid course." }, { status: 400 })
+      if (course.status !== "PUBLISHED") return NextResponse.json({ error: "This course isn't available." }, { status: 409 })
+      if (!razorpayConfigured()) return NextResponse.json({ error: "Card payments aren't switched on yet — add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET.", configured: false }, { status: 503 })
+      const { rates } = await getRates()
+      const { amount, minorUnits } = convertFromCHF(course.priceCHF, currency, rates[currency] ?? 1)
+      const order = await getRazorpay().orders.create({
+        amount: minorUnits, currency, receipt: `vrittih_c_${payload.userId}_${Date.now()}`.slice(0, 40),
+        notes: { userId: payload.userId, type: "course", courseId: course.id, planId: "", feeCHF: String(course.priceCHF), baseCHF: String(course.priceCHF), discountCHF: "0", couponId: "", couponCode: "" },
+      })
+      return NextResponse.json({ orderId: order.id, amount: order.amount, currency: order.currency, keyId: process.env.RAZORPAY_KEY_ID, displayAmount: amount, name: (course.title || "Vrittih course").slice(0, 60), courseId: course.id })
+    }
 
     const plan = planId ? await getEffectivePlan(planId) : null
     if (planId && !plan) return NextResponse.json({ error: "Unknown plan." }, { status: 400 })

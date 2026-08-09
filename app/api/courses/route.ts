@@ -10,6 +10,7 @@ const slugify = (s: string) => s.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-"
 function shape(c: any, enrolledSet?: Set<string>) {
   return {
     id: c.id, slug: c.slug, title: c.title, summary: c.summary, level: c.level, category: c.category, status: c.status,
+    accessType: c.accessType, priceCHF: c.priceCHF,
     skills: (() => { try { return JSON.parse(c.skills || "[]") } catch { return [] } })(),
     competencies: (() => { try { return JSON.parse(c.competencies || "[]") } catch { return [] } })(),
     lessonCount: c._count?.lessons ?? c.lessons?.length ?? 0,
@@ -51,6 +52,8 @@ export async function POST(req: NextRequest) {
       level: String(b.level || "MID").toUpperCase(), category: b.category ? String(b.category).slice(0, 40) : null,
       skills: JSON.stringify(Array.isArray(b.skills) ? b.skills.slice(0, 40).map((s: any) => String(s)) : []),
       competencies: JSON.stringify(Array.isArray(b.competencies) ? b.competencies.slice(0, 40).map((s: any) => String(s)) : []),
+      accessType: String(b.accessType || "FREE").toUpperCase() === "PAID" ? "PAID" : "FREE",
+      priceCHF: String(b.accessType || "FREE").toUpperCase() === "PAID" ? Math.max(0, Math.min(100000, Number(b.priceCHF) || 0)) : 0,
       status: "DRAFT",
     },
   })

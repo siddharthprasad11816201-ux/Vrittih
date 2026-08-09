@@ -4,6 +4,7 @@ import { resolveContext } from "@/lib/capability/context"
 import { courseProgressPct, LESSON_TYPES } from "@/lib/learning/course"
 import { proficiencyFromEvidence } from "@/lib/learning/competency"
 import { newSerial, newVerificationCode } from "@/lib/certificate"
+import { isPaid, lessonReadable } from "@/lib/learning/access"
 
 export const dynamic = "force-dynamic"
 const canAuthor = (ctx: any) => ctx.has("admin.access") || ctx.has("jobs.post") || ctx.has("ai.ops.view")
@@ -26,14 +27,21 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 
   const enrollment = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId: ctx.userId, courseId: course.id } }, include: { progress: { select: { lessonId: true } } } })
   const doneIds = new Set((enrollment?.progress || []).map(p => p.lessonId))
+  const hasAccess = !!enrollment || isAuthor
   return NextResponse.json({
     course: {
       id: course.id, slug: course.slug, title: course.title, summary: course.summary, level: course.level,
-      category: course.category, status: course.status, skills: jarr(course.skills), competencies: jarr(course.competencies),
-      author: course.author ? { id: course.author.id, name: course.author.name } : null, isAuthor,
+      category: course.category, status: course.status, accessType: course.accessType, priceCHF: course.priceCHF,
+      skills: jarr(course.skills), competencies: jarr(course.competencies),
+      author: course.author ? { id: course.author.id, name: course.author.name } : null, isAuthor, hasAccess,
     },
-    lessons: course.lessons.map(l => ({ id: l.id, order: l.order, section: l.section, title: l.title, type: l.type, contentMd: l.contentMd, resourceUrl: l.resourceUrl, durationMin: l.durationMin, done: doneIds.has(l.id) })),
-    enrollment: enrollment ? { id: enrollment.id, status: enrollment.status, progressPct: enrollment.progressPct, certificateCode: enrollment.certificateCode } : null,
+    // Protected content is only delivered to enrolled learners / the author; on a paid
+    // course, non-holders still get preview lessons (§10) but locked bodies elsewhere.
+    lessons: course.lessons.map(l => {
+      const readable = lessonReadable(course, l, hasAccess)
+      return { id: l.id, order: l.order, section: l.section, title: l.title, type: l.type, durationMin: l.durationMin, isPreview: l.isPreview, locked: !readable, contentMd: readable ? l.contentMd : null, resourceUrl: readable ? l.resourceUrl : null, done: doneIds.has(l.id) }
+    }),
+    enrollment: enrollment ? { id: enrollment.id, status: enrollment.status, progressPct: enrollment.progressPct, certificateCode: enrollment.certificateCode, accessSource: enrollment.accessSource } : null,
     lessonTypes: LESSON_TYPES,
   })
 }
@@ -61,6 +69,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
           contentMd: b.contentMd ? String(b.contentMd).slice(0, 20000) : null,
           resourceUrl: b.resourceUrl ? String(b.resourceUrl).slice(0, 500) : null,
           durationMin: Math.max(1, Math.min(600, Number(b.durationMin) || 10)), skill: b.skill ? String(b.skill).slice(0, 60) : null,
+          isPreview: !!b.isPreview,
         },
       })
       return NextResponse.json({ success: true, lessonId: l.id })
@@ -77,9 +86,15 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // ---- learner: enroll ----
   if (action === "enroll") {
     if (course.status !== "PUBLISHED" && !isAuthor) return NextResponse.json({ error: "Course not available." }, { status: 409 })
+    const existing = await prisma.enrollment.findUnique({ where: { userId_courseId: { userId: ctx.userId, courseId: course.id } }, select: { id: true } })
+    // Paid course, no prior grant, not the author → must pay or redeem a scholarship
+    // (the PAID/WAIVER enrollment is created by verify / redeem-waiver).
+    if (isPaid(course) && !existing && !isAuthor) {
+      return NextResponse.json({ error: "This is a paid course.", requiresPayment: true, priceCHF: course.priceCHF }, { status: 402 })
+    }
     await prisma.enrollment.upsert({
       where: { userId_courseId: { userId: ctx.userId, courseId: course.id } },
-      create: { userId: ctx.userId, courseId: course.id, status: "ACTIVE", progressPct: 0 },
+      create: { userId: ctx.userId, courseId: course.id, status: "ACTIVE", progressPct: 0, accessSource: "FREE" },
       update: {},
     })
     return NextResponse.json({ success: true })

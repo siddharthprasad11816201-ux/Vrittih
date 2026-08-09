@@ -47,6 +47,18 @@ export async function POST(req: NextRequest) {
     const couponId = (notes.couponId as string) || ""
     const feeCHF = Number(notes.feeCHF) || 0
     const baseCHF = Number(notes.baseCHF) || feeCHF   // pre-discount, for the audit trail
+    const courseId = (notes.courseId as string) || ""
+
+    // Paid-course purchase: grant a PAID enrollment (idempotent via @@unique) — do NOT
+    // touch the platform plan. Runs before the plan-activation path below.
+    if (courseId) {
+      await prisma.enrollment.upsert({
+        where: { userId_courseId: { userId: payload.userId, courseId } },
+        create: { userId: payload.userId, courseId, status: "ACTIVE", progressPct: 0, accessSource: "PAID", paymentRef: razorpay_payment_id },
+        update: { accessSource: "PAID", paymentRef: razorpay_payment_id },
+      }).catch(() => {})
+      return NextResponse.json({ success: true, paymentId: razorpay_payment_id, courseId })
+    }
 
     const data: any = { paid: true, paidAt: new Date(), paymentId: razorpay_payment_id }
     if (planId) {

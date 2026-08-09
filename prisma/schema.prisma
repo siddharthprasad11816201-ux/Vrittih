@@ -1378,6 +1378,8 @@ model Course {
   skills       String?                     // JSON string[] taught
   competencies String?                     // JSON string[] competency keys this course develops
   status       String   @default("DRAFT")  // DRAFT | PUBLISHED | ARCHIVED
+  accessType   String   @default("FREE")   // FREE | PAID  (§4 access models)
+  priceCHF     Float    @default(0)         // list price when accessType=PAID; server is the pricing authority
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
   author       User     @relation("CourseAuthor", fields: [authorId], references: [id], onDelete: Cascade)
@@ -1397,6 +1399,7 @@ model Lesson {
   resourceUrl String?
   durationMin Int      @default(10)
   skill       String?
+  isPreview   Boolean  @default(false)      // §10 free preview: visible before enrolment/payment
   course      Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   @@index([courseId, order])
 }
@@ -1410,6 +1413,9 @@ model Enrollment {
   startedAt       DateTime @default(now())
   completedAt     DateTime?
   certificateCode String?                       // set when a completion certificate is issued
+  accessSource    String   @default("FREE")     // FREE | PAID | WAIVER — how access was granted (§35 state machine)
+  paymentRef      String?                        // razorpay_payment_id for PAID grants (audit/idempotency)
+  couponId        String?                        // waiver Coupon id for WAIVER (scholarship) grants
   user            User     @relation("EnrollmentUser", fields: [userId], references: [id], onDelete: Cascade)
   course          Course   @relation(fields: [courseId], references: [id], onDelete: Cascade)
   progress        LessonProgress[]

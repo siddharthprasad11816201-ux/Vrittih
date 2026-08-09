@@ -12,15 +12,19 @@ export default function AcademyPage() {
   const [busy, setBusy] = useState<string | null>(null)
   const [err, setErr] = useState("")
   // author
-  const [nc, setNc] = useState({ title: "", summary: "", level: "MID", category: "", skills: "", competencies: "" })
-  const [nl, setNl] = useState({ title: "", type: "reading", durationMin: 10, contentMd: "", resourceUrl: "" })
+  const [nc, setNc] = useState({ title: "", summary: "", level: "MID", category: "", skills: "", competencies: "", accessType: "FREE", priceCHF: "" })
+  const [nl, setNl] = useState({ title: "", type: "reading", durationMin: 10, contentMd: "", resourceUrl: "", isPreview: false })
+  const [waiverCode, setWaiverCode] = useState("")   // course scholarship code
   // path
   const [pathSkills, setPathSkills] = useState(""); const [path, setPath] = useState<any>(null)
+  const priceLabel = (c: any) => c.accessType === "PAID" && c.priceCHF > 0 ? `CHF ${Number(c.priceCHF).toLocaleString("de-CH")}` : "Free"
 
   async function load() {
     try { const r = await fetch("/api/courses"); if (r.status === 401) { setState("denied"); return } setData(await r.json()); setState("ok") } catch { setState("denied") }
   }
   useEffect(() => { load() }, [])
+  // Razorpay checkout SDK (for paid-course enrolment).
+  useEffect(() => { if (!document.getElementById("rzp-sdk")) { const s = document.createElement("script"); s.id = "rzp-sdk"; s.src = "https://checkout.razorpay.com/v1/checkout.js"; document.body.appendChild(s) } }, [])
   // Deep-link: /academy?course=<slug> auto-opens that course (e.g. from the career coach).
   useEffect(() => {
     const slug = new URLSearchParams(window.location.search).get("course")
@@ -47,8 +51,39 @@ export default function AcademyPage() {
     setBusy("create"); setErr("")
     try {
       const d = await fetch("/api/courses", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ ...nc, skills: nc.skills.split(",").map(s => s.trim()).filter(Boolean), competencies: nc.competencies.split(",").map(s => s.trim()).filter(Boolean) }) }).then(r => r.json())
-      if (d.error) setErr(d.error); else { setNc({ title: "", summary: "", level: "MID", category: "", skills: "", competencies: "" }); await load(); await openCourse(d.id) }
+      if (d.error) setErr(d.error); else { setNc({ title: "", summary: "", level: "MID", category: "", skills: "", competencies: "", accessType: "FREE", priceCHF: "" }); await load(); await openCourse(d.id) }
     } finally { setBusy(null) }
+  }
+  // Paid-course checkout (§4/§6): create-order(courseId) → Razorpay → verify → refresh.
+  async function payCourse(course: any) {
+    setBusy("act"); setErr("")
+    try {
+      const d = await fetch("/api/payment/create-order", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ currency: "CHF", courseId: course.id }) }).then(r => r.json())
+      if (!d.orderId) { setErr(d.error || "Could not start checkout."); setBusy(null); return }
+      const RZP = (window as any).Razorpay
+      if (!RZP) { setErr("Payment window failed to load — please retry."); setBusy(null); return }
+      const rzp = new RZP({
+        key: d.keyId, amount: d.amount, currency: d.currency, order_id: d.orderId,
+        name: "Vrittih Academy", description: course.title, theme: { color: "#6495ED" },
+        handler: async (resp: any) => {
+          const v = await fetch("/api/payment/verify", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(resp) }).then(r => r.json())
+          if (v.success) { await openCourse(course.id); await load() } else setErr(v.error || "Verification failed.")
+          setBusy(null)
+        },
+        modal: { ondismiss: () => setBusy(null) },
+      })
+      rzp.on("payment.failed", (r: any) => { setErr(r.error?.description || "Payment failed."); setBusy(null) })
+      rzp.open()
+    } catch { setErr("Network error starting checkout."); setBusy(null) }
+  }
+  // Course scholarship (§7/§8): 100% waiver code → WAIVER enrolment (no charge).
+  async function redeemCourseWaiver(course: any) {
+    if (!waiverCode.trim()) return
+    setBusy("act"); setErr("")
+    try {
+      const d = await fetch("/api/payment/redeem-waiver", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ courseId: course.id, code: waiverCode.trim() }) }).then(r => r.json())
+      if (d.success) { setWaiverCode(""); await openCourse(course.id); await load() } else setErr(d.error || "That scholarship code isn't valid.")
+    } catch { setErr("Network error.") } finally { setBusy(null) }
   }
   async function genPath() {
     const skills = pathSkills.split(",").map(s => s.trim()).filter(Boolean)
@@ -77,7 +112,7 @@ export default function AcademyPage() {
             <div style={S.grid}>
               {data.courses.map((c: any) => (
                 <button key={c.id} style={S.card} onClick={() => openCourse(c.id)}>
-                  <div style={S.cardTitle}>{c.title}</div>
+                  <div style={S.cardTopRow}><div style={S.cardTitle}>{c.title}</div><span style={c.accessType === "PAID" && c.priceCHF > 0 ? S.paidBadge : S.freeBadge}>{priceLabel(c)}</span></div>
                   <div style={S.cardSub}>{c.level} · {c.lessonCount} lesson{c.lessonCount === 1 ? "" : "s"}{c.author ? ` · ${c.author.name}` : ""}</div>
                   {c.skills?.length > 0 && <div style={S.chips}>{c.skills.slice(0, 4).map((s: string) => <span key={s} style={S.chip}>{s}</span>)}</div>}
                   <span style={S.enrollTag}>{c.enrolled ? "Continue" : "View"} <IconArrowRight size={13} /></span>
@@ -134,6 +169,13 @@ export default function AcademyPage() {
                 <input style={S.input} placeholder="Skills taught (comma-separated)" value={nc.skills} onChange={e => setNc({ ...nc, skills: e.target.value })} />
                 <input style={S.input} placeholder="Competency keys (comma-separated)" value={nc.competencies} onChange={e => setNc({ ...nc, competencies: e.target.value })} />
               </div>
+              <div style={{ ...S.grid2, marginTop: 10 }}>
+                <select style={S.input} value={nc.accessType} onChange={e => setNc({ ...nc, accessType: e.target.value })}>
+                  <option value="FREE">Free course</option>
+                  <option value="PAID">Paid course</option>
+                </select>
+                {nc.accessType === "PAID" && <input style={S.input} type="number" min={0} placeholder="Price (CHF)" value={nc.priceCHF} onChange={e => setNc({ ...nc, priceCHF: e.target.value })} />}
+              </div>
               <input style={{ ...S.input, marginTop: 10 }} placeholder="Summary" value={nc.summary} onChange={e => setNc({ ...nc, summary: e.target.value })} />
               <button style={{ ...S.cta, marginTop: 10 }} onClick={createCourse} disabled={busy === "create"}>{busy === "create" ? "…" : "Create draft"}</button>
             </div>
@@ -159,14 +201,22 @@ export default function AcademyPage() {
                 ? <span style={S.doneTag}><IconAward size={14} /> Certified</span>
                 : open.enrollment
                   ? <span style={S.pctTag}>{open.enrollment.progressPct}%</span>
-                  : <button style={S.cta} onClick={() => courseAction(open.course.id, { action: "enroll" })} disabled={busy === "act"}>Enroll</button>}
+                  : open.course.accessType === "PAID" && open.course.priceCHF > 0 && !open.course.isAuthor
+                    ? <button style={S.cta} onClick={() => payCourse(open.course)} disabled={busy === "act"}>Enrol — CHF {Number(open.course.priceCHF).toLocaleString("de-CH")}</button>
+                    : <button style={S.cta} onClick={() => courseAction(open.course.id, { action: "enroll" })} disabled={busy === "act"}>Enroll</button>}
             </div>
             {err && <div style={S.err}>{err}</div>}
             {open.course.summary && <p style={S.sub}>{open.course.summary}</p>}
+            {!open.enrollment && !open.course.isAuthor && open.course.accessType === "PAID" && open.course.priceCHF > 0 && (
+              <div style={S.waiverRow}>
+                <input style={{ ...S.input, flex: 1 }} placeholder="Have a scholarship / fee-waiver code?" value={waiverCode} onChange={e => setWaiverCode(e.target.value)} />
+                <button style={S.ghost} onClick={() => redeemCourseWaiver(open.course)} disabled={busy === "act" || !waiverCode.trim()}>Redeem</button>
+              </div>
+            )}
             {open.enrollment?.certificateCode && <a href={`/verify/cert/${open.enrollment.certificateCode}`} style={S.certLink}><IconAward size={13} /> View certificate</a>}
             <div style={S.lessons}>
               {(open.lessons || []).map((l: any) => {
-                const canRead = !!(open.enrollment || open.course.isAuthor)
+                const canRead = !l.locked   // server gates: enrolled/author, or a preview lesson on a paid course
                 const isOpen = openLesson === l.id
                 return (
                   <div key={l.id} style={S.lessonWrap}>
@@ -174,7 +224,7 @@ export default function AcademyPage() {
                       <span style={{ color: l.done ? "var(--v-green)" : "var(--v-ink-3)", display: "grid", placeItems: "center" }}><IconCheckCircle size={17} /></span>
                       <button style={S.lessonToggle} onClick={() => canRead && setOpenLesson(isOpen ? null : l.id)} disabled={!canRead}>
                         <div style={S.lTitle}>{l.title}</div>
-                        <div style={S.lSub}>{l.type} · {l.durationMin} min{l.section ? ` · ${l.section}` : ""}{canRead ? (isOpen ? " · Hide" : " · Open") : ""}</div>
+                        <div style={S.lSub}>{l.type} · {l.durationMin} min{l.section ? ` · ${l.section}` : ""}{l.locked ? " · Locked" : l.isPreview && !open.enrollment && !open.course.isAuthor ? " · Free preview" : ""}{canRead ? (isOpen ? " · Hide" : " · Open") : ""}</div>
                       </button>
                       {open.enrollment && !l.done && <button style={S.miniBtn} disabled={busy === "act"} onClick={() => courseAction(open.course.id, { action: "complete-lesson", lessonId: l.id })}>Mark done</button>}
                     </div>
@@ -203,8 +253,11 @@ export default function AcademyPage() {
                   {nl.type === "video" && <input style={S.input} placeholder="Resource / video URL" value={nl.resourceUrl} onChange={e => setNl({ ...nl, resourceUrl: e.target.value })} />}
                   <input style={S.input} type="number" min={1} max={600} placeholder="Duration (min)" value={nl.durationMin} onChange={e => setNl({ ...nl, durationMin: Number(e.target.value) })} />
                 </div>
+                {open.course.accessType === "PAID" && (
+                  <label style={S.checkRow}><input type="checkbox" checked={nl.isPreview} onChange={e => setNl({ ...nl, isPreview: e.target.checked })} /> Free preview (visible before enrolment)</label>
+                )}
                 <div style={S.authorActions}>
-                  <button style={S.ghost} onClick={() => { if (nl.title.trim()) { courseAction(open.course.id, { action: "add-lesson", ...nl }); setNl({ title: "", type: "reading", durationMin: 10, contentMd: "", resourceUrl: "" }) } }} disabled={busy === "act"}>Add lesson</button>
+                  <button style={S.ghost} onClick={() => { if (nl.title.trim()) { courseAction(open.course.id, { action: "add-lesson", ...nl }); setNl({ title: "", type: "reading", durationMin: 10, contentMd: "", resourceUrl: "", isPreview: false }) } }} disabled={busy === "act"}>Add lesson</button>
                   {open.course.status !== "PUBLISHED" && <button style={S.cta} onClick={() => courseAction(open.course.id, { action: "publish" })} disabled={busy === "act"}>Publish course</button>}
                 </div>
               </div>
@@ -235,6 +288,11 @@ const S: Record<string, any> = {
   cardPlain: { background: "var(--v-surface)", border: "1px solid var(--v-line)", borderRadius: 14, padding: 16, marginBottom: 14 },
   cardH: { fontFamily: "var(--font-display)", fontSize: 15, fontWeight: 600, color: "var(--v-ink)", marginBottom: 12 },
   cardTitle: { fontSize: 14.5, fontWeight: 600, color: "var(--v-ink)" },
+  cardTopRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8 },
+  paidBadge: { fontSize: 11, fontWeight: 700, color: "var(--v-accent)", background: "var(--v-accent-soft)", padding: "2px 8px", borderRadius: 6, flexShrink: 0 },
+  freeBadge: { fontSize: 11, fontWeight: 700, color: "var(--v-green)", background: "var(--v-green-soft)", padding: "2px 8px", borderRadius: 6, flexShrink: 0 },
+  waiverRow: { display: "flex", gap: 8, marginTop: 10 },
+  checkRow: { display: "flex", alignItems: "center", gap: 8, marginTop: 10, fontSize: 12.5, color: "var(--v-ink-2)" },
   cardSub: { fontSize: 12.5, color: "var(--v-ink-2)", marginTop: 2 },
   chips: { display: "flex", flexWrap: "wrap", gap: 5, margin: "8px 0" },
   chip: { fontSize: 11.5, color: "var(--v-accent-2)", background: "var(--v-accent-soft)", padding: "2px 8px", borderRadius: 6 },

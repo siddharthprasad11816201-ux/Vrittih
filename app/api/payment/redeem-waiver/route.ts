@@ -19,7 +19,42 @@ export async function POST(req: NextRequest) {
     const payload = token ? verifyToken(token) : null
     if (!payload) return NextResponse.json({ error: "Please sign in to continue." }, { status: 401 })
 
-    const { code, planId, type = "jobseeker" } = await req.json().catch(() => ({}))
+    const { code, planId, type = "jobseeker", courseId } = await req.json().catch(() => ({}))
+
+    // ---- Course scholarship (100% waiver) — grant a WAIVER enrollment, never touch
+    // the platform plan. Mirrors the plan-waiver transaction below. ----
+    if (courseId) {
+      const course = await prisma.course.findUnique({ where: { id: String(courseId) }, select: { id: true, accessType: true, priceCHF: true, status: true } })
+      if (!course || course.accessType !== "PAID") return NextResponse.json({ error: "This course isn't a paid course." }, { status: 400 })
+      const v = await validateCoupon(String(code || ""), { userId: payload.userId, planId: null, audience: "individual", amountCHF: course.priceCHF })
+      if (!v.ok || !v.coupon) return NextResponse.json({ error: v.reason || "This code isn't valid." }, { status: 400 })
+      if (!v.waiver || v.finalCHF > 0) return NextResponse.json({ error: "This code only reduces the price — please pay the balance." }, { status: 400 })
+      try {
+        await prisma.$transaction(async (tx) => {
+          const c = await tx.coupon.findUnique({ where: { id: v.coupon.id } })
+          if (!c || !c.active) throw new Error("coupon_inactive")
+          if (c.maxRedemptions != null && c.redeemedCount >= c.maxRedemptions) throw new Error("coupon_exhausted")
+          await tx.couponRedemption.create({ data: { couponId: c.id, userId: payload.userId, planId: null, amountBeforeCHF: course.priceCHF, amountAfterCHF: 0, waiver: true } })
+          if (c.maxRedemptions != null) {
+            const upd = await tx.coupon.updateMany({ where: { id: c.id, redeemedCount: c.redeemedCount }, data: { redeemedCount: { increment: 1 } } })
+            if (upd.count === 0) throw new Error("coupon_exhausted")
+          } else {
+            await tx.coupon.update({ where: { id: c.id }, data: { redeemedCount: { increment: 1 } } })
+          }
+          await tx.enrollment.upsert({
+            where: { userId_courseId: { userId: payload.userId, courseId: course.id } },
+            create: { userId: payload.userId, courseId: course.id, status: "ACTIVE", progressPct: 0, accessSource: "WAIVER", couponId: c.id },
+            update: { accessSource: "WAIVER", couponId: c.id },
+          })
+        })
+      } catch (e: any) {
+        const msg = String(e?.message || "")
+        if (msg.includes("Unique constraint") || msg.includes("coupon_exhausted") || msg.includes("coupon_inactive")) return NextResponse.json({ error: "This code can no longer be redeemed." }, { status: 409 })
+        throw e
+      }
+      return NextResponse.json({ success: true, activated: true, courseId: course.id, waiver: true })
+    }
+
     const plan = planId ? await getEffectivePlan(planId) : null
     if (planId && !plan) return NextResponse.json({ error: "Unknown plan." }, { status: 400 })
     const amountCHF = plan ? plan.priceCHF : JOINING_FEE_CHF
