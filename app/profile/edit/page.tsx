@@ -86,6 +86,12 @@ export default function EditProfile() {
     for (const e of (parsed?.education || [])) await fetch("/api/profile/education", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ school:e.school||"", degree:e.degree||"", field:"", startYear:"", endYear:e.year||"" }) }).catch(()=>{})
     const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user); setParsed((x:any)=> x ? { ...x, education: [] } : x)
   }
+  // Add a single inferred/suggested skill (evidence panel — spec §8/§21).
+  async function addOneSkill(name: string) {
+    await fetch("/api/profile/skills", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ name }) }).catch(()=>{})
+    setParsed((x:any)=> x ? { ...x, skillsDetailed: (x.skillsDetailed || []).filter((s:any)=> s.skill !== name) } : x)
+    const d = await fetch("/api/profile").then(r => r.json()).catch(()=>({})); if (d.user) setUser(d.user)
+  }
 
   // Professional links (verified).
   async function loadLinks() { const d = await fetch("/api/profile/links").then(r => r.json()).catch(() => ({})); setLinks(d.links || []) }
@@ -214,6 +220,28 @@ export default function EditProfile() {
                       {parsed.skills?.length ? <button type="button" onClick={applyParsedSkills} style={S.rpBtn}>Add {parsed.skills.length} skills</button> : null}
                       {parsed.experience?.length ? <button type="button" onClick={applyParsedExperience} style={S.rpBtn}>Add {parsed.experience.length} experience</button> : null}
                       {parsed.education?.length ? <button type="button" onClick={applyParsedEducation} style={S.rpBtn}>Add {parsed.education.length} education</button> : null}
+                    </div>
+                  ) : null}
+                  {parsed && parsed.skillsDetailed?.length ? (
+                    <div style={S.rpEv}>
+                      <div style={S.rpEvHead}>What we found in your résumé — evidence-based</div>
+                      <div style={S.rpChips}>
+                        {parsed.skillsDetailed.filter((s: any) => s.status !== "inferred").map((s: any) => (
+                          <span key={s.skill} style={S.rpChip} title={s.evidence ? `${s.status === "explicit" ? "Listed in your Skills" : "Demonstrated"}: ${s.evidence}` : (s.status === "explicit" ? "Listed in your Skills" : "Demonstrated")}>
+                            {s.skill}<span style={S.rpTag}>{s.status === "explicit" ? "listed" : "shown"}</span>
+                          </span>
+                        ))}
+                      </div>
+                      {parsed.skillsDetailed.some((s: any) => s.status === "inferred") ? (
+                        <>
+                          <div style={S.rpEvSub}>Related skills we inferred — tap to add:</div>
+                          <div style={S.rpChips}>
+                            {parsed.skillsDetailed.filter((s: any) => s.status === "inferred").map((s: any) => (
+                              <button type="button" key={s.skill} onClick={() => addOneSkill(s.skill)} style={S.rpChipAdd}>+ {s.skill}</button>
+                            ))}
+                          </div>
+                        </>
+                      ) : null}
                     </div>
                   ) : null}
                 </div>
@@ -425,6 +453,13 @@ const S: Record<string,any> = {
   rpActions: { display:"flex", gap:8, flexWrap:"wrap", marginTop:10 },
   rpBtn: { border:"1px solid var(--v-accent)", background:"var(--v-surface)", color:"var(--v-accent)", borderRadius:9, padding:"6px 12px", fontSize:12.5, fontWeight:600, cursor:"pointer" },
   rpUpload: { flexShrink:0, display:"inline-flex", alignItems:"center", gap:7, background:"var(--v-accent)", color:"#fff", borderRadius:10, padding:"10px 16px", fontSize:13.5, fontWeight:600, cursor:"pointer" },
+  rpEv: { marginTop:12, borderTop:"1px solid var(--v-line-2)", paddingTop:10 },
+  rpEvHead: { fontSize:12, fontWeight:700, color:"var(--v-ink-3)", textTransform:"uppercase" as const, letterSpacing:".04em" },
+  rpEvSub: { fontSize:12, color:"var(--v-ink-3)", margin:"10px 0 6px" },
+  rpChips: { display:"flex", flexWrap:"wrap" as const, gap:6, marginTop:8 },
+  rpChip: { display:"inline-flex", alignItems:"center", gap:5, background:"var(--v-surface)", border:"1px solid var(--v-line-2)", borderRadius:999, padding:"4px 10px", fontSize:12.5, color:"var(--v-ink)", cursor:"default" },
+  rpTag: { fontSize:10, color:"var(--v-ink-3)", background:"var(--v-surface-2)", borderRadius:5, padding:"1px 5px" },
+  rpChipAdd: { display:"inline-flex", alignItems:"center", gap:4, background:"var(--v-surface)", border:"1px dashed var(--v-accent)", color:"var(--v-accent)", borderRadius:999, padding:"4px 11px", fontSize:12.5, fontWeight:600, cursor:"pointer" },
   row: { display:"flex", flexWrap:"wrap" as const, gap:12, marginBottom:12 },
   input: { width:"100%", border:"0.5px solid rgba(0,0,0,.13)", borderRadius:8, padding:"8px 11px", fontSize:13, color:"#0A0A0F", outline:"none", fontFamily:"inherit" },
   saveBtn: { background:"#6366F1", color:"#fff", border:"none", padding:"9px 20px", borderRadius:8, fontSize:13, fontWeight:500, cursor:"pointer", marginTop:4 },
