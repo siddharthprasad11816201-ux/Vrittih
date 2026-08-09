@@ -2,6 +2,14 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (f) — Phase 11: AI Marketplace
+- **AI Marketplace shipped** (built on the staged MarketplaceItem/Install/Review models — no new schema). Surfaces the platform's real in-house AIOS capabilities as installable agents, plus user-published prompts/workflows.
+  - **Catalog:** 14 in-house agents (Enterprise Brain, Career Coach, Recruiter Copilot, HR Copilot, Project Manager, Financial/Sales/Campus/Policy/Clinical intelligence, Research Assistant, AI Tutor, Opportunity Matcher, Career Frontier) — each mapped to a **real, gateway-executable capId** (integrity-tested: every seeded capId exists in the registry). Idempotent seeder preserves accrued installs/ratings.
+  - **API:** `GET/POST /api/marketplace` (browse/search/sort + publish), `GET/DELETE /api/marketplace/[slug]`, `/install` (toggle), `/review` (install-gated, exact rating aggregate), `/run`. **Run executes the mapped capability through the AIOS gateway**, which enforces the *caller's own* authz + audits the run — installing an item can never escalate privilege. Governance: users may publish PROMPT/WORKFLOW only; AGENT/TOOL are admin-governed.
+  - **UI:** `/marketplace` (browse / installed / my-items tabs, filters, install, publish modal) + `/marketplace/[slug]` (detail, gateway-run panel with evidence output + audited runId, install-gated reviews). Nav wired for employers (Operations) and candidates (Resources).
+  - **Honesty:** ratings show a real average or "New" (never a fake 0/5); installs are real counters; run surfaces the gateway's honest failures (denied / no-evidence).
+  - **Verified:** 30/30 unit + integrity, 16/16 E2E (login → seed → install → review + gate → publish + governance → gateway-run audited → 404s). Build clean (149 pages).
+
 ## 2026-08-09 (e) — foundation completeness remediation (pre-Phase-11 gate)
 - **Whole-product completeness/authenticity audit** before advancing to new phases: a deterministic 100%-file scan (111 pages / 231 routes / 156 libs → 0 no-op handlers, 0 dead anchors, only 1 borderline marker, all correct) **plus** a 38-agent semantic audit of every shipped module (Phases 1–10 + copilots + platform), each finding adversarially verified → **27 CONFIRMED** (8 high / 13 med / 6 low; 0 refuted). A 23-check verify pass then caught 1 BROKEN + 3 CONCERN. **All 31 fixed; build clean (148 pages).**
   - **Jobs (HIGH):** requirements/benefits/experienceLevel/openings were silently dropped by the API schema — now persisted (new nullable Job columns) + rendered on job detail. Salary now Swiss `de-CH` grouping, not INR lakh.

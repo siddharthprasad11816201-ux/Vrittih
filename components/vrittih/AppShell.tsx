@@ -68,6 +68,7 @@ function buildNav(caps: Set<string>): Section[] {
     ops.push({ href: "/university", label: "University", icon: <IconLayers size={18} /> })  // Phase 8 University OS
     ops.push({ href: "/government", label: "Government", icon: <IconShield size={18} /> })   // Phase 11 Government platform
     ops.push({ href: "/healthcare", label: "Healthcare", icon: <IconActivity size={18} /> }) // Phase 12 Healthcare platform
+    ops.push({ href: "/marketplace", label: "Marketplace", icon: <IconStar size={18} /> })   // Phase 11 AI Marketplace
     if (ops.length) sections.push({ title: "Operations", items: ops })
     const comms: Item[] = [{ href: "/messages", label: "Messages", icon: <IconMessage size={18} /> }]
     // Email (Mail) and the built-in video-call (Interviews) are hidden for all tiers for
@@ -108,6 +109,7 @@ function buildNav(caps: Set<string>): Section[] {
     sections.push({ title: "Resources", items: [
       { href: "/projects", label: "Projects", icon: <IconLayers size={18} /> }, // Phase 5 personal project workspace
       { href: "/tests", label: "Assessments", icon: <IconAward size={18} /> },
+      { href: "/marketplace", label: "Marketplace", icon: <IconStar size={18} /> }, // Phase 11 AI Marketplace
       { href: "/tools", label: "Tools", icon: <IconZap size={18} /> },
     ] })
   }

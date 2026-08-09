@@ -28,7 +28,7 @@ See [PLATFORM_CONSTITUTION.md](PLATFORM_CONSTITUTION.md). In short: one unified 
 | — | AI copilot rebuilds to expert grade | Career Coach, Interview AI, Learning Tutor, Executive/HR Copilots → route through the brain | 🟡 | 15 |
 | 9 | Government Platform | Citizen services, schemes, grievances + **Policy Intelligence** (brain-routed, FX-safe) | ✅ | 100 |
 | 10 | Healthcare Platform | Patients, appointments, records, triage routing + **Clinical Ops Intelligence** (brain-routed) | ✅ | 100 |
-| 11 | AI Marketplace | Agents/prompts/tools/workflows, dev SDK | ⬜ | 0 (models staged) |
+| 11 | AI Marketplace | Agents/prompts/tools/workflows — install + run in-house agents via the gateway; publish prompts/workflows | ✅ | 100 |
 | 12 | Analytics & BI | Dashboards, KPIs, forecasting, decision intelligence | ⬜ | 0 |
 | 13 | Automation Platform | Workflow/rules engine, integration hub, no/low-code | ⬜ | 0 |
 | 14 | Digital Twin | Org/employee/project twins, simulation | ⬜ | 0 |
