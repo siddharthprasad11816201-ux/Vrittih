@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
       overall: r.match.overall, projectedMatch: r.match.projectedMatch,
       matched: r.match.matched.slice(0, 4).map((m) => m.skill),
       missing: r.match.missing.slice(0, 3).map((m) => ({ skill: m.skill, difficulty: m.difficulty })),
+      transferable: r.match.transferable.slice(0, 3).map((t) => ({ skill: t.skill, via: t.via })),
       label: r.match.hiring.label,
     }
   })

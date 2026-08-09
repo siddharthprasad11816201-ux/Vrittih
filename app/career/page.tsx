@@ -13,7 +13,7 @@ import DocumentUpload from "@/components/career/DocumentUpload"
  * career paths, and document ingestion. Anonymous users get a sign-in prompt. */
 
 type Skill = { skill: string; confidence: number; level: string; category: string; implied: boolean }
-type Match = { id: string; title: string; company: string; remote: boolean; overall: number; projectedMatch: number; matched: string[]; missing: { skill: string; difficulty: string }[]; label: string }
+type Match = { id: string; title: string; company: string; remote: boolean; overall: number; projectedMatch: number; matched: string[]; missing: { skill: string; difficulty: string }[]; transferable: { skill: string; via: string }[]; label: string }
 type Dashboard = { skills: Skill[]; stats: { total: number; demonstrated: number; strengths: string[]; jobsConsidered: number }; matches: Match[] }
 
 const tierColor = (n: number) => (n >= 75 ? "#16A34A" : n >= 55 ? "#6495ED" : n >= 35 ? "#B45309" : "#94A3B8")
@@ -93,6 +93,11 @@ export default function CareerPage() {
                     {m.matched.map((s) => <span key={s} style={S.chipOk}>{s}</span>)}
                     {m.missing.map((x) => <span key={x.skill} style={S.chipMiss}>{x.skill}</span>)}
                   </div>
+                  {m.transferable?.length > 0 && (
+                    <div style={S.matchTransfer}>Transferable: {m.transferable.map((t, i) => (
+                      <span key={t.skill}>{i > 0 ? ", " : ""}<b>{t.via}</b> → {t.skill}</span>
+                    ))}</div>
+                  )}
                   {m.projectedMatch > m.overall && <div style={S.matchProj}>→ up to {m.projectedMatch}% after closing the gap</div>}
                 </Link>
               ))}
@@ -152,4 +157,5 @@ const S: Record<string, any> = {
   chipOk: { font: "600 11.5px var(--font-sans)", background: "#EAF1FE", color: "#2F6BE0", borderRadius: 7, padding: "3px 8px" },
   chipMiss: { font: "600 11.5px var(--font-sans)", background: "#F1F5F9", color: "#94A3B8", borderRadius: 7, padding: "3px 8px" },
   matchProj: { font: "400 12px var(--font-sans)", color: "#16A34A", marginTop: 7 },
+  matchTransfer: { font: "400 11.5px var(--font-sans)", color: "#7C6FD8", marginTop: 6 },
 }

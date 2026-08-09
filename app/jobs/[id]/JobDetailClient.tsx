@@ -23,13 +23,28 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
   const [coverLetter, setCoverLetter] = useState("")
   const [showForm, setShowForm] = useState(false)
   const [error, setError] = useState("")
+  // "gone" = the role genuinely no longer exists (404). "transient" = the request
+  // failed (500 / network) and a retry may succeed. fetch() does NOT reject on
+  // 4xx/5xx, so without inspecting r.status BOTH used to collapse into a bare
+  // "Job not found." — mislabeling a transient outage as a permanent removal and
+  // dead-ending recommended-job clicks. Keep them distinct so each gets the right UX.
+  const [loadErr, setLoadErr] = useState<"none" | "gone" | "transient">("none")
 
   useEffect(() => {
+    let alive = true
+    setLoading(true); setLoadErr("none")
     fetch(`/api/jobs/${id}`)
-      .then(r => r.json())
-      .then(d => setJob(d.job))
-      .catch(() => setError("Couldn't load this job. Please check your connection and try again."))
-      .finally(() => setLoading(false))
+      .then(async (r) => {
+        if (!alive) return
+        if (r.status === 404) { setLoadErr("gone"); return }
+        if (!r.ok) { setLoadErr("transient"); return }
+        const d = await r.json().catch(() => null)
+        if (d?.job) setJob(d.job)
+        else setLoadErr("transient")
+      })
+      .catch(() => { if (alive) setLoadErr("transient") })
+      .finally(() => { if (alive) setLoading(false) })
+    return () => { alive = false }
   }, [id])
 
   // Returned from sign-in mid-apply: resume in the FULL validated apply flow, not
@@ -69,8 +84,31 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
     setApplying(false)
   }
 
-  if (loading) return <AppShell><div className={styles.loading}>Loading...</div></AppShell>
-  if (!job) return <AppShell><div className={styles.loading}>Job not found.</div></AppShell>
+  if (loading) return <AppShell><div className={styles.loading}>Loading…</div></AppShell>
+  if (loadErr === "gone") return (
+    <AppShell>
+      <div style={A.empty}>
+        <h1 style={A.emptyTitle}>This role is no longer available</h1>
+        <p style={A.emptyText}>It may have been filled or closed since it was recommended to you. Here&apos;s where to go next:</p>
+        <div style={A.emptyBtns}>
+          <Link href="/career" style={A.emptyPrimary}>See your best-fit roles →</Link>
+          <Link href="/jobs" style={A.emptySecondary}>Browse all jobs</Link>
+        </div>
+      </div>
+    </AppShell>
+  )
+  if (loadErr === "transient" || !job) return (
+    <AppShell>
+      <div style={A.empty}>
+        <h1 style={A.emptyTitle}>Couldn&apos;t load this role</h1>
+        <p style={A.emptyText}>Something went wrong on our side — this is usually temporary.</p>
+        <div style={A.emptyBtns}>
+          <button onClick={() => { setJob(null); setLoadErr("none"); setLoading(true); fetch(`/api/jobs/${id}`).then(async (r) => { if (r.status === 404) { setLoadErr("gone"); return } if (!r.ok) { setLoadErr("transient"); return } const d = await r.json().catch(() => null); if (d?.job) setJob(d.job); else setLoadErr("transient") }).catch(() => setLoadErr("transient")).finally(() => setLoading(false)) }} style={A.emptyPrimary}>Try again</button>
+          <Link href="/jobs" style={A.emptySecondary}>Browse all jobs</Link>
+        </div>
+      </div>
+    </AppShell>
+  )
 
   return (
     <AppShell>
@@ -256,6 +294,12 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
 
 // Apply options — Vrittih's tracked flow plus the official external routes.
 const A: Record<string, any> = {
+  empty: { maxWidth: 520, margin: "56px auto", textAlign: "center", padding: "0 20px" },
+  emptyTitle: { font: "700 22px var(--font-sans)", color: "var(--brand-900, #0B1126)", margin: 0, letterSpacing: "-.02em" },
+  emptyText: { font: "400 14px/1.6 var(--font-sans)", color: "var(--v-ink-3, #64748B)", margin: "12px 0 22px" },
+  emptyBtns: { display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" },
+  emptyPrimary: { font: "600 13.5px var(--font-sans)", color: "#fff", background: "var(--brand-600, #6495ED)", border: "none", borderRadius: 11, padding: "11px 18px", textDecoration: "none", cursor: "pointer" },
+  emptySecondary: { font: "600 13.5px var(--font-sans)", color: "var(--brand-700, #334EAC)", background: "var(--v-surface, #fff)", border: "1px solid var(--v-line-2, #cdd6f5)", borderRadius: 11, padding: "11px 18px", textDecoration: "none", cursor: "pointer" },
   box: { border: "1px solid var(--v-line, #E6E3DA)", borderRadius: 14, padding: 20, background: "var(--v-surface, #fff)", marginTop: 8 },
   head: { fontSize: 17, fontWeight: 650, color: "var(--brand-900, #0B1126)", margin: 0 },
   sub: { fontSize: 13.5, color: "var(--v-ink-3, #94A3B8)", margin: "6px 0 16px", lineHeight: 1.5 },

@@ -4,6 +4,7 @@
  * close it / projected match / offer odds" breakdown. */
 import { extract, type SkillResult } from "./engine"
 import { canonical, categoryOf, IMPLY } from "./taxonomy"
+import { effectiveConfidence } from "./semantic"
 import { skillWeightFactor, calibratedFunnel, type Calibration } from "./calibration"
 
 const clamp01 = (n: number) => Math.max(0, Math.min(1, n))
@@ -43,7 +44,11 @@ export type MatchResult = {
   technical: number
   confidence: number       // how sure we are (evidence coverage)
   matched: { skill: string; category: string; confidence: number; must: boolean }[]
-  missing: { skill: string; category: string; must: boolean; difficulty: string; prepDays: number; expectedGain: number }[]
+  missing: { skill: string; category: string; must: boolean; difficulty: string; prepDays: number; expectedGain: number; transferFrom?: string }[]
+  // Required skills the candidate doesn't hold outright but is partway to via an
+  // adjacent skill they DO hold (semantic transfer). Honest: never counted as
+  // "matched", only shown as "you're partway here because of X".
+  transferable: { skill: string; category: string; via: string; credit: number }[]
   why: string[]
   subscores: { technical: number; communication: number | null; leadership: number | null; research: number | null }
   projectedMatch: number   // after closing the top missing must-haves
@@ -71,7 +76,14 @@ function coverage(req: Requirement[], confFn: (s: string) => number, weightFn: (
 export function matchJob(candidate: SkillResult[], job: JobLike, cal?: Calibration | null): MatchResult {
   const req = jobRequirements(job)
   const cand = new Map(candidate.map((s) => [s.skill, s]))
-  const conf = (sk: string) => cand.get(sk)?.confidence ?? 0
+  const held = new Map(candidate.map((s) => [s.skill, s.confidence]))
+  // Exact evidence (used to decide what the candidate genuinely HAS) vs semantic
+  // effective confidence (exact, or a capped transfer from an adjacent held skill —
+  // used to score effective fit). memoised per skill within this match.
+  const exactConf = (sk: string) => cand.get(sk)?.confidence ?? 0
+  const effCache = new Map<string, ReturnType<typeof effectiveConfidence>>()
+  const eff = (sk: string) => { let e = effCache.get(sk); if (!e) { e = effectiveConfidence(sk, held); effCache.set(sk, e) } return e }
+  const conf = (sk: string) => eff(sk).conf
 
   // §21: recruiter-feedback weight nudge is OFF unless explicitly enabled by an
   // owner, so scores never silently mirror (and entrench) recruiter behaviour.
@@ -79,11 +91,16 @@ export function matchJob(candidate: SkillResult[], job: JobLike, cal?: Calibrati
   const weightFn = calibrateWeights ? (sk: string) => skillWeightFactor(sk, cal) : undefined
 
   const matched: MatchResult["matched"] = []
-  const missingRaw: { skill: string; category: string; must: boolean }[] = []
+  const missingRaw: { skill: string; category: string; must: boolean; transferFrom?: string }[] = []
+  const transferable: MatchResult["transferable"] = []
   for (const r of req) {
-    const c = conf(r.skill)
-    if (c >= 0.4) matched.push({ skill: r.skill, category: r.category, confidence: c, must: r.must })
-    else missingRaw.push({ skill: r.skill, category: r.category, must: r.must })
+    // "matched" reflects EXACT evidence only — semantic transfer never fabricates it.
+    const ex = exactConf(r.skill)
+    if (ex >= 0.4) { matched.push({ skill: r.skill, category: r.category, confidence: ex, must: r.must }); continue }
+    const e = eff(r.skill)
+    const transferFrom = !e.exact && e.via && e.conf >= 0.25 ? e.via : undefined
+    if (transferFrom) transferable.push({ skill: r.skill, category: r.category, via: transferFrom, credit: pct(e.conf) })
+    missingRaw.push({ skill: r.skill, category: r.category, must: r.must, transferFrom })
   }
   const actual = coverage(req, conf, weightFn)
   const technical = actual.technical, mustHave = actual.priority, overall = actual.overall
@@ -123,7 +140,7 @@ export function matchJob(candidate: SkillResult[], job: JobLike, cal?: Calibrati
   return {
     overall: pct(overall), technical: pct(technical), confidence: pct(assessable),
     matched: matched.sort((a, b) => b.confidence - a.confidence),
-    missing, why,
+    missing, transferable: transferable.sort((a, b) => b.credit - a.credit).slice(0, 6), why,
     subscores: { technical: pct(technical), communication: softOrNull("Communication"), leadership: softOrNull("Leadership"), research: softOrNull("Research") },
     projectedMatch: pct(projected), prepDays,
     hiring: { screening: pct(screening), shortlist: pct(shortlist), technical: pct(techRound), offer: pct(offer), label, ...(cf ? { calibrated: Math.round(cf.advanceRate * 100), basis: cf.basis } : {}) },

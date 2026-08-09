@@ -11,7 +11,7 @@ import { simulateCareer } from "@/lib/career/simulator"
 import { parseChfSalary } from "@/lib/career/salary"
 import { momentum, diffVectors, type SeriesPoint, type SkillVector } from "@/lib/career/progress"
 import { inputFromUser, resumeFromUser } from "@/lib/career/fromUser"
-import { classifyIntent, FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
+import { parseQuery, FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
 import { writeAiRun, inputsHash } from "@/lib/aios/audit"
 
 export const dynamic = "force-dynamic"
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
     const message = String(body?.message || "").slice(0, 500)
-    const intent = classifyIntent(message)
+    const { intent, slots } = parseQuery(message)
     // AIOS §4 governance: audit every coach invocation as a registered-agent run.
     writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: "intent-classify-v1", inputsHash: inputsHash(message), outputs: { intent }, status: "ok", explanation: `Coach intent: ${intent}` }).catch(() => {})
 
@@ -95,11 +95,30 @@ export async function POST(req: NextRequest) {
       }
       case "matches": {
         if (!ranked.length) return reply(intent, "There are no active roles to match against right now — check back shortly.", [])
-        const strong = ranked.filter((r) => r.match.overall >= 35).slice(0, 5)
-        const shown = (strong.length ? strong : ranked.slice(0, 5))
-        return reply(intent, strong.length ? `Your strongest matches right now — ranked by real fit against your skills:` : `Nothing is a strong fit yet, but these are your closest roles. Ask me what to learn to raise them.`, [
+        // Apply the query's structured filters (§NLP): a match threshold and/or remote.
+        let pool = ranked
+        if (slots.remote) pool = pool.filter((r) => (r.job as any).remote)
+        const hasThreshold = slots.threshold != null
+        const thr = hasThreshold ? (slots.threshold as number) : 35
+        const above = pool.filter((r) => r.match.overall >= thr)
+        const shown = (above.length ? above : pool).slice(0, hasThreshold ? 12 : 5)
+        const rw = slots.remote ? " remote" : ""
+        let lead: string
+        if (!pool.length) lead = `I don't see any${rw} roles to match against right now — check back shortly.`
+        else if (hasThreshold) lead = above.length
+          ? `${above.length}${rw} role${above.length === 1 ? "" : "s"} match you at ${thr}% or higher — ranked by real fit:`
+          : `No${rw} roles currently reach ${thr}% for your profile. Your closest are below — ask me what to learn to raise them.`
+        else lead = above.length
+          ? `Your strongest${rw} matches right now — ranked by real fit against your skills:`
+          : `Nothing${rw} is a strong fit yet, but these are your closest roles. Ask me what to learn to raise them.`
+        const cards: Card[] = [
           { kind: "jobs", items: shown.map((r) => ({ id: r.job.id, title: r.job.title, subtitle: (r.job as any).company, score: r.match.overall })) },
-        ], { label: "Browse all jobs", href: "/jobs" })
+        ]
+        // Show the semantics working: skills the top role needs that the candidate
+        // is partway to via an adjacent skill they already hold.
+        const topR = shown[0]
+        if (topR?.match.transferable?.length) cards.push({ kind: "chips", title: `Transferable strengths for ${topR.job.title}`, items: topR.match.transferable.slice(0, 5).map((t) => `${t.via} → ${t.skill}`) })
+        return reply(intent, lead, cards, { label: "Browse all jobs", href: "/jobs" })
       }
       case "resume": {
         if (!top) return reply(intent, "Add a target role first — pick a job and I'll review your résumé against exactly what it screens for.", [], { label: "Find jobs", href: "/jobs" })
