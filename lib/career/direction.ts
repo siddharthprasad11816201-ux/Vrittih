@@ -48,8 +48,11 @@ export function careerDirection(input: AnalyzeInput): CareerDirection {
     const matched: { skill: string; conf: number }[] = []
     for (const sk of a.skills) {
       const e = effectiveConfidence(sk, held)
-      sum += e.conf
-      if (e.conf >= 0.3) matched.push({ skill: sk, conf: e.conf })
+      sum += e.conf // score MAY include semantic transfer (a fair fit measure)
+      // ...but only EXACT, genuinely-held skills are ever DISPLAYED as signals — a
+      // skill reached purely via transfer (e.conf high but e.exact false) is never
+      // presented as the candidate's own evidence. (Honesty: mirrors match.ts.)
+      if (e.exact && e.conf >= 0.3) matched.push({ skill: sk, conf: e.conf })
     }
     return {
       label: a.label, blurb: a.blurb,
@@ -83,7 +86,9 @@ export function careerDirection(input: AnalyzeInput): CareerDirection {
     note = `You're early here — ${top.matched.length ? `we can see ${top.matched.slice(0, 3).join(", ")}` : "add a few core skills"} — but a little more evidence will sharpen this.`
   } else {
     headline = `Your evidence points toward ${top.label}`
-    note = `Strongest signals: ${top.matched.slice(0, 4).join(", ")}${top.matched.length > 4 ? ", and more" : ""} — ${top.blurb}.`
+    note = top.matched.length
+      ? `Strongest signals: ${top.matched.slice(0, 4).join(", ")}${top.matched.length > 4 ? ", and more" : ""} — ${top.blurb}.`
+      : `Your current skills are adjacent to this direction — ${top.blurb}. Add a couple of its core skills to make it definitive.`
   }
 
   return {
