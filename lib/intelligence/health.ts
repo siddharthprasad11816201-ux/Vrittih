@@ -48,7 +48,9 @@ const darkDomainRule: DecisionRule = (ctx) => ctx.domains
     recommendation: `No ${d.label.toLowerCase()} data is flowing yet — connect the source so this domain can be measured and forecast.`,
     evidence: [`0 of ${d.total} ${d.label.toLowerCase()} metrics have data.`],
     supportingMetrics: [{ label: "Metric coverage", value: `0/${d.total}`, band: null }],
-    confidence: 0.9,
+    // "0 of N metrics have data" is a certain coverage fact, not a prediction — so
+    // this reads as certainty (1), never an invented mid-range AI confidence.
+    confidence: 1,
     alternatives: [`Start collecting ${d.label.toLowerCase()} events now.`, `Defer this domain until the workflow that produces it is live.`],
     risks: [`Decisions in ${d.label.toLowerCase()} are currently unsupported by data.`],
   }))

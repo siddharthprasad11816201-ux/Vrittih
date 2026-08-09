@@ -2,6 +2,11 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (d) — AI Constitution-compliance audit (honest confidence)
+- **Dedicated AI-honesty audit** across every AI provider, Enterprise-Brain engine, intelligence lib, and AI-facing route (6 finder areas → adversarial per-finding verify; 4 CONFIRMED = 2 distinct bugs, 0 refuted). The AI layer is otherwise honest — sibling decision rules derive confidence from real coverage/R², `confidence: 0` returns are genuine insufficient-evidence, and deterministic providers correctly omit confidence.
+  - **Fabricated confidence (MED):** `lib/intelligence/health.ts` `darkDomainRule` hardcoded `confidence: 0.9` on "…intelligence is dark" cards, rendered to executives as "Confidence: 90%". "0 of N metrics have data" is a *certain* coverage fact, so it now reports `confidence: 1` — consistent with the sibling rules and no longer an invented mid-range AI estimate.
+  - **Fabricated confidence (LOW):** `lib/project/intelligence.ts` `forecastCompletion()` returned `confidence: 0.9` for a project with zero open tasks (a completed project — also a certainty, ETA = now); now `confidence: 1`. (Carried only in the API/audit payload, not rendered.)
+
 ## 2026-08-09 (c) — remaining-surfaces audit + resilience sweep
 - **Third adversarial audit** over the remaining surfaces (learning/research/admin/messaging/offers/interviews/tests/network/community/contacts/settings/notifications; 29 agents, 21 CONFIRMED, 0 plausible, 4 refuted), then an 8-agent adversarial **verification** pass (0 BROKEN, 0 CONCERN) before commit — all fixed:
   - **SECURITY — IDOR (HIGH):** `POST /api/tests/[id]/submit` updated a `TestAttempt` by client-supplied `attemptId` alone (no owner/test/state check) — any candidate could overwrite another's attempt or re-score their own after seeing results. Now an **atomic status-conditional** `updateMany` scoped to `{id, userId, testId, status: IN_PROGRESS}` (+ separate `answer.createMany`), closing the cross-candidate IDOR, the re-submit bypass, and a self-race in one write. Added an `attemptId` input guard (400).

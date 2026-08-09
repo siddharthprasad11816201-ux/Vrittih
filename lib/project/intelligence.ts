@@ -29,7 +29,7 @@ export function velocity(tasks: TaskLite[], now = Date.now(), weeks = 4): { perW
  * Confidence falls when velocity is near zero or the backlog is large relative to it. */
 export function forecastCompletion(openCount: number, perWeek: number, now = Date.now()): { openCount: number; weeksRemaining: number | null; etaAt: number | null; confidence: number } {
   const open = Math.max(0, Math.round(openCount))
-  if (open === 0) return { openCount: 0, weeksRemaining: 0, etaAt: now, confidence: 0.9 }
+  if (open === 0) return { openCount: 0, weeksRemaining: 0, etaAt: now, confidence: 1 } // no open work: completion is a fact, not a forecast
   if (perWeek <= 0) return { openCount: open, weeksRemaining: null, etaAt: null, confidence: 0.15 } // stalled — cannot forecast
   const weeksRemaining = +(open / perWeek).toFixed(1)
   const etaAt = now + weeksRemaining * WEEK
