@@ -2,6 +2,10 @@
 
 Reverse-chronological record of significant platform changes. Each implementation appends here.
 
+## 2026-08-09 (n) — Talent Intelligence §22: counterfactual matching
+- **"What would make this candidate a stronger match?"** on the `/talent` Discover results. For each ranked candidate, `lib/talent/counterfactual.ts` computes — per query skill they lack — the **real marginal fit lift** (re-scores with that skill added) and flags when it's **transferable** from a skill they already have (via the ontology implication graph, §20/§21). Rendered as "To strengthen: +Kubernetes +21% · +Docker +21%" dashed chips (transferable ones marked ~). Evidence-based; when a candidate already covers the ask, no counterfactuals are shown (no fabrication).
+- **Verified:** 7/7 units (lift positive, have-skills excluded, sorted, transferable-from React→JavaScript & Kubernetes→Docker, full-cover→none). Build clean (152 pages). No schema change.
+
 ## 2026-08-09 (m) — Talent Intelligence §31/§40/§41: natural-language talent search
 - **Recruiters can now search the candidate pool in plain English** on `/talent` → Discover: e.g. *"Senior Python engineers with real ML deployment experience, preferably research."*
   - `lib/talent/query.ts` `parseTalentQuery()` (in-house, deterministic, no LLM) turns the brief into a structured spec — ontology-detected skills split **must vs preferred** (by intent markers like "preferably"), **seniority**, and a **requireEvidence** flag ("real / production / hands-on / demonstrated").

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma"
 import { resolveContext } from "@/lib/capability/context"
 import { rankTalent } from "@/lib/talent/discovery"
 import { parseTalentQuery, type TalentQuery } from "@/lib/talent/query"
+import { counterfactuals } from "@/lib/talent/counterfactual"
 
 export const dynamic = "force-dynamic"
 const canManage = (ctx: any) => ctx.has("candidates.view") || ctx.has("pipeline.manage") || ctx.has("jobs.post") || ctx.has("admin.access")
@@ -51,6 +52,8 @@ export async function POST(req: NextRequest) {
     return {
       id: r.candidate.id, name: r.candidate.name, headline: r.candidate.headline, openToWork: r.candidate.openToWork,
       score: r.match.score, coverage: r.match.coverage, shared: r.match.shared, missing: r.match.missing, demonstrated,
+      // §22 counterfactual: the additions that would most raise this candidate's fit.
+      strengthen: counterfactuals(r.candidate.skills || [], skills, 3),
     }
   })
   // When the recruiter wants real experience, rank demonstrated coverage first.

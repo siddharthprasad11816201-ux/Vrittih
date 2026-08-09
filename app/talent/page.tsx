@@ -139,6 +139,11 @@ export default function TalentPage() {
                           ))}
                         </div>
                       )}
+                      {r.strengthen?.length > 0 && (
+                        <div style={S.strengthen}>To strengthen: {r.strengthen.map((c: any) => (
+                          <span key={c.skill} style={S.cfChip} title={c.transferableFrom ? `Transferable from ${c.transferableFrom}` : "Would raise this candidate's fit"}>+{c.skill} <b>+{c.lift}%</b>{c.transferableFrom ? " ~" : ""}</span>
+                        ))}</div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -255,6 +260,8 @@ const S: Record<string, any> = {
   shown: { fontSize: 11.5, color: "var(--v-green)", background: "var(--v-green-soft)", padding: "2px 8px", borderRadius: 6, fontWeight: 600 },
   interp: { fontSize: 12.5, color: "var(--v-ink-2)", background: "var(--v-accent-soft)", border: "1px solid var(--v-line)", borderRadius: 10, padding: "8px 12px", marginBottom: 12 },
   demoTag: { fontSize: 10.5, fontWeight: 700, color: "var(--v-green)", background: "var(--v-green-soft)", padding: "1px 7px", borderRadius: 999, marginLeft: 8 },
+  strengthen: { fontSize: 11.5, color: "var(--v-ink-3)", marginTop: 7, display: "flex", flexWrap: "wrap" as const, gap: 6, alignItems: "center" },
+  cfChip: { fontSize: 11, color: "var(--v-accent)", background: "var(--v-accent-soft)", border: "1px dashed var(--v-accent)", padding: "2px 8px", borderRadius: 6 },
   sectionH: { fontFamily: "var(--font-display)", fontSize: 14, fontWeight: 600, color: "var(--v-ink)", margin: "18px 0 10px" },
   refBadge: { fontSize: 11, fontWeight: 700 },
   stageSel: { border: "1px solid var(--v-line)", borderRadius: 8, padding: "6px 9px", fontSize: 12, background: "var(--v-surface)", color: "var(--v-ink)", fontFamily: "inherit" },
