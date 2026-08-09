@@ -235,7 +235,7 @@ function Personal({ o }: any) {
         <Info label="Headline" value={i.headline || "Not set"} />
         <Info label="Member since" value={fmtDate(i.memberSince)} />
       </div>
-      <div style={{ marginTop: 16 }}><Link href="/profile/edit" style={S.primaryBtn}>Edit profile</Link> <Link href="/profile" style={S.ghostBtn}>View public profile</Link></div>
+      <div style={{ marginTop: 16 }}><Link href="/profile/edit" style={S.primaryBtn}>Edit profile</Link> <Link href={`/u/${i.id}`} style={S.ghostBtn}>View public profile</Link></div>
     </Card>
   )
 }

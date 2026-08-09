@@ -14,8 +14,7 @@ export default function JobMatchPage() {
     fetch("/api/jobs/match").then(r=>r.json()).then(d => {
       setJobs(d.jobs || [])
       setSkills(d.userSkills || [])
-      setLoading(false)
-    })
+    }).catch(() => {}).finally(() => setLoading(false))
   }, [])
 
   const filtered = jobs.filter(j => j.matchScore >= filter)

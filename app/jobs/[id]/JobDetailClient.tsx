@@ -27,7 +27,9 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
   useEffect(() => {
     fetch(`/api/jobs/${id}`)
       .then(r => r.json())
-      .then(d => { setJob(d.job); setLoading(false) })
+      .then(d => setJob(d.job))
+      .catch(() => setError("Couldn't load this job. Please check your connection and try again."))
+      .finally(() => setLoading(false))
   }, [id])
 
   // Returned from sign-in mid-apply: resume in the FULL validated apply flow, not

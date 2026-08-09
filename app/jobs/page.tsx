@@ -48,16 +48,18 @@ function JobsInner() {
 
   async function fetchJobs(query = q) {
     setLoading(true)
-    const params = new URLSearchParams()
-    if (query) params.set("q", query)
-    if (industry !== "All") params.set("industry", industry)
-    if (type !== "All") params.set("type", type)
-    if (remote) params.set("remote", "true")
-    const res = await fetch("/api/jobs?" + params.toString())
-    const data = await res.json()
-    setJobs(data.jobs || [])
-    setTotal(data.total || 0)
-    setLoading(false)
+    try {
+      const params = new URLSearchParams()
+      if (query) params.set("q", query)
+      if (industry !== "All") params.set("industry", industry)
+      if (type !== "All") params.set("type", type)
+      if (remote) params.set("remote", "true")
+      const res = await fetch("/api/jobs?" + params.toString())
+      const data = await res.json()
+      setJobs(data.jobs || [])
+      setTotal(data.total || 0)
+    } catch { setJobs([]); setTotal(0) }   // don't hang on 'Loading jobs…' if the request fails
+    finally { setLoading(false) }
   }
 
   function handleSearch(e: FormEvent) {

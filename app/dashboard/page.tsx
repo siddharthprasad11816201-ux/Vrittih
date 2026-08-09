@@ -8,7 +8,7 @@ import PipelineRail from "@/components/vrittih/PipelineRail"
 import PipelineDonut from "@/components/vrittih/PipelineDonut"
 import AstroJobCard from "@/components/vrittih/AstroJobCard"
 import { dailyGuidance } from "@/lib/astrology"
-import { basicActive, trialActive, trialDaysLeft } from "@/lib/trial"
+import { basicActive, trialActive, trialDaysLeft, TRIAL_APPLICATION_CAP } from "@/lib/trial"
 import {
   IconBriefcase, IconFileText, IconUsers, IconVideo, IconAward, IconCheckCircle,
   IconArrowRight, IconCheck, IconUser, IconShield, IconTarget, IconClipboard,
@@ -33,26 +33,27 @@ export default function Dashboard() {
     fetch("/api/auth/me").then(r => r.json()).then(d => {
       if (!d.user) { router.push("/login"); return }
       setUser(d.user); loadData(d.user)
-    })
+    }).catch(() => router.push("/login"))   // don't hang the overview if auth check fails
   }, [])
 
   async function loadData(u: any) {
     const isEmp = ["EMPLOYER", "ADMIN", "SUPER_ADMIN"].includes(u.role)
-    // Profile (birth details) for everyone — powers the daily astrological guidance
-    // (advanced tiers + admins) and the best-fit card (seekers).
-    const prof = await fetch("/api/profile").then(r => r.json()).catch(() => ({}))
-    setProfile({ birthDate: prof?.user?.profile?.birthDate || null, birthTime: prof?.user?.profile?.birthTime || null, experience: prof?.user?.experience || [] })
-    if (isEmp) {
-      const [jobsData, appsData] = await Promise.all([
-        fetch("/api/jobs?mine=true").then(r => r.json()),
-        fetch("/api/applications?employer=true").then(r => r.json()),
-      ])
-      setJobs(jobsData.jobs || []); setApplications(appsData.applications || [])
-    } else {
-      const appsData = await fetch("/api/applications").then(r => r.json())
-      setApplications(appsData.applications || [])
-    }
-    setLoading(false)
+    try {
+      // Profile (birth details) for everyone — powers the daily astrological guidance
+      // (advanced tiers + admins) and the best-fit card (seekers).
+      const prof = await fetch("/api/profile").then(r => r.json()).catch(() => ({}))
+      setProfile({ birthDate: prof?.user?.profile?.birthDate || null, birthTime: prof?.user?.profile?.birthTime || null, experience: prof?.user?.experience || [] })
+      if (isEmp) {
+        const [jobsData, appsData] = await Promise.all([
+          fetch("/api/jobs?mine=true").then(r => r.json()).catch(() => ({})),
+          fetch("/api/applications?employer=true").then(r => r.json()).catch(() => ({})),
+        ])
+        setJobs(jobsData.jobs || []); setApplications(appsData.applications || [])
+      } else {
+        const appsData = await fetch("/api/applications").then(r => r.json()).catch(() => ({}))
+        setApplications(appsData.applications || [])
+      }
+    } finally { setLoading(false) }   // always clear loading, even on failure
   }
 
   if (loading) return <AppShell><div style={S.loading}>Loading your overview…</div></AppShell>
@@ -84,7 +85,7 @@ export default function Dashboard() {
   const empty = applications.length === 0
 
   const seekerMetrics = [
-    { label: "Applications", value: applications.length, href: "/applications", action: "Browse jobs" },
+    { label: "Applications", value: applications.length, href: empty ? "/jobs" : "/applications", action: empty ? "Browse jobs" : "View applications" },
     { label: "Interviews", value: count(a => a.status === "INTERVIEW"), href: "/applications", action: null }, // video room hidden for now
     { label: "Offers", value: count(a => a.status === "OFFERED"), href: "/applications", action: null },
     { label: "Hired", value: count(a => a.status === "HIRED"), href: "/applications", action: null },
@@ -147,7 +148,7 @@ export default function Dashboard() {
             <h1 style={S.h1}>Overview</h1>
             <p style={S.greeting}>Good {partOfDay}, {first}</p>
             {guidance && <p style={S.advice}><span style={S.adviceStar} aria-hidden="true">✦</span> {guidance.line}</p>}
-            {onTrial && !isEmployer && <p style={S.trial}>Free trial · {trialDaysLeft(user)} day{trialDaysLeft(user) === 1 ? "" : "s"} left · {applications.length}/10 applications used · <Link href="/pay" style={{ color: "var(--v-accent)", textDecoration: "none", fontWeight: 500 }}>Upgrade</Link></p>}
+            {onTrial && !isEmployer && <p style={S.trial}>Free trial · {trialDaysLeft(user)} day{trialDaysLeft(user) === 1 ? "" : "s"} left · {applications.length}/{TRIAL_APPLICATION_CAP} applications used ·<Link href="/pay" style={{ color: "var(--v-accent)", textDecoration: "none", fontWeight: 500 }}>Upgrade</Link></p>}
           </div>
           <Link href={isEmployer ? "/dashboard/post-job" : "/jobs"} style={S.primary}>
             {isEmployer ? "Post a job" : "Browse jobs"} <IconArrowRight size={15} />

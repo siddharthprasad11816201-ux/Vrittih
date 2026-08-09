@@ -13,6 +13,10 @@ async function resolveUser(idOrEmail: string): Promise<string | null> {
   if (idOrEmail.includes("@")) { const u = await prisma.user.findUnique({ where: { email: idOrEmail.toLowerCase() }, select: { id: true } }); return u?.id || null }
   const u = await prisma.user.findUnique({ where: { id: idOrEmail }, select: { id: true } }); return u?.id || null
 }
+// A manager may only act on their OWN company's employees (never an arbitrary platform user).
+async function isMyEmployee(userId: string, employerId: string): Promise<boolean> {
+  return !!(await prisma.employee.findUnique({ where: { employerId_userId: { employerId, userId } }, select: { userId: true } }).catch(() => null))
+}
 
 export async function GET(req: NextRequest) {
   const ctx = await resolveContext(req)
@@ -81,6 +85,7 @@ export async function POST(req: NextRequest) {
     const subjectId = await resolveUser(String(b.subject || ""))
     if (!subjectId) return NextResponse.json({ error: "Subject not found." }, { status: 404 })
     if (subjectId === ctx.userId) return NextResponse.json({ error: "You can't review yourself." }, { status: 400 })
+    if (!(await isMyEmployee(subjectId, ctx.userId))) return NextResponse.json({ error: "You can only review your own team members." }, { status: 403 })
     const ratings = Array.isArray(b.ratings) ? b.ratings.filter((r: any) => r.competencyKey).map((r: any) => ({ competencyKey: String(r.competencyKey).slice(0, 60), rating: Math.max(1, Math.min(5, Math.round(Number(r.rating) || 0))) })) : []
     const rv = await prisma.performanceReview.create({ data: { subjectId, reviewerId: ctx.userId, period: b.period ? String(b.period).slice(0, 40) : null, ratingsJson: JSON.stringify(ratings), overall: Math.round(reviewRollup(ratings).overall), summary: b.summary ? String(b.summary).slice(0, 5000) : null, status: "DRAFT" } })
     return NextResponse.json({ success: true, id: rv.id }, { status: 201 })
@@ -106,6 +111,7 @@ export async function POST(req: NextRequest) {
   if (action === "schedule-1on1") {
     const employeeId = await resolveUser(String(b.employee || ""))
     if (!employeeId) return NextResponse.json({ error: "Employee not found." }, { status: 404 })
+    if (!(await isMyEmployee(employeeId, ctx.userId))) return NextResponse.json({ error: "You can only schedule 1:1s with your own team members." }, { status: 403 })
     await prisma.oneOnOne.create({ data: { managerId: ctx.userId, employeeId, notes: b.notes ? String(b.notes).slice(0, 4000) : null, scheduledAt: b.scheduledAt ? new Date(b.scheduledAt) : null } })
     await createNotification({ userId: employeeId, title: "1:1 scheduled", body: "Your manager scheduled a 1:1.", link: "/hrms/performance", sendEmail: false }).catch(() => {})
     return NextResponse.json({ success: true }, { status: 201 })

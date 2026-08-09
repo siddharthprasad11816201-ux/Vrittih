@@ -57,7 +57,9 @@ export async function GET(req: NextRequest) {
     rates: {
       applicationToInterview: pct(reachedInterview, totalApps),
       interviewToOffer: pct(reachedOffer, reachedInterview),
-      offerAcceptance: pct(offers.ACCEPTED || hired, offersSent || reachedOffer),
+      // Use ONE consistent source (the Offer table when offers were actually sent, else the
+      // application funnel) and clamp — never mix operands or exceed 100%.
+      offerAcceptance: (() => { const [num, den] = offersSent > 0 ? [offers.ACCEPTED || 0, offersSent] : [hired, reachedOffer]; return den > 0 ? Math.min(100, Math.round((num / den) * 100)) : 0 })(),
       hireRate: pct(hired, totalApps),
       rejectionRate: pct(rejected, totalApps),
     },

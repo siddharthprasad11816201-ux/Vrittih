@@ -38,7 +38,7 @@ export default function EditProfile() {
         birthTime: d.user.profile?.birthTime || "", birthPlace: d.user.profile?.birthPlace || "",
         openToWork: !!d.user.openToWork,
       })
-    })
+    }).catch(() => router.push("/login"))   // don't hang on a failed load — send to sign-in
   }, [])
 
   async function saveBasic(e: any) {

@@ -20,15 +20,17 @@ const tierColor = (n: number) => (n >= 75 ? "#16A34A" : n >= 55 ? "#6495ED" : n 
 
 export default function CareerPage() {
   const [d, setD] = useState<Dashboard | null>(null)
-  const [state, setState] = useState<"loading" | "anon" | "ready">("loading")
+  const [state, setState] = useState<"loading" | "anon" | "ready" | "error">("loading")
 
   const load = () => fetch("/api/career/dashboard").then((r) => {
     if (r.status === 401) { setState("anon"); return null }
-    return r.ok ? r.json() : null
-  }).then((j) => { if (j) { setD(j); setState("ready") } }).catch(() => setState("anon"))
+    if (!r.ok) { setState("error"); return null }
+    return r.json()
+  }).then((j) => { if (j) { setD(j); setState("ready") } }).catch(() => setState("error"))
   useEffect(() => { load() }, [])
 
   if (state === "loading") return <AppShell><div style={S.loading}>Loading your Career Intelligence…</div></AppShell>
+  if (state === "error") return <AppShell><div style={S.loading}>Couldn't load your Career Intelligence right now. <button onClick={load} style={{ marginLeft: 8, color: "#6495ED", background: "none", border: "none", cursor: "pointer", font: "inherit", textDecoration: "underline" }}>Retry</button></div></AppShell>
   if (state === "anon") return (
     <AppShell>
       <div style={S.wrap}>

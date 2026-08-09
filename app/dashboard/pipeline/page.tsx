@@ -68,8 +68,8 @@ export default function ApplicantPipeline() {
         ) : filtered.length === 0 ? (
           <div className="ppEmpty">
             <p className="ppEmptyTitle">No applicants yet</p>
-            <p className="ppEmptyText">Once candidates apply, drag them through Applied → Offer → Hired here. Import your Indeed applicants to fill this instantly.</p>
-            <Link href="/admin/import" className="ppCta">Import candidates <IconArrowRight size={14} /></Link>
+            <p className="ppEmptyText">Once candidates apply, drag them through Applied → Offer → Hired here. Post a job to start attracting applicants.</p>
+            <Link href="/dashboard/post-job" className="ppCta">Post a job <IconArrowRight size={14} /></Link>
           </div>
         ) : (
           <div className="ppBoard">

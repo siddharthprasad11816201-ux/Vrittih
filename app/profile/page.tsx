@@ -24,8 +24,11 @@ export default function ProfilePage() {
   const [skill, setSkill] = useState("")
 
   async function load() {
-    const d = await fetch("/api/profile").then(r => r.json())
-    setUser(d.user); setAbout(d.user?.bio || ""); setLoading(false)
+    try {
+      const d = await fetch("/api/profile").then(r => r.json())
+      setUser(d.user); setAbout(d.user?.bio || "")
+    } catch { /* leave user null → the not-signed-in fallback renders instead of hanging */ }
+    finally { setLoading(false) }
   }
   useEffect(() => { load() }, [])
 
