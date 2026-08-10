@@ -11,7 +11,7 @@ import { simulateCareer } from "@/lib/career/simulator"
 import { parseChfSalary } from "@/lib/career/salary"
 import { momentum, diffVectors, type SeriesPoint, type SkillVector } from "@/lib/career/progress"
 import { inputFromUser, resumeFromUser } from "@/lib/career/fromUser"
-import { parseQuery, FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
+import { parseQuery, conversational, FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
 import { getCalibration } from "@/lib/career/calibrationStore"
 import { writeAiRun, inputsHash } from "@/lib/aios/audit"
 
@@ -29,6 +29,13 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json().catch(() => ({}))
     const message = String(body?.message || "").slice(0, 500)
+
+    // General/conversational messages (greeting, thanks, "nothing", "how are you")
+    // get a warm human reply + gentle steer — never the robotic menu. Runs first and
+    // needs no profile, so "hi" works for anyone.
+    const conv = conversational(message)
+    if (conv) return NextResponse.json({ intent: "help", reply: conv.reply, cards: [], suggestions: conv.suggestions, cta: null })
+
     const { intent, slots } = parseQuery(message)
     // AIOS §4 governance: audit every coach invocation as a registered-agent run.
     writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: "intent-classify-v1", inputsHash: inputsHash(message), outputs: { intent }, status: "ok", explanation: `Coach intent: ${intent}` }).catch(() => {})

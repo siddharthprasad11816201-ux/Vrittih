@@ -111,3 +111,29 @@ export function list(a: string[]): string {
   if (x.length <= 1) return x[0] || ""
   return x.slice(0, -1).join(", ") + " and " + x[x.length - 1]
 }
+
+// Warm, human handling of GENERAL / conversational messages so the coach doesn't dump
+// the same menu at "hi", "thanks", or "nothing". Deterministic + in-house (no LLM).
+// Gated to short messages so it never hijacks a real question that happens to contain
+// a word like "no" or "not sure" ("not sure if I'm ready for senior" stays a real query).
+const CONV_SUGG = ["What are my best-fit jobs?", "What should I learn next?", "How do I improve my résumé?"]
+export type ConvReply = { reply: string; suggestions: string[] }
+export function conversational(text: string): ConvReply | null {
+  const t = normI(text).trim()
+  if (!t) return null
+  const words = t.split(/\s+/).length
+  const greet = /^(hi+|hey+|hello+|yo|howdy|hiya|namaste|good (morning|afternoon|evening)|greetings)\b/.test(t)
+  const thanks = /\b(thank you|thanks|thankyou|thx|tysm|ty|cheers|appreciate it)\b/.test(t)
+  const bye = /^(bye|goodbye|see ya|cya|see you|later|good ?night|gn)\b/.test(t)
+  const howru = /\b(how are you|how('?s| is) it going|hows it going|what'?s up|whats up|sup|how do you do)\b/.test(t)
+  const whoru = /\b(who are you|what are you|are you (a )?(bot|ai|human|real|person)|is this (a )?(bot|ai|human))\b/.test(t)
+  const unsure = /^(nothing|nothin|nothing much|idk|i ?dk|i dont know|i don'?t know|not sure|dunno|no|nope|nah|skip|nvm|never ?mind|ok(ay)?|k|meh|hmm+|no idea|whatever)\b/.test(t)
+
+  if (greet) return { reply: "Hey! I'm your in-house career coach. I read your real profile and live roles — want your best-fit jobs, what to learn next, or a quick résumé check?", suggestions: CONV_SUGG }
+  if (whoru) return { reply: "I'm Vrittih's in-house career coach — no external AI. Every answer comes from your real profile and live job listings, never guesswork. Ask me about your fit, skills, résumé, seniority, or interviews.", suggestions: CONV_SUGG }
+  if (thanks && words <= 6) return { reply: "Anytime! Want me to line up your next move — your best-fit roles or the highest-leverage skill to learn?", suggestions: CONV_SUGG.slice(0, 2) }
+  if (bye) return { reply: "Take care — I'll be here whenever you want to pick up your career plan.", suggestions: CONV_SUGG.slice(0, 2) }
+  if (howru && words <= 6) return { reply: "Doing well, thanks for asking! Let's put that to work on your career — want your best-fit jobs or what to learn next?", suggestions: CONV_SUGG.slice(0, 2) }
+  if ((unsure && words <= 4) || t.length <= 2) return { reply: "No problem. If you're not sure where to start, the two most useful are your best-fit jobs and the highest-leverage skill to learn next — want either?", suggestions: CONV_SUGG.slice(0, 2) }
+  return null
+}
