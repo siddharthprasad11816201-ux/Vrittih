@@ -9,8 +9,17 @@ export async function POST(req: NextRequest) {
     const payload = verifyToken(token)
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
     const { school, degree, field, startYear, endYear } = await req.json()
+    // Robust year parsing: the résumé parser often supplies only a single year (and
+    // via the client as endYear with an empty startYear). Pull a 4-digit year from
+    // whatever is given rather than parseInt("") -> NaN, which Prisma rejects (a
+    // required Int) with a 500 the client silently swallowed.
+    const intYear = (v: unknown) => { const m = String(v ?? "").match(/\b(19|20)\d{2}\b/); return m ? parseInt(m[0], 10) : null }
+    const sy = intYear(startYear), ey = intYear(endYear)
+    let start = sy, end = ey
+    if (start == null) { start = ey; end = null } // only one year known -> treat as start
+    if (start == null) return NextResponse.json({ error: "Please include a year for this education." }, { status: 400 })
     const edu = await prisma.education.create({
-      data: { userId: payload.userId, school, degree, field, startYear: parseInt(startYear), endYear: endYear ? parseInt(endYear) : null },
+      data: { userId: payload.userId, school: school || "", degree: degree || "", field: field || "", startYear: start, endYear: end },
     })
     return NextResponse.json({ education: edu }, { status: 201 })
   } catch (err: any) {

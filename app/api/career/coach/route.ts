@@ -75,7 +75,12 @@ export async function POST(req: NextRequest) {
     switch (intent) {
       case "learn": {
         const f = computeFrontier(candidate, jobLikes)
-        if (!f.learnNext.length) return reply(intent, "You already cover the core skills across the live roles I can see — focus on a strong application and interview prep rather than new skills.", [])
+        if (!f.learnNext.length) {
+          // Honesty: an empty frontier usually means too FEW live roles to compare
+          // against — not that the user has mastered everything. Don't falsely reassure.
+          if (f.jobsConsidered < 5) return reply(intent, "I don't have enough live roles right now to work out your highest-leverage skills. Once more roles are posted — or you pick a target role — I'll compute exactly what to learn next.", [], { label: "Browse jobs", href: "/jobs" })
+          return reply(intent, `Across the ${f.jobsConsidered} live roles I can see, you already cover their core skills — so focus on a strong application and interview prep rather than new skills.`, [], { label: "See your matches", href: "/career" })
+        }
         const top3 = f.learnNext.slice(0, 3)
         const lead = top3[0]
         // Honesty: only claim "within reach" for roles the frontier actually
@@ -133,6 +138,10 @@ export async function POST(req: NextRequest) {
         if (!top) return reply(intent, "Add a target role first — pick a job and I'll review your résumé against exactly what it screens for.", [], { label: "Find jobs", href: "/jobs" })
         const targets = jobRequirements(top.job).filter((r) => r.weight >= 0.8).map((r) => r.skill)
         const resume = await resumeFromUser(p.userId)
+        // Honesty: never report a score for a résumé that doesn't exist. A new user with
+        // a couple of skills but no uploaded résumé / experience bullets would otherwise
+        // get a definitive "0/100" for a document we never saw.
+        if (!resume.bullets?.length) return reply(intent, `I don't see a résumé to review yet — upload one, or add your experience with a few bullet points, and I'll check it against ${top.job.title} and exactly what it screens for.`, [], { label: "Add your résumé", href: "/profile/edit" })
         const rev = reviewResume(resume, targets)
         const fixes = rev.findings.slice(0, 3).map((f) => f.message + " → " + f.fix)
         return reply(intent, `Against ${top.job.title}, your résumé scores ${rev.score}/100 (${rev.stats.keywordCoverage}% keyword match). ${rev.missingKeywords.length ? "Add the keywords it screens for where true, and tighten these bullets:" : "Tighten these bullets:"}`, [
@@ -181,7 +190,9 @@ export async function POST(req: NextRequest) {
         ], { label: "Open Career DNA", href: "/career" })
       }
       default:
-        return reply("fallback", "I'm not sure I caught that. I can help with your best-fit jobs, what to learn next, your seniority, résumé, interview prep, Career DNA and career paths — try one of these:", [{ kind: "list", items: FOLLOWUPS.fallback }])
+        // Off-menu question: acknowledge it's outside what I can answer from real data,
+        // and steer to the nearest useful thing — rather than a bare "I didn't catch that".
+        return reply("fallback", "That's a bit outside what I can answer from your real profile and live roles — I stick to what I can back with evidence rather than guess. The closest things I can help with are your best-fit jobs, what to learn next, and your résumé — want one of those?", [{ kind: "list", items: FOLLOWUPS.fallback }])
     }
   } catch (e: any) {
     console.error("[COACH]", e?.message)

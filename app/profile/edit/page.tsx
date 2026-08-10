@@ -84,16 +84,21 @@ export default function EditProfile() {
     const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user); setParsed((x:any)=> x ? { ...x, experience: [] } : x)
   }
   async function applyParsedEducation() {
-    for (const e of (parsed?.education || [])) await fetch("/api/profile/education", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ school:e.school||"", degree:e.degree||"", field:"", startYear:"", endYear:e.year||"" }) }).catch(()=>{})
+    for (const e of (parsed?.education || [])) await fetch("/api/profile/education", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ school:e.school||"", degree:e.degree||"", field:"", startYear:e.year||"", endYear:"" }) }).catch(()=>{})
     const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user); setParsed((x:any)=> x ? { ...x, education: [] } : x)
   }
   // One-click: add everything the profile supports (skills + experience + education).
   async function applyAll() {
     for (const name of (parsed?.skills || []).slice(0, 40)) await fetch("/api/profile/skills", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ name }) }).catch(()=>{})
     for (const e of (parsed?.experience || [])) await fetch("/api/profile/experience", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ company:e.company||"", title:e.title||"", location:"", startDate:e.start||"", endDate:e.end||"", description:"" }) }).catch(()=>{})
-    for (const e of (parsed?.education || [])) await fetch("/api/profile/education", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ school:e.school||"", degree:e.degree||"", field:"", startYear:"", endYear:e.year||"" }) }).catch(()=>{})
+    for (const e of (parsed?.education || [])) await fetch("/api/profile/education", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({ school:e.school||"", degree:e.degree||"", field:"", startYear:e.year||"", endYear:"" }) }).catch(()=>{})
+    // Also persist the basic fields the parser prefilled into local form state — otherwise
+    // "Add all" imports skills/experience/education but silently loses name/headline/bio/
+    // location/phone/links unless the user separately clicks Save. One action = everything.
+    await fetch("/api/profile", { method:"PATCH", headers:{"Content-Type":"application/json"}, body:JSON.stringify(form) }).catch(()=>{})
     const d = await fetch("/api/profile").then(r => r.json()); setUser(d.user)
     setParsed((x:any)=> x ? { ...x, skills: [], experience: [], education: [] } : x)
+    setSaved(true); setTimeout(() => setSaved(false), 2500)
   }
   // Add a single inferred/suggested skill (evidence panel — spec §8/§21).
   async function addOneSkill(name: string) {
