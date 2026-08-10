@@ -5,7 +5,7 @@
  * Run: npm run ml:sft */
 import { createRequire } from "module"
 import { execSync } from "child_process"
-import { writeFileSync, mkdirSync, mkdtempSync } from "fs"
+import { writeFileSync, mkdirSync, mkdtempSync, existsSync, readFileSync } from "fs"
 import { tmpdir } from "os"
 import { fileURLToPath } from "url"
 import { dirname, resolve, join } from "path"
@@ -31,14 +31,31 @@ const RESP = {
   help: "I read your real profile and live roles to help with best-fit jobs, what to learn, seniority, résumé, interviews and career paths.",
 }
 
+const SYS = "You are Vrittih's in-house career coach. Answer only from the user's real profile and live roles; never invent numbers or salaries."
+const seen = new Set()
+const rows = []
+const add = (user, assistant) => {
+  user = String(user || "").trim(); assistant = String(assistant || "").trim()
+  const k = user.toLowerCase()
+  if (!user || !assistant || seen.has(k)) return
+  seen.add(k)
+  rows.push({ messages: [{ role: "system", content: SYS }, { role: "user", content: user }, { role: "assistant", content: assistant }] })
+}
+
+// 1) curated seed dataset — the bulk (ml/sft_seed.jsonl: {user, assistant} per line).
+//    Grow this with real, anonymised Q&A pairs (or regenerate) for a better model.
+const SEED = resolve(ROOT, "ml/sft_seed.jsonl")
+let seeded = 0
+if (existsSync(SEED)) {
+  for (const line of readFileSync(SEED, "utf8").split("\n")) {
+    if (!line.trim()) continue
+    try { const o = JSON.parse(line); const before = seen.size; add(o.user, o.assistant); if (seen.size > before) seeded++ } catch {}
+  }
+}
+// 2) intent phrasings -> a short canonical response (fills any gaps).
+for (const d of TRAINING) if (RESP[d.intent]) add(d.text, RESP[d.intent])
+
 mkdirSync(resolve(ROOT, "ml/data"), { recursive: true })
-const rows = TRAINING.filter((d) => RESP[d.intent]).map((d) => JSON.stringify({
-  messages: [
-    { role: "system", content: "You are Vrittih's in-house career coach. Answer only from the user's real profile and live roles; never invent numbers or salaries." },
-    { role: "user", content: d.text },
-    { role: "assistant", content: RESP[d.intent] },
-  ],
-}))
 const dest = resolve(ROOT, "ml/data/sft.jsonl")
-writeFileSync(dest, rows.join("\n") + "\n")
-console.log(`Wrote ${rows.length} SFT rows to ml/data/sft.jsonl (seed — grow with real Q&A pairs).`)
+writeFileSync(dest, rows.map((r) => JSON.stringify(r)).join("\n") + "\n")
+console.log(`Wrote ${rows.length} SFT rows to ml/data/sft.jsonl (${seeded} from ml/sft_seed.jsonl + ${rows.length - seeded} intent phrasings).`)
