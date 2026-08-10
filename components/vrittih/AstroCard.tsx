@@ -87,13 +87,13 @@ export default function AstroCard({ birthDate, experience = [], self = false }: 
 
       {/* career fit — blends chart + experience */}
       <div style={{ ...S.block, background: "var(--brand-100)", borderColor: "transparent", padding: "16px 18px", borderRadius: 14 }}>
-        <div style={S.blockLabel}><IconStar size={14} /> &nbsp;Astrological temperament <span style={S.synergy}>{fit.synergy}</span></div>
+        <div style={S.blockLabel}><IconStar size={14} /> &nbsp;Astrological temperament</div>
         <p style={{ ...S.note, color: "var(--v-ink)", fontWeight: 600, marginTop: 8 }}>{fit.headline}</p>
         <p style={S.note}>{fit.note}</p>
-        <div style={S.blockLabel2}>Fields traditionally associated with your sign</div>
+        <div style={S.blockLabel2}>Fields traditionally associated with your sign — for reflection, not a recommendation</div>
         <div style={S.roles}>
           {fit.recommended.map(r => (
-            <Link key={r} href={`/jobs?q=${encodeURIComponent(r)}`} style={S.roleChip}>{r}</Link>
+            <span key={r} style={S.roleChipStatic}>{r}</span>
           ))}
         </div>
       </div>
@@ -148,6 +148,7 @@ const S: Record<string, any> = {
   synergy: { marginLeft: "auto", fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: ".05em", color: "var(--brand-700)", background: "var(--v-surface)", padding: "3px 9px", borderRadius: 999 },
   roles: { display: "flex", flexWrap: "wrap", gap: 7, marginTop: 12 },
   roleChip: { display: "inline-flex", alignItems: "center", background: "var(--v-surface)", border: "1px solid var(--brand-200)", color: "var(--brand-700)", padding: "6px 13px", borderRadius: 999, fontSize: 12.5, fontWeight: 600, textDecoration: "none" },
+  roleChipStatic: { display: "inline-flex", alignItems: "center", background: "var(--v-surface-2, #F1F5F9)", border: "1px solid var(--v-line, #E6E3DA)", color: "var(--v-ink-3, #94A3B8)", padding: "6px 13px", borderRadius: 999, fontSize: 12.5, fontWeight: 500 },
   list: { listStyle: "none", padding: 0, margin: "8px 0 0", display: "flex", flexDirection: "column", gap: 6 },
   li: { display: "flex", alignItems: "center", gap: 7, fontSize: 13, color: "var(--v-ink-2)" },
   liMuted: { fontSize: 13, color: "var(--v-ink-3)", lineHeight: 1.5 },

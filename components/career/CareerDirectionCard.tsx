@@ -27,19 +27,25 @@ const BADGE: Record<CareerDirection["strength"], { label: string; bg: string; fg
 
 export default function CareerDirectionCard() {
   const [d, setD] = useState<CareerDirection | null>(null)
-  const [state, setState] = useState<"loading" | "ready" | "hide">("loading")
+  const [state, setState] = useState<"loading" | "ready" | "hide" | "error">("loading")
 
-  useEffect(() => {
-    let alive = true
+  const load = () => {
+    setState("loading")
     fetch("/api/career/direction")
-      .then((r) => (r.ok ? r.json() : null))
-      .then((j) => { if (!alive) return; if (j?.direction) { setD(j.direction); setState("ready") } else setState("hide") })
-      .catch(() => { if (alive) setState("hide") })
-    return () => { alive = false }
-  }, [])
+      .then((r) => (r.status === 401 ? "anon" : r.ok ? r.json() : Promise.reject()))
+      .then((j) => { if (j === "anon") { setState("hide"); return } if (j?.direction) { setD(j.direction); setState("ready") } else setState("error") })
+      .catch(() => setState("error"))
+  }
+  useEffect(() => { load() }, [])
 
   if (state === "loading") return <section style={S.card}><div style={S.head}><span style={S.headIc}><IconTarget size={16} /></span><h2 style={S.title}>Best-fit career direction</h2></div><p style={S.muted}>Reading your evidence…</p></section>
-  if (state === "hide" || !d) return null
+  if (state === "hide") return null // not signed in — the page handles that
+  if (state === "error" || !d) return (
+    <section style={S.card}>
+      <div style={S.head}><span style={S.headIc}><IconTarget size={16} /></span><h2 style={S.title}>Best-fit career direction</h2></div>
+      <p style={S.muted}>Couldn&apos;t compute your direction just now. <button onClick={load} style={{ background: "none", border: "none", color: "var(--brand-700,#334EAC)", font: "inherit", fontWeight: 600, cursor: "pointer", textDecoration: "underline", padding: 0 }}>Retry</button></p>
+    </section>
+  )
 
   const badge = BADGE[d.strength]
   return (

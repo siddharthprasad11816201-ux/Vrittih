@@ -36,7 +36,12 @@ export async function GET(req: NextRequest) {
     id: j.id, title: j.title, description: j.description, industry: j.industry, createdAt: j.createdAt, remote: j.remote,
     skills: (j.skills || []).map((s: any) => s.skill?.name).filter(Boolean),
   })), cal)
-  const matches = ranked.slice(0, 6).map((r) => {
+  // Quality floor: only surface roles that are a genuine fit. Without this, a user with
+  // few/no skills gets 6 rows at ~0% badged as "strong matches" — a self-contradicting,
+  // broken-looking page. Sub-floor roles are dropped; the client shows an honest empty
+  // state instead of listing 0% matches.
+  const STRONG_FLOOR = 40
+  const matches = ranked.filter((r) => r.match.overall >= STRONG_FLOOR).slice(0, 6).map((r) => {
     const job = jobs.find((j) => j.id === r.job.id)!
     return {
       id: r.job.id, title: job.title, company: job.company, remote: job.remote,

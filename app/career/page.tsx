@@ -80,6 +80,16 @@ export default function CareerPage() {
           </div>
         )}
 
+        {d.matches.length === 0 && (
+          <div style={S.panel}>
+            <div style={S.panelTitle}>Best-fit roles for you</div>
+            <p style={{ font: "400 13.5px/1.6 var(--font-sans)", color: "#64748B", margin: 0 }}>
+              No strong role matches yet. {d.stats.total > 0 ? "None of the live roles clear a genuine-fit bar for your current skills — add more skills or a résumé, or check back as new roles are posted." : "Add your skills or upload a résumé and your best-fit roles will appear here."}
+              {" "}<Link href="/profile/edit" style={{ color: "#334EAC", fontWeight: 600 }}>Update your profile →</Link>
+            </p>
+          </div>
+        )}
+
         {d.matches.length > 0 && (
           <div style={S.panel}>
             <div style={S.panelTitle}>Best-fit roles for you</div>
@@ -91,7 +101,9 @@ export default function CareerPage() {
                     <span style={{ ...S.matchScore, color: tierColor(m.overall) }}>{m.overall}%</span>
                   </div>
                   <div style={S.matchChips}>
+                    {m.matched.length > 0 && <span style={S.chipLabel}>You have</span>}
                     {m.matched.map((s) => <span key={s} style={S.chipOk}>{s}</span>)}
+                    {m.missing.length > 0 && <span style={{ ...S.chipLabel, marginLeft: m.matched.length ? 6 : 0 }}>Missing</span>}
                     {m.missing.map((x) => <span key={x.skill} style={S.chipMiss}>{x.skill}</span>)}
                   </div>
                   {m.transferable?.length > 0 && (
@@ -168,7 +180,8 @@ const S: Record<string, any> = {
   matchTitle: { font: "600 14px var(--font-sans)", color: "#1F2937" },
   matchCo: { font: "400 12.5px var(--font-sans)", color: "#94A3B8" },
   matchScore: { font: "700 16px var(--font-sans)", fontVariantNumeric: "tabular-nums" },
-  matchChips: { display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 },
+  matchChips: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 6, marginTop: 8 },
+  chipLabel: { font: "700 9.5px var(--font-sans)", textTransform: "uppercase", letterSpacing: ".04em", color: "#94A3B8" },
   chipOk: { font: "600 11.5px var(--font-sans)", background: "#EAF1FE", color: "#2F6BE0", borderRadius: 7, padding: "3px 8px" },
   chipMiss: { font: "600 11.5px var(--font-sans)", background: "#F1F5F9", color: "#94A3B8", borderRadius: 7, padding: "3px 8px" },
   matchProj: { font: "400 12px var(--font-sans)", color: "#16A34A", marginTop: 7 },
