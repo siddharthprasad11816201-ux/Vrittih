@@ -78,6 +78,11 @@ export async function POST(req: NextRequest) {
     const job = await prisma.job.findUnique({ where:{ id:jobId }, include:{ postedBy:{ select:{ id:true,name:true } }, form:true } })
     if (!job) return NextResponse.json({ error: "Job not found" }, { status: 404 })
 
+    // #5: a closed or deactivated role must not accept applications, even via a direct
+    // API call — the "Applications closed" banner was cosmetic before this.
+    if ((job as any).active === false) return NextResponse.json({ error: "This role is no longer accepting applications." }, { status: 409 })
+    if ((job as any).closesAt && new Date((job as any).closesAt).getTime() < Date.now()) return NextResponse.json({ error: "Applications for this role have closed." }, { status: 409 })
+
     // Enforce the employer's requirements server-side. The client shows them, but
     // a required document or answer must not be skippable by calling the API directly.
     const parse = (s?: string | null) => { try { const v = JSON.parse(s || "[]"); return Array.isArray(v) ? v : [] } catch { return [] } }
@@ -88,6 +93,12 @@ export async function POST(req: NextRequest) {
 
     const missing: string[] = []
     if (job.form?.coverLetter === "required" && !String(coverLetter || "").trim()) missing.push("Cover letter")
+    // #10: a "résumé required" job must actually enforce it — accept a résumé sent with
+    // this application, else fall back to the one saved on the profile.
+    if ((job.form as any)?.requireResume && !String(resumeUrl || "").trim()) {
+      const u = await prisma.user.findUnique({ where: { id: payload.userId }, select: { resumeUrl: true } })
+      if (!u?.resumeUrl) missing.push("Résumé")
+    }
     for (const q of reqQuestions) {
       if (!q.required) continue
       const a = givenAnswers.find(x => x && x.questionId === q.id)

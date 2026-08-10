@@ -26,16 +26,23 @@ export default function MatchPanel({ jobId }: { jobId: string }) {
   const [m, setM] = useState<Match | null>(null)
   const [feedback, setFeedback] = useState<Feedback | null>(null)
 
-  useEffect(() => {
+  const load = () => {
+    setState("loading")
     fetch(`/api/career/match/${jobId}`).then((r) => {
       if (r.status === 401) { setState("anon"); return null }
       if (!r.ok) { setState("error"); return null }
       return r.json()
-    }).then((d) => { if (d?.match) { setM(d.match); setFeedback(d.feedback || null); setState("ready") } }).catch(() => setState("error"))
-  }, [jobId])
+    }).then((d) => { if (d === null) return; if (d?.match) { setM(d.match); setFeedback(d.feedback || null); setState("ready") } else setState("error") }).catch(() => setState("error"))
+  }
+  useEffect(() => { load() }, [jobId])
 
   if (state === "loading") return <div style={S.card}><div style={S.muted}>Analysing your fit…</div></div>
-  if (state === "error") return null
+  if (state === "error") return (
+    <div style={S.card}>
+      <div style={S.title}>Your fit for this role</div>
+      <p style={S.muted}>Couldn&apos;t analyse your fit just now — this is usually temporary. <button onClick={load} style={{ background: "none", border: "none", color: "#334EAC", font: "inherit", fontWeight: 600, cursor: "pointer", textDecoration: "underline", padding: 0 }}>Try again</button></p>
+    </div>
+  )
   if (state === "anon") return (
     <div style={S.card}>
       <div style={S.title}>Your fit for this role</div>

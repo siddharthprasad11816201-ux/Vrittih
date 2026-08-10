@@ -110,6 +110,10 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
     </AppShell>
   )
 
+  // #5: a closed (past closesAt) or deactivated role must not offer an apply path — the
+  // banner alone was cosmetic while the button + flow still worked.
+  const closed = job.active === false || (job.closesAt && new Date(job.closesAt).getTime() < Date.now())
+
   return (
     <AppShell>
       <div className={styles.wrap}>
@@ -188,6 +192,15 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
             <div className={styles.successBox}>
               Application submitted successfully.
               <Link href="/dashboard/applications" className={styles.trackLink}>Track status</Link>
+            </div>
+          ) : closed ? (
+            <div style={A.box}>
+              <h2 style={A.head}>This role has closed</h2>
+              <p style={A.sub}>Applications are no longer being accepted for this position. Here&apos;s where to look next:</p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 4 }}>
+                <Link href="/career" style={{ ...A.emptyPrimary, textDecoration: "none" }}>See your best-fit roles</Link>
+                <Link href="/jobs" style={{ ...A.emptySecondary, textDecoration: "none" }}>Browse all jobs</Link>
+              </div>
             </div>
           ) : showForm ? (
             <div className={styles.applyForm}>
