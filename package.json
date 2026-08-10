@@ -21,7 +21,8 @@
     "deploy:db": "node scripts/deploy-db.mjs",
     "deploy:db:full": "node scripts/deploy-db.mjs --jobs",
     "train:semantic": "node scripts/train-semantic.mjs",
-    "ml:export": "node scripts/export-intent-data.mjs"
+    "ml:export": "node scripts/export-intent-data.mjs",
+    "dev:coach-transformer": "node scripts/dev-coach-transformer.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -31,12 +31,22 @@ async function readCapped(res: Response, cap: number): Promise<string | null> {
   return out + dec.decode()
 }
 
-/** Pure: read the classifier's {intent, confidence} JSON into a valid Intent, or null. */
-export function parseClassification(raw: string): Intent | null {
+/** Pure: read the classifier's {intent, confidence} JSON into a valid intent + its
+ * confidence (missing confidence -> 1, i.e. trusted), or null when the intent is invalid. */
+export function parseClassification(raw: string): { intent: Intent; confidence: number } | null {
   let o: any
   try { o = JSON.parse(raw) } catch { return null }
   const intent = String(o?.intent || "") as Intent
-  return VALID_INTENTS.has(intent) ? intent : null
+  if (!VALID_INTENTS.has(intent)) return null
+  const confidence = typeof o?.confidence === "number" && Number.isFinite(o.confidence) ? o.confidence : 1
+  return { intent, confidence }
+}
+
+// Below this softmax confidence, defer to the in-house classifier rather than trust a
+// possibly-confidently-wrong prediction (esp. on wordings far from the training set).
+function minConfidence(): number {
+  const m = Number(process.env.TRANSFORMER_MIN_CONFIDENCE)
+  return Number.isFinite(m) && m >= 0 && m <= 1 ? m : 0.5
 }
 
 const transformerBrain: CoachBrain = {
@@ -62,9 +72,11 @@ const transformerBrain: CoachBrain = {
       if (!res.ok) return inhouseBrain.understand(message)
       const text = await readCapped(res, BODY_CAP)
       if (text == null) return inhouseBrain.understand(message)
-      const intent = parseClassification(text)
-      // Model classifies intent; slots are extracted in-house (deterministic).
-      return intent ? { kind: "intent", intent, slots: extractSlots(message), brain: "transformer" } : inhouseBrain.understand(message)
+      const c = parseClassification(text)
+      // Invalid, or below the confidence floor -> defer to in-house (never a confident-
+      // but-wrong route). Model classifies intent; slots are extracted in-house.
+      if (!c || c.confidence < minConfidence()) return inhouseBrain.understand(message)
+      return { kind: "intent", intent: c.intent, slots: extractSlots(message), brain: "transformer" }
     } catch {
       return inhouseBrain.understand(message)
     } finally {

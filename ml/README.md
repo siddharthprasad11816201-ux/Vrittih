@@ -32,11 +32,23 @@ Then set the app env and restart:
 ```
 COACH_BRAIN=transformer
 TRANSFORMER_URL=http://localhost:8077/classify
-TRANSFORMER_TIMEOUT_MS=3000   # optional (default 3000)
+TRANSFORMER_TIMEOUT_MS=3000        # optional (default 3000)
+TRANSFORMER_MIN_CONFIDENCE=0.5     # optional (default 0.5) — below this, defer to in-house
 ```
 
-If the server is down / slow / returns an invalid intent, the coach silently falls back to
-the in-house brain — it never hard-depends on the model.
+If the server is down / slow / returns an invalid intent, OR the prediction is below the
+confidence floor, the coach silently falls back to the in-house brain — it never hard-
+depends on the model, and never trusts a low-confidence (possibly confidently-wrong)
+classification.
+
+### One command for both (dev)
+
+```bash
+npm run dev:coach-transformer
+```
+
+Starts the classifier server + Next dev with the env above wired, and tears both down on
+Ctrl-C. (Train the model first — see above.)
 
 ## Files
 - `train_intent.py` — from-scratch Transformer (embedding + 2 encoder layers + masked
