@@ -11,7 +11,7 @@ export type SemanticModel = {
 }
 
 export const MODEL: SemanticModel = {
-  trained: { docs: 2434, skills: 77, pairs: 299, dims: 32, sources: {"jobs":2408,"profiles":25,"courses":1}, at: "2026-08-09T23:58:37.488Z" },
+  trained: { docs: 2434, skills: 77, pairs: 299, dims: 32, sources: {"jobs":2408,"profiles":25,"courses":1}, at: "2026-08-10T02:19:36.117Z" },
   pairs: {
   "AWS|Docker": 0.202,
   "AWS|GCP": 0.899,

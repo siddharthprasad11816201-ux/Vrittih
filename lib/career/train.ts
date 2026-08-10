@@ -103,7 +103,11 @@ export function computeModel(docs: string[][], opts: TrainOpts = {}): TrainedMod
     // broad noise. Keep soft<->soft and tech<->tech, which are signal.
     if (isSoft(a) !== isSoft(b)) continue
     const pab = f / n, pa = (docFreq.get(a) as number) / n, pb = (docFreq.get(b) as number) / n
-    const npmi = Math.log(pab / (pa * pb)) / -Math.log(pab) // in [-1, 1]
+    // nPMI in [-1, 1]. Guard the degenerate pab=1 case (a pair that co-occurs in
+    // 100% of qualifying docs): -log(1)=0 would make the ratio 0/0=NaN and silently
+    // drop the maximally-correlated pair; its correct nPMI limit is 1.
+    const denom = -Math.log(pab)
+    const npmi = denom === 0 ? 1 : Math.log(pab / (pa * pb)) / denom
     if (npmi >= MIN_NPMI) scored.push({ key, a, b, npmi: Math.min(1, npmi) })
   }
 

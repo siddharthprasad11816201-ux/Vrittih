@@ -4,7 +4,7 @@ import { verifyToken } from "@/lib/jwt"
 import { analyzeCareer } from "@/lib/career/engine"
 import { rankJobs } from "@/lib/career/match"
 import { inputFromUser } from "@/lib/career/fromUser"
-import { buildCalibrationFromDb } from "@/lib/career/calibrationSource"
+import { getCalibration } from "@/lib/career/calibrationStore"
 import { feedbackSignals } from "@/lib/career/calibration"
 
 export const dynamic = "force-dynamic"
@@ -27,10 +27,11 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
     take: 150,
   })
-  // §21: outcome calibration learned from real decided applications. No-op (neutral)
-  // until enough outcomes exist; informational funnel + feedback only (score weights
-  // stay off unless CAREER_CALIBRATE_WEIGHTS=on).
-  const cal = await buildCalibrationFromDb(prisma).catch(() => null)
+  // §21: outcome calibration — a CHEAP read of the cron/admin-precomputed global
+  // cohort (MatchCalibration), never a live recompute on the request path. Null (a
+  // neutral no-op) until enough decided outcomes exist; informational funnel +
+  // feedback only (score weights stay off unless CAREER_CALIBRATE_WEIGHTS=on).
+  const cal = await getCalibration("global").catch(() => null)
   const ranked = rankJobs(skills, jobs.map((j) => ({
     id: j.id, title: j.title, description: j.description, industry: j.industry, createdAt: j.createdAt, remote: j.remote,
     skills: (j.skills || []).map((s: any) => s.skill?.name).filter(Boolean),
