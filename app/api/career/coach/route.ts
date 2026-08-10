@@ -12,6 +12,7 @@ import { parseChfSalary } from "@/lib/career/salary"
 import { momentum, diffVectors, type SeriesPoint, type SkillVector } from "@/lib/career/progress"
 import { inputFromUser, resumeFromUser } from "@/lib/career/fromUser"
 import { parseQuery, FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
+import { buildCalibrationFromDb } from "@/lib/career/calibrationSource"
 import { writeAiRun, inputsHash } from "@/lib/aios/audit"
 
 export const dynamic = "force-dynamic"
@@ -60,7 +61,8 @@ export async function POST(req: NextRequest) {
       })
       jobLikes = jobs.map((j) => ({ id: j.id, title: j.title, company: j.company, description: j.description, industry: j.industry, createdAt: j.createdAt, remote: j.remote, salary: j.salary, skills: (j.skills || []).map((s: any) => s.skill?.name).filter(Boolean) }))
     }
-    const ranked = jobLikes.length ? rankJobs(candidate, jobLikes) : []
+    const cal = jobLikes.length ? await buildCalibrationFromDb(prisma).catch(() => null) : null
+    const ranked = jobLikes.length ? rankJobs(candidate, jobLikes, cal) : []
     const top = ranked[0]
 
     switch (intent) {

@@ -14,7 +14,8 @@ import DocumentUpload from "@/components/career/DocumentUpload"
 
 type Skill = { skill: string; confidence: number; level: string; category: string; implied: boolean }
 type Match = { id: string; title: string; company: string; remote: boolean; overall: number; projectedMatch: number; matched: string[]; missing: { skill: string; difficulty: string }[]; transferable: { skill: string; via: string }[]; label: string }
-type Dashboard = { skills: Skill[]; stats: { total: number; demonstrated: number; strengths: string[]; jobsConsidered: number }; matches: Match[] }
+type Feedback = { skill: string; direction: "up" | "down"; liftPct: number }
+type Dashboard = { skills: Skill[]; stats: { total: number; demonstrated: number; strengths: string[]; jobsConsidered: number }; matches: Match[]; feedback?: Feedback[] | null }
 
 const tierColor = (n: number) => (n >= 75 ? "#16A34A" : n >= 55 ? "#6495ED" : n >= 35 ? "#B45309" : "#94A3B8")
 
@@ -100,6 +101,20 @@ export default function CareerPage() {
                   )}
                   {m.projectedMatch > m.overall && <div style={S.matchProj}>→ up to {m.projectedMatch}% after closing the gap</div>}
                 </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {d.feedback && d.feedback.length > 0 && (
+          <div style={S.panel}>
+            <div style={S.panelTitle}>What employers actually advance</div>
+            <p style={S.panelSub}>Learned in-house from real, decided applications — anonymised, never tied to any person or employer.</p>
+            <div style={S.matchChips}>
+              {d.feedback.map((f) => (
+                <span key={f.skill} style={f.direction === "up" ? S.chipOk : S.chipMiss}>
+                  {f.skill} {f.direction === "up" ? "+" : "−"}{f.liftPct}%
+                </span>
               ))}
             </div>
           </div>

@@ -4,6 +4,8 @@ import { verifyToken } from "@/lib/jwt"
 import { analyzeCareer } from "@/lib/career/engine"
 import { rankJobs } from "@/lib/career/match"
 import { inputFromUser } from "@/lib/career/fromUser"
+import { buildCalibrationFromDb } from "@/lib/career/calibrationSource"
+import { feedbackSignals } from "@/lib/career/calibration"
 
 export const dynamic = "force-dynamic"
 
@@ -25,10 +27,14 @@ export async function GET(req: NextRequest) {
     orderBy: { createdAt: "desc" },
     take: 150,
   })
+  // §21: outcome calibration learned from real decided applications. No-op (neutral)
+  // until enough outcomes exist; informational funnel + feedback only (score weights
+  // stay off unless CAREER_CALIBRATE_WEIGHTS=on).
+  const cal = await buildCalibrationFromDb(prisma).catch(() => null)
   const ranked = rankJobs(skills, jobs.map((j) => ({
     id: j.id, title: j.title, description: j.description, industry: j.industry, createdAt: j.createdAt, remote: j.remote,
     skills: (j.skills || []).map((s: any) => s.skill?.name).filter(Boolean),
-  })))
+  })), cal)
   const matches = ranked.slice(0, 6).map((r) => {
     const job = jobs.find((j) => j.id === r.job.id)!
     return {
@@ -38,6 +44,7 @@ export async function GET(req: NextRequest) {
       missing: r.match.missing.slice(0, 3).map((m) => ({ skill: m.skill, difficulty: m.difficulty })),
       transferable: r.match.transferable.slice(0, 3).map((t) => ({ skill: t.skill, via: t.via })),
       label: r.match.hiring.label,
+      advanceRate: r.match.hiring.calibrated ?? null, // empirically calibrated (null until enough real outcomes)
     }
   })
 
@@ -50,5 +57,8 @@ export async function GET(req: NextRequest) {
       jobsConsidered: jobs.length,
     },
     matches,
+    // §21 outcome learning — k-anonymized skill signals from real advancement, or null
+    // until there's enough data to be trustworthy. Never identity/employer-specific.
+    feedback: cal ? feedbackSignals(cal) : null,
   })
 }

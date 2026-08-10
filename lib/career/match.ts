@@ -149,8 +149,8 @@ export function matchJob(candidate: SkillResult[], job: JobLike, cal?: Calibrati
 
 /** Rank a set of jobs for a candidate by fit (+ light, honest tie-breakers). We
  * do NOT fabricate market signals (salary trends, company health) we don't have. */
-export function rankJobs(candidate: SkillResult[], jobs: (JobLike & { id: string; createdAt?: any; remote?: boolean })[]) {
+export function rankJobs(candidate: SkillResult[], jobs: (JobLike & { id: string; createdAt?: any; remote?: boolean })[], cal?: Calibration | null) {
   return jobs
-    .map((j) => ({ job: j, match: matchJob(candidate, j) }))
+    .map((j) => ({ job: j, match: matchJob(candidate, j, cal) }))
     .sort((a, b) => b.match.overall - a.match.overall || (new Date(b.job.createdAt || 0).getTime() - new Date(a.job.createdAt || 0).getTime()))
 }
