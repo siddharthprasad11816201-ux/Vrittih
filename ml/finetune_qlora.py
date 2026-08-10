@@ -18,14 +18,37 @@ DATA = os.path.join(HERE, "data", "sft.jsonl")
 OUT = os.path.join(HERE, "model", "lora")
 
 
+def _base_billions(name):
+    import re
+    m = re.search(r"(\d+(?:\.\d+)?)\s*[bB]\b", name or "")
+    return float(m.group(1)) if m else 7.0
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--base", default="mistralai/Mistral-7B-Instruct-v0.3")
     ap.add_argument("--epochs", type=int, default=3)
     ap.add_argument("--maxlen", type=int, default=1024)
+    ap.add_argument("--force", action="store_true", help="skip the VRAM preflight (may OOM)")
     args = ap.parse_args()
 
     import torch
+
+    # VRAM preflight BEFORE the ~GBs model download — rough 4-bit QLoRA need by size.
+    vram = round(torch.cuda.get_device_properties(0).total_memory / 1e9, 1) if torch.cuda.is_available() else 0
+    b = _base_billions(args.base)
+    need = 3.0 if b <= 1.6 else 4.5 if b <= 3 else 8.0 if b <= 8 else 16.0
+    print(f"GPU VRAM: {vram} GB · base '{args.base}' (~{b}B) needs ~{need} GB for QLoRA.")
+    if vram and vram + 0.5 < need and not args.force:
+        raise SystemExit(
+            f"\n✗ Not enough VRAM: {vram} GB < ~{need} GB.\n"
+            f"  On {vram} GB, fine-tune a SMALL base instead, e.g.:\n"
+            f"    python ml/finetune_qlora.py --base Qwen/Qwen2.5-1.5B-Instruct\n"
+            f"    python ml/finetune_qlora.py --base microsoft/Phi-3.5-mini-instruct   # ~3.8B, tight\n"
+            f"  Or skip fine-tuning: your from-scratch intent classifier already runs here,\n"
+            f"  and for generation serve a small model via Ollama (COACH_NARRATE=on).\n"
+            f"  (Add --force to try anyway.)\n"
+        )
     from datasets import Dataset
     from transformers import (AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig,
                               TrainingArguments)
