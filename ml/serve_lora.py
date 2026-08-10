@@ -19,7 +19,25 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ADAPTER = os.path.join(HERE, "model", "lora")
-BASE = os.environ.get("BASE_MODEL", "Qwen/Qwen2.5-1.5B-Instruct")
+
+
+def _resolve_base():
+    # BASE_MODEL overrides; else read the base the adapter was trained on (peft writes it
+    # into adapter_config.json) so base + adapter can never mismatch; else default.
+    if os.environ.get("BASE_MODEL"):
+        return os.environ["BASE_MODEL"]
+    cfg = os.path.join(ADAPTER, "adapter_config.json")
+    if os.path.isfile(cfg):
+        try:
+            b = json.load(open(cfg, encoding="utf-8")).get("base_model_name_or_path")
+            if b:
+                return b
+        except Exception:
+            pass
+    return "Qwen/Qwen2.5-1.5B-Instruct"
+
+
+BASE = _resolve_base()
 
 bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                          bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
