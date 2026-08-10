@@ -16,6 +16,7 @@ import argparse, json, os
 # HuggingFace's xet transfer backend fails on flaky/slow links ("CAS Client Error: error
 # decoding response body"). Default to plain resumable HTTPS; override with HF_HUB_DISABLE_XET=0.
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "60")  # tolerate slow links (default 10s -> handshake/read timeouts)
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data", "sft.jsonl")

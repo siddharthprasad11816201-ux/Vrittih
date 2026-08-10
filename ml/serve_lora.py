@@ -15,6 +15,7 @@ port with PORT. Loads in 4-bit so a 1.5B fits ~2GB VRAM.
 import json, os
 # xet transfer backend fails on flaky links; default to plain resumable HTTPS (override HF_HUB_DISABLE_XET=0).
 os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+os.environ.setdefault("HF_HUB_DOWNLOAD_TIMEOUT", "60")  # tolerate slow links
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
