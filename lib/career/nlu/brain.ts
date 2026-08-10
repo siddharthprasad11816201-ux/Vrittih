@@ -14,8 +14,10 @@
 import { parseQuery, conversational, type Intent, type Slots } from "@/lib/career/coach"
 
 export type Understanding =
-  | { kind: "conversational"; reply: string; suggestions: string[] }
-  | { kind: "intent"; intent: Intent; slots: Slots }
+  | { kind: "conversational"; reply: string; suggestions: string[]; brain?: string }
+  | { kind: "intent"; intent: Intent; slots: Slots; brain?: string }
+// `brain` is the brain that ACTUALLY produced this understanding (so the audit trail is
+// honest when a non-default brain silently fell back to in-house).
 
 export interface CoachBrain {
   readonly name: string
@@ -29,9 +31,9 @@ export const inhouseBrain: CoachBrain = {
   name: "inhouse",
   async understand(message: string): Promise<Understanding> {
     const conv = conversational(message)
-    if (conv) return { kind: "conversational", reply: conv.reply, suggestions: conv.suggestions }
+    if (conv) return { kind: "conversational", reply: conv.reply, suggestions: conv.suggestions, brain: "inhouse" }
     const { intent, slots } = parseQuery(message)
-    return { kind: "intent", intent, slots }
+    return { kind: "intent", intent, slots, brain: "inhouse" }
   },
 }
 

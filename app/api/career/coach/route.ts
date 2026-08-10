@@ -41,10 +41,17 @@ export async function POST(req: NextRequest) {
     // never the robotic menu, and need no profile ("hi" works for anyone).
     const brain = resolveBrain()
     const u = await brain.understand(message)
-    if (u.kind === "conversational") return NextResponse.json({ intent: "help", reply: u.reply, cards: [], suggestions: u.suggestions, cta: null })
+    // Audit the brain that ACTUALLY answered (selfhost silently falls back to in-house).
+    const usedBrain = u.brain || brain.name
+    if (u.kind === "conversational") {
+      // Audit EVERY invocation, including the conversational path (the one place a
+      // non-default brain could surface text — so it must not escape the trail).
+      writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: `coach-brain:${usedBrain}`, inputsHash: inputsHash(message), outputs: { kind: "conversational" }, status: "ok", explanation: `Coach conversational (${usedBrain})` }).catch(() => {})
+      return NextResponse.json({ intent: "help", reply: u.reply, cards: [], suggestions: u.suggestions, cta: null })
+    }
     const { intent, slots } = u
     // AIOS §4 governance: audit every coach invocation as a registered-agent run.
-    writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: `coach-brain:${brain.name}`, inputsHash: inputsHash(message), outputs: { intent }, status: "ok", explanation: `Coach intent (${brain.name}): ${intent}` }).catch(() => {})
+    writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: `coach-brain:${usedBrain}`, inputsHash: inputsHash(message), outputs: { intent }, status: "ok", explanation: `Coach intent (${usedBrain}): ${intent}` }).catch(() => {})
 
     if (intent === "help") {
       return reply(intent, "I'm your in-house career coach. I read your real profile and live job listings — no guesswork — to help you decide what to do next. Ask me things like:", [

@@ -1,9 +1,10 @@
 # Coach brain (pluggable NLU)
 
 The AI Career Coach's language understanding is pluggable. The coach's **answers are
-always composed from real profile + job data** by the in-house engine — a brain only
-decides *intent + slots* (or returns a short conversational line). So swapping brains
-can make understanding smarter, but can never let the coach fabricate advice.
+always composed from real profile + job data** by the in-house engine, and all
+**user-facing wording (including conversational replies) is in-house** — a non-default
+brain only decides *intent + slots*. So swapping brains can make understanding smarter,
+but can never let the coach fabricate advice or author a reply.
 
 Selected by the `COACH_BRAIN` env var (default: in-house).
 
@@ -28,8 +29,10 @@ COACH_LLM_KEY=...                                           # optional bearer to
 COACH_LLM_TIMEOUT_MS=4000                                   # optional (default 4000)
 ```
 
-Enabling this relaxes the platform's "no external model" rule **for understanding only**
-— the model classifies; it never writes the answer.
+Enabling this relaxes the platform's "no external model" rule **for classification only**
+— the model picks intent + slots; it never writes a single user-facing word (conversational
+replies and answers are always in-house). Model output that's oversized, malformed, or an
+invalid intent is discarded and the request falls back to in-house.
 
 ## `transformer` (planned — relaxes "no third-party libs")
 Your own small transformer trained from scratch on your data with PyTorch on your GPU.
