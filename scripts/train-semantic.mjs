@@ -87,7 +87,7 @@ async function main() {
   await prisma.$disconnect()
 
   const at = new Date().toISOString()
-  const model = computeModel(docs, { isSoft: (s) => tax.categoryOf(s) === "soft", at, sources })
+  const model = computeModel(docs, { isSoft: (s) => tax.categoryOf(s) === "soft", at, sources, dims: 32, epochs: 250 })
   const dest = resolve(ROOT, "lib/career/semantic-model.ts")
   writeFileSync(dest, serializeModel(model))
 

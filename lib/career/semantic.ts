@@ -67,6 +67,25 @@ const CORPUS: Adj = (() => {
 const CORPUS_BLEND = 0.9
 const CORPUS_TRANSFER = 0.4
 
+// ---- self-trained embeddings (cosine relatedness), for richer recommendations ----
+const VECTORS: Record<string, number[]> = (MODEL && (MODEL as any).vectors) || {}
+function cosine(a: string, b: string): number {
+  const va = VECTORS[a], vb = VECTORS[b]
+  if (!va || !vb) return 0
+  let dot = 0, na = 0, nb = 0
+  for (let i = 0; i < va.length; i++) { dot += va[i] * vb[i]; na += va[i] * va[i]; nb += vb[i] * vb[i] }
+  if (na === 0 || nb === 0) return 0
+  return dot / (Math.sqrt(na) * Math.sqrt(nb))
+}
+/** Embedding cosine relatedness in [0,1] (negative cosines clamped to 0). Powers the
+ * "related skills" recommendations; deliberately NOT used for match transfer credit,
+ * which stays on the conservative ontology-first path so the honesty caps hold. */
+export function vectorRelatedness(a: string, b: string): number {
+  const x = cx(a), y = cx(b)
+  if (x === y) return 1
+  return r2(Math.max(0, cosine(x, y)))
+}
+
 function directRel(a: string, b: string, corpusW: number): number {
   const o = ONTOLOGY.get(a)?.get(b) || 0
   const c = (CORPUS.get(a)?.get(b) || 0) * corpusW
@@ -116,13 +135,19 @@ export function transferRelatedness(a: string, b: string): number {
   return r2(neighborsW(x, CORPUS_TRANSFER).get(y) || 0)
 }
 
-/** The strongest-related skills to `skill`, most-related first. */
+/** The strongest-related skills to `skill`, most-related first. Merges the graph
+ * (ontology + PMI) with self-trained embedding neighbours (cosine), so recommendations
+ * are denser than sparse PMI alone. */
 export function related(skill: string, min = 0.2, max = 8): { skill: string; weight: number }[] {
-  return [...neighbors(skill)]
-    .filter(([, w]) => w >= min)
-    .sort((p, q) => q[1] - p[1])
-    .slice(0, max)
-    .map(([s, w]) => ({ skill: s, weight: r2(w) }))
+  const a = cx(skill)
+  const merged = new Map<string, number>()
+  for (const [s, w] of neighbors(a)) merged.set(s, Math.max(merged.get(s) || 0, w))
+  for (const s of Object.keys(VECTORS)) {
+    if (s === a) continue
+    const c = Math.max(0, cosine(a, s))
+    if (c >= 0.5) merged.set(s, Math.max(merged.get(s) || 0, r2(c)))
+  }
+  return [...merged].filter(([, w]) => w >= min).sort((p, q) => q[1] - p[1]).slice(0, max).map(([s, w]) => ({ skill: s, weight: r2(w) }))
 }
 
 const TRANSFER_DISCOUNT = 0.9 // transfer credit is always < the exact evidence it derives from
