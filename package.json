@@ -24,7 +24,8 @@
     "ml:export": "node scripts/export-intent-data.mjs",
     "dev:coach-transformer": "node scripts/dev-coach-transformer.mjs",
     "gpu:check": "node scripts/gpu-check.mjs",
-    "ml:sft": "node scripts/build-sft-data.mjs"
+    "ml:sft": "node scripts/build-sft-data.mjs",
+    "dev:coach-mini": "node scripts/dev-coach-mini.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

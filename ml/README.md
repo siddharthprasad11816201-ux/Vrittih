@@ -65,6 +65,14 @@ path is to **run — and optionally fine-tune — an open model** on your GPU.
 
 **0. Check your hardware:** `npm run gpu:check` (prints GPU + VRAM + what fits).
 
+**Low VRAM (≈4 GB)?** A 7B won't fit. Use a small model in one command:
+```bash
+ollama pull qwen2.5:1.5b-instruct     # ~2 GB VRAM (or MINI_MODEL=llama3.2:3b)
+npm run dev:coach-mini                 # selfhost + grounded narration, wired to the app
+```
+Falls back to the in-house brain if Ollama isn't up. Your from-scratch classifier
+(`npm run dev:coach-transformer`) is also an excellent fit for low VRAM.
+
 **1. Run Mistral locally** (Ollama exposes an OpenAI-compatible endpoint):
 
 ```bash
