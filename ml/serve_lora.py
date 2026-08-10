@@ -75,6 +75,12 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(b)
 
+    def do_GET(self):
+        # Friendly health check — opening the URL in a browser (GET) shouldn't look broken.
+        self._send(200, {"status": "ok", "model": "fine-tuned (base + LoRA)" if os.path.isdir(ADAPTER) else "base",
+                         "endpoint": "/v1/chat/completions", "method": "POST",
+                         "usage": 'POST JSON {"messages":[{"role":"user","content":"hi"}]}'})
+
     def do_POST(self):
         if not self.path.endswith("/chat/completions"):
             return self._send(404, {"error": "not found"})
