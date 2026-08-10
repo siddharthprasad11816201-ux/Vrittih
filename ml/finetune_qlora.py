@@ -13,6 +13,10 @@ grounded generation). Needs ~12-16GB+ VRAM for a 7B QLoRA; use a smaller base on
 """
 import argparse, json, os
 
+# HuggingFace's xet transfer backend fails on flaky/slow links ("CAS Client Error: error
+# decoding response body"). Default to plain resumable HTTPS; override with HF_HUB_DISABLE_XET=0.
+os.environ.setdefault("HF_HUB_DISABLE_XET", "1")
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 DATA = os.path.join(HERE, "data", "sft.jsonl")
 OUT = os.path.join(HERE, "model", "lora")
