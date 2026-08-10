@@ -6,6 +6,7 @@ import DnaPanel from "@/components/career/DnaPanel"
 import ProgressPanel from "@/components/career/ProgressPanel"
 import PathSimulatorPanel from "@/components/career/PathSimulatorPanel"
 import FrontierPanel from "@/components/career/FrontierPanel"
+import KnowledgeGraphPanel from "@/components/career/KnowledgeGraphPanel"
 import DocumentUpload from "@/components/career/DocumentUpload"
 
 /* ICIRE — the Career Intelligence dashboard: the whole in-house engine for the
@@ -64,6 +65,8 @@ export default function CareerPage() {
         </div>
 
         <DnaPanel />
+
+        <KnowledgeGraphPanel />
 
         {d.skills.length > 0 && (
           <div style={S.panel}>
