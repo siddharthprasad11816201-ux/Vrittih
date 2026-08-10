@@ -50,10 +50,9 @@ def main():
             f"  (Add --force to try anyway.)\n"
         )
     from datasets import Dataset
-    from transformers import (AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig,
-                              TrainingArguments)
+    from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
     from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
-    from trl import SFTTrainer  # trl provides SFTTrainer over chat data
+    from trl import SFTTrainer, SFTConfig  # modern trl (>=1.x): training args go in SFTConfig
 
     if not os.path.exists(DATA):
         raise SystemExit("Missing ml/data/sft.jsonl — run:  npm run ml:sft")
@@ -72,19 +71,18 @@ def main():
                       target_modules=["q_proj", "k_proj", "v_proj", "o_proj"])
     model = get_peft_model(model, lora)
 
-    def fmt(ex):
-        return {"text": tok.apply_chat_template(ex["messages"], tokenize=False, add_generation_prompt=False)}
-    ds = ds.map(fmt)
-
+    # modern trl SFTTrainer: conversational rows ({"messages":[...]}) are formatted via the
+    # tokenizer's chat template automatically; training args live in SFTConfig; the tokenizer
+    # is passed as processing_class. (Older trl used tokenizer=/dataset_text_field=/max_seq_length=.)
     os.makedirs(OUT, exist_ok=True)
-    trainer = SFTTrainer(
-        model=model, tokenizer=tok, train_dataset=ds, dataset_text_field="text",
-        max_seq_length=args.maxlen,
-        args=TrainingArguments(output_dir=OUT, per_device_train_batch_size=1,
-                               gradient_accumulation_steps=8, num_train_epochs=args.epochs,
-                               learning_rate=2e-4, bf16=True, logging_steps=5, save_strategy="epoch",
-                               report_to=[]),
-    )
+    cfg = SFTConfig(output_dir=OUT, per_device_train_batch_size=1, gradient_accumulation_steps=8,
+                    num_train_epochs=args.epochs, learning_rate=2e-4, bf16=torch.cuda.is_available(),
+                    logging_steps=5, save_strategy="epoch", report_to=[], max_length=args.maxlen)
+    try:
+        trainer = SFTTrainer(model=model, args=cfg, train_dataset=ds, processing_class=tok)
+    except TypeError:
+        # very old trl fallback
+        trainer = SFTTrainer(model=model, args=cfg, train_dataset=ds, tokenizer=tok)
     trainer.train()
     model.save_pretrained(OUT)
     tok.save_pretrained(OUT)
