@@ -20,7 +20,8 @@
     "db:sqlite": "node scripts/use-db.mjs sqlite",
     "deploy:db": "node scripts/deploy-db.mjs",
     "deploy:db:full": "node scripts/deploy-db.mjs --jobs",
-    "train:semantic": "node scripts/train-semantic.mjs"
+    "train:semantic": "node scripts/train-semantic.mjs",
+    "ml:export": "node scripts/export-intent-data.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

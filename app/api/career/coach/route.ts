@@ -14,6 +14,7 @@ import { inputFromUser, resumeFromUser } from "@/lib/career/fromUser"
 import { FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
 import { resolveBrain } from "@/lib/career/nlu/brain"
 import "@/lib/career/nlu/selfhost" // registers the optional self-hosted-model provider (off unless COACH_BRAIN=selfhost)
+import "@/lib/career/nlu/transformer" // registers the optional own-trained transformer provider (off unless COACH_BRAIN=transformer)
 import { getCalibration } from "@/lib/career/calibrationStore"
 import { writeAiRun, inputsHash } from "@/lib/aios/audit"
 
