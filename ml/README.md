@@ -96,6 +96,17 @@ pip install torch transformers peft bitsandbytes datasets accelerate trl
 python ml/finetune_qlora.py --base mistralai/Mistral-7B-Instruct-v0.3   # -> ml/model/lora/
 ```
 
-Serve base + LoRA (vLLM/llama.cpp/TGI) with an OpenAI-compatible endpoint, point
-`COACH_LLM_URL` at it, and you're running your own fine-tuned model. ~12–16 GB+ VRAM for a
+**4. Serve your fine-tuned model** (no external stack needed):
+
+```bash
+python ml/serve_lora.py        # loads base + ml/model/lora/, OpenAI-compatible on :8078
+```
+```
+COACH_BRAIN=selfhost
+COACH_NARRATE=on
+COACH_LLM_URL=http://localhost:8078/v1/chat/completions
+```
+Now the coach is driven by **your own fine-tuned model** — grounded (it can't invent
+numbers) and falling back to in-house if the server is down. Serves the base model if no
+adapter exists yet. (vLLM/llama.cpp/TGI also work if you prefer.) ~12–16 GB+ VRAM for a
 7B QLoRA; use a smaller base on less (see `gpu:check`).
