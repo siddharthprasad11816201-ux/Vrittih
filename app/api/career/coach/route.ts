@@ -11,7 +11,9 @@ import { simulateCareer } from "@/lib/career/simulator"
 import { parseChfSalary } from "@/lib/career/salary"
 import { momentum, diffVectors, type SeriesPoint, type SkillVector } from "@/lib/career/progress"
 import { inputFromUser, resumeFromUser } from "@/lib/career/fromUser"
-import { parseQuery, conversational, FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
+import { FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
+import { resolveBrain } from "@/lib/career/nlu/brain"
+import "@/lib/career/nlu/selfhost" // registers the optional self-hosted-model provider (off unless COACH_BRAIN=selfhost)
 import { getCalibration } from "@/lib/career/calibrationStore"
 import { writeAiRun, inputsHash } from "@/lib/aios/audit"
 
@@ -30,15 +32,19 @@ export async function POST(req: NextRequest) {
     const body = await req.json().catch(() => ({}))
     const message = String(body?.message || "").slice(0, 500)
 
-    // General/conversational messages (greeting, thanks, "nothing", "how are you")
-    // get a warm human reply + gentle steer — never the robotic menu. Runs first and
-    // needs no profile, so "hi" works for anyone.
-    const conv = conversational(message)
-    if (conv) return NextResponse.json({ intent: "help", reply: conv.reply, cards: [], suggestions: conv.suggestions, cta: null })
-
-    const { intent, slots } = parseQuery(message)
+    // Language understanding is pluggable (lib/career/nlu). DEFAULT = in-house (rules +
+    // trained NB + slots + conversational — keeps all rules); COACH_BRAIN=selfhost routes
+    // understanding to a locally self-hosted model, always degrading to in-house on any
+    // failure. Either way the coach's ANSWERS are composed only from real data below —
+    // the brain only classifies intent/slots (or returns a short conversational line), so
+    // it can never fabricate advice. Conversational messages get a warm reply + steer,
+    // never the robotic menu, and need no profile ("hi" works for anyone).
+    const brain = resolveBrain()
+    const u = await brain.understand(message)
+    if (u.kind === "conversational") return NextResponse.json({ intent: "help", reply: u.reply, cards: [], suggestions: u.suggestions, cta: null })
+    const { intent, slots } = u
     // AIOS §4 governance: audit every coach invocation as a registered-agent run.
-    writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: "intent-classify-v1", inputsHash: inputsHash(message), outputs: { intent }, status: "ok", explanation: `Coach intent: ${intent}` }).catch(() => {})
+    writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: `coach-brain:${brain.name}`, inputsHash: inputsHash(message), outputs: { intent }, status: "ok", explanation: `Coach intent (${brain.name}): ${intent}` }).catch(() => {})
 
     if (intent === "help") {
       return reply(intent, "I'm your in-house career coach. I read your real profile and live job listings — no guesswork — to help you decide what to do next. Ask me things like:", [
