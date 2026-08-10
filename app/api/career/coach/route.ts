@@ -15,6 +15,7 @@ import { FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
 import { resolveBrain } from "@/lib/career/nlu/brain"
 import "@/lib/career/nlu/selfhost" // registers the optional self-hosted-model provider (off unless COACH_BRAIN=selfhost)
 import "@/lib/career/nlu/transformer" // registers the optional own-trained transformer provider (off unless COACH_BRAIN=transformer)
+import { narrate } from "@/lib/career/nlu/narrator" // optional grounded generative rephrase (off unless COACH_NARRATE=on)
 import { getCalibration } from "@/lib/career/calibrationStore"
 import { writeAiRun, inputsHash } from "@/lib/aios/audit"
 
@@ -213,8 +214,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "temporary", temporary: true }, { status: 503 })
   }
 
-  function reply(intent: Intent, text: string, cards: Card[], cta?: { label: string; href: string }) {
-    return NextResponse.json({ intent, reply: text, cards, suggestions: FOLLOWUPS[intent] || [], cta: cta || null })
+  async function reply(intent: Intent, text: string, cards: Card[], cta?: { label: string; href: string }) {
+    // Optional grounded generative rephrase (COACH_NARRATE=on) — never changes cards/facts,
+    // and falls back to the in-house text if the rewrite would invent anything.
+    const prose = await narrate(text)
+    return NextResponse.json({ intent, reply: prose, cards, suggestions: FOLLOWUPS[intent] || [], cta: cta || null })
   }
 }
 

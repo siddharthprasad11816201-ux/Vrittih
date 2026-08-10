@@ -55,3 +55,39 @@ Ctrl-C. (Train the model first — see above.)
   mean-pool + linear head), trained on the intent set.
 - `serve_intent.py` — stdlib HTTP server + PyTorch inference (`/classify`).
 - `data/intents.json`, `model/model.pt` — generated (git-ignored below).
+
+---
+
+# Bigger model — Mistral (generative), on your GPU
+
+A true 7B **from scratch** is not feasible on one machine (cluster-scale). The realistic
+path is to **run — and optionally fine-tune — an open model** on your GPU.
+
+**0. Check your hardware:** `npm run gpu:check` (prints GPU + VRAM + what fits).
+
+**1. Run Mistral locally** (Ollama exposes an OpenAI-compatible endpoint):
+
+```bash
+ollama run mistral            # or: ollama pull mistral
+# endpoint: http://localhost:11434/v1/chat/completions
+```
+
+**2a. Use it for intent** (classification): `COACH_BRAIN=selfhost`,
+`COACH_LLM_URL=http://localhost:11434/v1/chat/completions`, `COACH_LLM_MODEL=mistral`.
+
+**2b. Use it to *generate* answers** (grounded): `COACH_NARRATE=on` (plus the two vars
+above). The model rewrites the coach's in-house answer in a warmer voice, but a hard
+guardrail rejects any rewrite that introduces a number/currency not in the real data — so
+it can rephrase, never fabricate. Cards/figures always come from the engine.
+
+**3. Fine-tune Mistral on your data (QLoRA)** — adapt an open model (not from scratch):
+
+```bash
+npm run ml:sft                # build ml/data/sft.jsonl (seed — grow with real Q&A)
+pip install torch transformers peft bitsandbytes datasets accelerate trl
+python ml/finetune_qlora.py --base mistralai/Mistral-7B-Instruct-v0.3   # -> ml/model/lora/
+```
+
+Serve base + LoRA (vLLM/llama.cpp/TGI) with an OpenAI-compatible endpoint, point
+`COACH_LLM_URL` at it, and you're running your own fine-tuned model. ~12–16 GB+ VRAM for a
+7B QLoRA; use a smaller base on less (see `gpu:check`).
