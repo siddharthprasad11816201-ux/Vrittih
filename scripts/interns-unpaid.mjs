@@ -1,38 +1,41 @@
 /* EduRankAI policy: internships are STRICTLY UNPAID except a designated few (which pay
  * in CHF). This enforces that on the Job table and removes the CHF-rule violation of ₹/
- * USD/"LPA" intern stipends: every internship whose salary is not an explicit CHF amount
- * is set to "Unpaid"; CHF-paid internships are kept (the paid few). Idempotent.
+ * INR/USD/"LPA" intern stipends: every internship whose salary is not a clean CHF amount
+ * is set to "Unpaid"; CHF-only internships are kept (the paid few).
  *
- *   node scripts/interns-unpaid.mjs           # dry-run: report only
- *   node scripts/interns-unpaid.mjs --apply   # apply the change
+ * Bulk updateMany (fast on Postgres + SQLite), idempotent, dry-run by default.
+ *   node scripts/interns-unpaid.mjs            # report only
+ *   node scripts/interns-unpaid.mjs --apply    # apply
  */
 import { PrismaClient } from "@prisma/client"
 
 const APPLY = process.argv.includes("--apply")
 const prisma = new PrismaClient()
 
-const isIntern = (j) => j.type === "INTERNSHIP" || /\bintern(ship)?s?\b/i.test(j.title || "")
-// A legitimate paid intern pays in CHF ONLY — any ₹/INR/USD/LPA token (even mixed with
-// CHF) is a CHF-rule violation and gets unpaid'd.
-const isChfPaid = (s) => /\bchf\b/i.test(s || "") && !/₹|\bINR\b|\bUSD\b|\bLPA\b|\$|rs\.?\s*\d/i.test(s || "")
+const INTERN = { OR: [{ type: "INTERNSHIP" }, { title: { contains: "Intern" } }] }
+const FORBIDDEN = ["₹", "₨", "INR", "LPA", "Rs", "USD", "rupee", "lakh"] // non-CHF currency tokens present in the data
+const forbiddenOr = FORBIDDEN.map((s) => ({ salary: { contains: s } }))
 
 async function main() {
-  const jobs = await prisma.job.findMany({ select: { id: true, title: true, type: true, salary: true } })
-  const interns = jobs.filter(isIntern)
-  const toUnpaid = interns.filter((j) => (j.salary || "").trim().toLowerCase() !== "unpaid" && !isChfPaid(j.salary))
-  const keptPaid = interns.filter((j) => isChfPaid(j.salary))
+  // A) interns with no CHF in their salary (incl. null / "Not Disclosed" / ₹ / USD) -> Unpaid
+  const whereNoChf = { AND: [INTERN, { NOT: { salary: { contains: "CHF" } } }, { NOT: { salary: "Unpaid" } }] }
+  // B) interns that DO mention CHF but ALSO a forbidden currency (mixed) -> Unpaid (not CHF-only)
+  const whereMixed = { AND: [INTERN, { salary: { contains: "CHF" } }, { OR: forbiddenOr }] }
 
-  console.log(`Internships: ${interns.length}`)
-  console.log(`  -> set to Unpaid: ${toUnpaid.length}`)
-  console.log(`  -> kept (explicit CHF, the paid few): ${keptPaid.length}`)
-  for (const j of keptPaid) console.log(`       CHF-paid: ${j.title} — ${j.salary}`)
-  console.log(`  sample being unpaid'd:`)
-  for (const j of toUnpaid.slice(0, 8)) console.log(`       ${j.title} — was: ${(j.salary || "(none)").slice(0, 60)}`)
-
-  if (!APPLY) { console.log("\nDRY RUN — re-run with --apply to write."); await prisma.$disconnect(); return }
-  let n = 0
-  for (const j of toUnpaid) { await prisma.job.update({ where: { id: j.id }, data: { salary: "Unpaid" } }); n++ }
-  console.log(`\nApplied: ${n} internships set to Unpaid.`)
+  if (!APPLY) {
+    const [a, b, keptPaid] = await Promise.all([
+      prisma.job.count({ where: whereNoChf }),
+      prisma.job.count({ where: whereMixed }),
+      prisma.job.count({ where: { AND: [INTERN, { salary: { contains: "CHF" } }, { NOT: { OR: forbiddenOr } }] } }),
+    ])
+    console.log(`DRY RUN — interns -> Unpaid: ${a + b} (no-CHF ${a} + mixed-currency ${b}); kept CHF-only (paid few): ${keptPaid}`)
+    console.log("Re-run with --apply to write.")
+    await prisma.$disconnect(); return
+  }
+  const a = await prisma.job.updateMany({ where: whereNoChf, data: { salary: "Unpaid" } })
+  const b = await prisma.job.updateMany({ where: whereMixed, data: { salary: "Unpaid" } })
+  const keptPaid = await prisma.job.count({ where: { AND: [INTERN, { salary: { contains: "CHF" } }, { NOT: { OR: forbiddenOr } }] } })
+  console.log(`Applied — interns set to Unpaid: ${a.count + b.count}; kept CHF-only (paid few): ${keptPaid}`)
   await prisma.$disconnect()
 }
 main().catch((e) => { console.error(e); process.exit(1) })
