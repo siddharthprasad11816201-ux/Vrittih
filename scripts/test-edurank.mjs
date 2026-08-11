@@ -140,6 +140,38 @@ const copy = al.alertNotification("Backend roles", [{ id: "a", createdAt: NOW }]
 eq("singular notification copy", copy.title, '1 new job for "Backend roles"')
 eq("plural notification copy", al.alertNotification("X", [{ id: "a", createdAt: NOW }, { id: "b", createdAt: NOW }]).title, '2 new jobs for "X"')
 
+/* ---------- 7. Social engagement + trust primitives ---------- */
+const soc = load("lib/social/engage.ts")
+
+// reactions
+eq("unknown reaction degrades to like", soc.normalizeReaction("angry"), "like")
+eq("valid reaction kept", soc.normalizeReaction("celebrate"), "celebrate")
+const tally = soc.tallyReactions([{ reaction: "like" }, { reaction: "celebrate" }, { reaction: "celebrate" }, { reaction: null }])
+ok("tally counts by type with total", tally.total === 4 && tally.byType.celebrate === 2 && tally.byType.like === 2, JSON.stringify(tally))
+
+// hashtags
+eq("parses unique lowercase tags", soc.parseHashtags("Loving #NodeJS and #nodejs plus #Hiring!"), ["nodejs", "hiring"])
+eq("ignores tags starting with a digit", soc.parseHashtags("#1st #2fast"), [])
+eq("no tags -> empty", soc.parseHashtags("plain text"), [])
+ok("caps at 10 tags", soc.parseHashtags(Array.from({ length: 15 }, (_, i) => `#tag${String.fromCharCode(97 + i)}`).join(" ")).length === 10)
+
+// report validation
+ok("valid reason/target accepted", soc.isValidReason("spam") && soc.isValidTarget("post"))
+ok("invalid reason/target rejected", !soc.isValidReason("because") && !soc.isValidTarget("planet"))
+ok("status validation", soc.isValidStatus("OPEN") && soc.isValidStatus("RESOLVED") && !soc.isValidStatus("open"))
+
+// blocking is mutual
+const blocks = [{ blockerId: "me", blockedId: "a" }, { blockerId: "b", blockedId: "me" }, { blockerId: "x", blockedId: "y" }]
+const hid = soc.hiddenUserIds(blocks, "me")
+ok("hides both who I blocked and who blocked me, not unrelated pairs",
+  hid.has("a") && hid.has("b") && !hid.has("x") && !hid.has("y") && hid.size === 2, JSON.stringify([...hid]))
+
+// endorsement weight: diminishing returns, never linear, bounded
+eq("0 endorsements -> 0", soc.endorsementWeight(0), 0)
+ok("1 endorsement is meaningful", soc.endorsementWeight(1) === 0.25, String(soc.endorsementWeight(1)))
+ok("weight rises but with diminishing returns", soc.endorsementWeight(5) > soc.endorsementWeight(2) && (soc.endorsementWeight(5) - soc.endorsementWeight(4)) < (soc.endorsementWeight(2) - soc.endorsementWeight(1)))
+ok("weight is bounded below 1 even at high volume", soc.endorsementWeight(1000) < 1)
+
 /* ---------- summary ---------- */
 fs.rmSync(tmp, { recursive: true, force: true })
 console.log(`\n${pass} passed, ${fail} failed`)

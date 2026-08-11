@@ -402,21 +402,82 @@ model BackgroundJob {
 
 // ---------- Professional feed ----------
 model Post {
-  id        String        @id @default(cuid())
-  authorId  String
-  content   String
-  createdAt DateTime      @default(now())
-  likes     PostLike[]
-  comments  PostComment[]
+  id         String        @id @default(cuid())
+  authorId   String
+  content    String
+  repostOfId String?                     // set when this post reshares another (optional quote in content)
+  visibility String        @default("public")  // "public" | "connections"
+  createdAt  DateTime      @default(now())
+  repostOf   Post?         @relation("PostReposts", fields: [repostOfId], references: [id], onDelete: SetNull)
+  reposts    Post[]        @relation("PostReposts")
+  likes      PostLike[]
+  comments   PostComment[]
+  hashtags   PostHashtag[]
   @@index([createdAt])
+  @@index([repostOfId])
 }
 
 model PostLike {
   postId    String
   userId    String
+  reaction  String   @default("like")   // like | celebrate | support | insightful | curious
   createdAt DateTime @default(now())
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   @@id([postId, userId])
+}
+
+// Hashtags parsed from post content on create (topic pages / feed shaping).
+model Hashtag {
+  id    String        @id @default(cuid())
+  tag   String        @unique          // lowercase, no leading #
+  posts PostHashtag[]
+}
+
+model PostHashtag {
+  postId    String
+  hashtagId String
+  post      Post    @relation(fields: [postId], references: [id], onDelete: Cascade)
+  hashtag   Hashtag @relation(fields: [hashtagId], references: [id], onDelete: Cascade)
+  @@id([postId, hashtagId])
+  @@index([hashtagId])
+}
+
+// Trust & safety: user-facing report of any content/user, resolved from an admin queue.
+model Report {
+  id           String    @id @default(cuid())
+  reporterId   String
+  targetType   String                      // post | comment | user | job | company
+  targetId     String
+  reason       String                      // spam | harassment | misinformation | scam | other
+  detail       String?
+  status       String    @default("OPEN")  // OPEN | RESOLVED | DISMISSED
+  resolvedById String?
+  resolution   String?
+  resolvedAt   DateTime?
+  createdAt    DateTime  @default(now())
+  @@index([status, createdAt])
+  @@index([targetType, targetId])
+  @@unique([reporterId, targetType, targetId])
+}
+
+// Mutual invisibility: blocked users are filtered out of feed, search and messaging.
+model UserBlock {
+  blockerId String
+  blockedId String
+  createdAt DateTime @default(now())
+  @@id([blockerId, blockedId])
+  @@index([blockedId])
+}
+
+// LinkedIn-class social proof: a connection vouches for a skill the user lists.
+model SkillEndorsement {
+  id         String   @id @default(cuid())
+  userId     String                       // the person being endorsed
+  skill      String                       // canonical skill name
+  endorserId String
+  createdAt  DateTime @default(now())
+  @@unique([userId, skill, endorserId])
+  @@index([userId, skill])
 }
 
 model PostComment {
