@@ -42,6 +42,29 @@ npm run dev:coach-lora
 bigger model only makes the *phrasing* fluent, and the guardrail still rejects any invented
 number/currency.
 
+## University HPC cluster (IITG PARAM, etc.) — best option if you have access
+
+Institutional clusters have real datacenter GPUs (A100/V100, 40–80 GB) — a 7B (even 13B)
+QLoRA fine-tune is easy. Flow:
+
+1. **SSH in** to the login node (you need an authorized account/allocation).
+2. **Clone the repo** (data + code come with it):
+   `git clone https://github.com/<you>/Vrittih.git` — if private, use a GitHub token.
+3. **One-time env** on the login node:
+   `conda create -y -n vrittih python=3.11 && conda activate vrittih`
+   `pip install torch transformers peft bitsandbytes datasets accelerate trl`
+4. **Pre-download the base on the LOGIN node** (compute nodes are usually offline):
+   `export HF_HOME=$HOME/hf_cache`
+   `python -c "from huggingface_hub import snapshot_download; snapshot_download('mistralai/Mistral-7B-Instruct-v0.3')"`
+5. **Submit the job:** `sbatch ml/hpc_finetune.slurm` (adapt the `#SBATCH` partition/account/
+   module lines to your cluster — `sinfo`, `module avail`). It runs `finetune_qlora.py`,
+   which builds training data straight from `ml/sft_seed.jsonl` (no Node needed).
+6. **Copy the adapter back:** `scp -r <cluster>:.../ml/model/lora ./ml/model/` and serve with
+   `python ml/serve_lora.py`.
+
+Note: **Claude Code runs on your laptop, not the cluster** — it writes these scripts, but you
+run them over SSH. (You *can* install Claude Code on the login node for direct help there.)
+
 ## No 4 GB GPU handy?
 
 - **Rent a cloud GPU** (e.g. a single 24 GB card) for a few hours — the *same* commands run

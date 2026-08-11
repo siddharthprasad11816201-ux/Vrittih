@@ -59,9 +59,24 @@ def main():
     from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
     from trl import SFTTrainer, SFTConfig  # modern trl (>=1.x): training args go in SFTConfig
 
-    if not os.path.exists(DATA):
-        raise SystemExit("Missing ml/data/sft.jsonl — run:  npm run ml:sft")
-    rows = [json.loads(l) for l in open(DATA, encoding="utf-8") if l.strip()]
+    # Prefer the Node-built ml/data/sft.jsonl (messages format); else build straight from
+    # the committed ml/sft_seed.jsonl ({user, assistant}) so NO Node is needed — important
+    # on an HPC cluster where you just git-clone and run Python.
+    SEED = os.path.join(HERE, "sft_seed.jsonl")
+    SYS = "You are Vrittih's in-house career coach. Answer only from the user's real profile and live roles; never invent numbers or salaries."
+    if os.path.exists(DATA):
+        rows = [json.loads(l) for l in open(DATA, encoding="utf-8") if l.strip()]
+    elif os.path.exists(SEED):
+        rows = []
+        for l in open(SEED, encoding="utf-8"):
+            if not l.strip():
+                continue
+            o = json.loads(l)
+            if o.get("user") and o.get("assistant"):
+                rows.append({"messages": [{"role": "system", "content": SYS}, {"role": "user", "content": o["user"]}, {"role": "assistant", "content": o["assistant"]}]})
+        print(f"Built {len(rows)} training rows from ml/sft_seed.jsonl (no Node needed).")
+    else:
+        raise SystemExit("No training data — need ml/data/sft.jsonl (npm run ml:sft) or ml/sft_seed.jsonl")
     ds = Dataset.from_list(rows)
 
     tok = AutoTokenizer.from_pretrained(args.base)
