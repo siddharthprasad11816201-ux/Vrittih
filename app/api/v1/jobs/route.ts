@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { rateLimit } from "@/lib/ratelimit/store"
 import { prisma } from "@/lib/prisma"
 import { authApiKey } from "@/lib/apikey"
 import { safeExternalUrl } from "@/lib/url"
@@ -30,6 +31,14 @@ export async function POST(req: NextRequest) {
   try { body = await req.json() } catch { return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 }) }
   const list: any[] = Array.isArray(body) ? body : Array.isArray(body?.jobs) ? body.jobs : [body]
   if (!list.length) return NextResponse.json({ error: "No jobs provided" }, { status: 400 })
+  // The batch was UNBOUNDED and looped one prisma.job.create per element, so a single
+  // request could pin the database indefinitely. Bound it and rate-limit per API key.
+  const MAX_BATCH = 100
+  if (list.length > MAX_BATCH) {
+    return NextResponse.json({ error: `Too many jobs in one request (${list.length}). Send at most ${MAX_BATCH} per call.` }, { status: 413 })
+  }
+  const rl = await rateLimit("write", ctx.employerId, { scope: "v1_jobs" })
+  if (!rl.allowed) return NextResponse.json({ error: "Rate limit exceeded." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
 
   const created: any[] = [], errors: any[] = []
   let pendingCount = 0

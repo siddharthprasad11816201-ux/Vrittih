@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { rateLimit, clientIp } from "@/lib/ratelimit/store"
 import { prisma } from "@/lib/prisma"
 import { consumeChallenge, verifyAssertion, rpFromRequest } from "@/lib/webauthn"
 import { signToken } from "@/lib/jwt"
@@ -10,6 +11,8 @@ export const dynamic = "force-dynamic"
 // Passkey login step 2: verify the assertion signature and issue a session.
 export async function POST(req: NextRequest) {
   try {
+    const rl = await rateLimit("auth", clientIp(req), { scope: "webauthn", failOpen: false })
+    if (!rl.allowed) return NextResponse.json({ error: "Too many attempts. Please wait." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
     const { userId, credentialId, authenticatorData, clientDataJSON, signature } = await req.json()
     if (!userId || !credentialId || !authenticatorData || !clientDataJSON || !signature) {
       return NextResponse.json({ error: "Missing assertion fields" }, { status: 400 })

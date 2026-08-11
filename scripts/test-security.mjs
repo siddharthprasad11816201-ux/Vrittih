@@ -16,16 +16,30 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "sec-"))
 process.env.JWT_SECRET = process.env.JWT_SECRET || "test_secret_for_security_suite_only"
 
+// Transpile a TS module (and, on demand, its relative imports) to CJS in a temp tree.
+// The directory structure is MIRRORED so relative specifiers like "./types" resolve.
 function load(rel) {
-  const src = fs.readFileSync(path.join(ROOT, rel), "utf8")
+  const dest = path.join(tmp, rel.replace(/\.ts$/, ".js"))
+  if (fs.existsSync(dest)) return require(dest)
+
+  const abs = path.join(ROOT, rel)
+  const src = fs.readFileSync(abs, "utf8")
   const out = ts.transpileModule(src, {
     // esModuleInterop mirrors the real build (next/tsconfig), so default-imports of Node
     // built-ins transpile the same way here as they do in production.
     compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019, esModuleInterop: true },
   }).outputText
-  const f = path.join(tmp, rel.replace(/[\\/]/g, "__").replace(/\.ts$/, ".cjs"))
-  fs.writeFileSync(f, out)
-  return require(f)
+  fs.mkdirSync(path.dirname(dest), { recursive: true })
+  fs.writeFileSync(dest, out)
+
+  // Materialise relative dependencies first so require() finds them.
+  for (const m of src.matchAll(/from\s+["'](\.[^"']+)["']/g)) {
+    const depRel = path.relative(ROOT, path.resolve(path.dirname(abs), m[1])).replace(/\\/g, "/")
+    for (const cand of [`${depRel}.ts`, `${depRel}/index.ts`]) {
+      if (fs.existsSync(path.join(ROOT, cand))) { load(cand); break }
+    }
+  }
+  return require(dest)
 }
 let pass = 0, fail = 0
 const ok = (n, c, d = "") => { console.log(`${c ? "PASS" : "FAIL"}  ${n}${c ? "" : "  " + d}`); c ? pass++ : fail++ }
@@ -143,6 +157,63 @@ ok("worker tick no longer trusts the Host header in production", read("app/api/i
 ok("login issues a challenge instead of a bare userId", read("app/api/auth/login/route.ts").includes("issueChallenge"))
 ok("login rate limiting fails CLOSED", read("app/api/auth/login/route.ts").includes("failOpen: false"))
 ok("the client threads the challenge into step 2", read("app/verify/2fa/page.tsx").includes("params.get(\"ch\")"))
+
+
+/* ---------- 7. Code execution sandbox — closes: untrusted code in the app process ---------- */
+const sbx = load("lib/sandbox/policy.ts")
+const sbxTypes = load("lib/sandbox/types.ts")
+
+// Limits are clamped: a client can only ever ask for LESS than the ceiling.
+const huge = sbx.clampLimits({ timeoutMs: 999999999, memoryMb: 999999, cpus: 64, processes: 999999 })
+ok("timeout is clamped to the ceiling", huge.timeoutMs <= sbx.MAX_LIMITS.timeoutMs, String(huge.timeoutMs))
+ok("memory is clamped", huge.memoryMb <= sbx.MAX_LIMITS.memoryMb, String(huge.memoryMb))
+ok("cpus are clamped", huge.cpus <= sbx.MAX_LIMITS.cpus, String(huge.cpus))
+ok("pid limit is clamped", huge.processes <= sbx.MAX_LIMITS.processes, String(huge.processes))
+ok("negative/garbage limits become sane positives", sbx.clampLimits({ timeoutMs: -5, memoryMb: NaN }).timeoutMs >= 1)
+
+// Validation rejects abusive requests before anything is executed.
+ok("unknown language rejected", sbx.validate({ language: "brainfuck", source: "x" }).ok === false)
+ok("empty source rejected", sbx.validate({ language: "python", source: "   " }).ok === false)
+ok("oversized source rejected", sbx.validate({ language: "python", source: "a".repeat(sbx.MAX_SOURCE_BYTES + 1) }).ok === false)
+ok("too many test cases rejected", sbx.validate({ language: "python", source: "x", tests: new Array(sbx.MAX_TESTS + 1).fill({}) }).ok === false)
+ok("a valid request is accepted with clamped limits", sbx.validate({ language: "python", source: "print(1)" }).ok === true)
+
+// Output is capped so a runaway program cannot exhaust server memory.
+const capped = sbx.capOutput("x".repeat(1000), 100)
+ok("output is truncated at the cap and flagged", capped.truncated === true && capped.text.length < 1000)
+ok("short output is untouched", sbx.capOutput("hi", 100).truncated === false)
+
+// Comparison ignores trailing whitespace but not real differences.
+ok("trailing whitespace/newlines do not fail a correct answer", sbx.outputMatches("42\n", "42"))
+ok("CRLF vs LF does not fail a correct answer", sbx.outputMatches("a\r\nb", "a\nb"))
+ok("a genuinely wrong answer still fails", !sbx.outputMatches("41", "42"))
+
+// Hidden test cases must never leak their expectations to the candidate.
+const summary = sbx.summarizeTests(
+  [{ name: "visible", expectedStdout: "1" }, { name: "secret", hidden: true, expectedStdout: "2" }],
+  [{ stdout: "1", stderr: "" }, { stdout: "9", stderr: "" }])
+eq("scores count hidden cases", summary.totalCount, 2)
+eq("only the passing case counts", summary.passedCount, 1)
+ok("hidden case leaks neither expected nor actual",
+  summary.tests[1].expected === undefined && summary.tests[1].actual === undefined, JSON.stringify(summary.tests[1]))
+ok("visible case still shows its detail", summary.tests[0].expected === "1")
+
+// The default provider must refuse rather than fake execution.
+const idx = read("lib/sandbox/index.ts")
+ok("default provider is disabled (safe default)", idx.includes(`SANDBOX_PROVIDER || "disabled"`))
+ok("an unknown provider name falls back to disabled, never a weaker runner", idx.includes("|| disabledProvider"))
+ok("disabled provider executes nothing and says so", read("lib/sandbox/providers/disabled.ts").includes(`status: "unavailable"`))
+ok("no in-process eval of untrusted code",
+  ["new Function(", "eval(", 'require("vm")', 'from "vm"'].every((bad) => !(read("lib/sandbox/providers/docker.ts") + idx).includes(bad)))
+
+// The docker runner must actually isolate.
+const dock = read("lib/sandbox/providers/docker.ts")
+for (const flag of ["--network", "none", "--read-only", "--pids-limit", "--memory", "--cpus", "--cap-drop", "no-new-privileges", "--user"]) {
+  ok(`docker runner sets ${flag}`, dock.includes(flag))
+}
+ok("swap is disabled (memory-swap equals memory)", dock.includes("--memory-swap"))
+ok("host-side wall-clock kill exists", dock.includes("SIGKILL"))
+ok("languages are registry-driven, not hard-coded in the UI", Object.keys(sbxTypes.LANGUAGES).length >= 6)
 
 fs.rmSync(tmp, { recursive: true, force: true })
 console.log(`\n${pass} passed, ${fail} failed`)

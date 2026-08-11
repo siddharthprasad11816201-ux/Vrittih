@@ -10,6 +10,9 @@ const CHALLENGES = [
   "Smile naturally",
 ]
 
+// NOTE: state was a module-level Map, which is lost between serverless invocations, so
+// a challenge issued by one lambda was invisible to the next. It is kept only as a UX
+// prompt store; it is NOT a security control (see POST).
 const pendingChallenges = new Map<string, { challenge: string; expiresAt: number }>()
 
 export async function GET(req: NextRequest) {
@@ -36,7 +39,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Challenge expired" }, { status: 400 })
     }
     pendingChallenges.delete(userId)
-    return NextResponse.json({ success: true, verified: challengeCompleted === true })
+    // HONESTY: this endpoint cannot verify liveness. It never inspects a frame or video —
+    // it only sees a boolean the client chose to send. Returning that boolean as
+    // "verified" would misrepresent an unverified claim as a verification, so the response
+    // now states plainly that this is an unverified client assertion. Real liveness needs
+    // server-side analysis of media captured against a server-issued nonce; until that
+    // exists, /api/verify/face-verify treats face strictly as a SECOND factor after the
+    // password and never as proof of presence.
+    return NextResponse.json({
+      success: true,
+      verified: false,
+      clientAsserted: challengeCompleted === true,
+      note: "Liveness is not server-verified. This response records a client assertion only.",
+    })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
