@@ -35,7 +35,7 @@ const RULES: [RegExp, Intent][] = [
 
 const normI = (t: string) => (t || "").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "")
 
-export type Slots = { threshold?: number; remote?: boolean; type?: string }
+export type Slots = { threshold?: number; remote?: boolean; type?: string; payMin?: number; location?: string }
 
 /** Pull structured filters out of a query, in-house. Understands match thresholds
  * ("more than 50%", "at least 60", "70%+", ">= 40"), remote, and internship. */
@@ -55,6 +55,50 @@ export function extractSlots(text: string): Slots {
   if (m) { const n = parseInt(m[1], 10); if (n >= 0 && n <= 100) slots.threshold = n }
   if (/\bremote\b|work from home|\bwfh\b|from home/.test(t)) slots.remote = true
   if (/\bintern(ship)?s?\b/.test(t)) slots.type = "internship"
+
+  // --- pay amount (CHF) ---
+  // Before this, ANY number after "more than" hit the 0..100 percent guard, so
+  // "jobs paying more than 90000" was silently dropped and the user got unfiltered
+  // results. A pay amount is recognised when the number carries a currency marker
+  // (CHF / francs / a k suffix) or the sentence is pay-worded and the value is far
+  // too large to be a percentage. CHF only — never converted, never invented.
+  const payWorded = /\b(salary|salaries|pay|paying|paid|compensation|ctc|package|earn|earning|stipend|wage|income)\b/.test(t)
+  const payMatch =
+    masked.match(/(?:chf|fr\.?|francs?)\s*([0-9][0-9,.'_ ]*)\s*(k\b)?/) ||
+    masked.match(/([0-9][0-9,.'_ ]*)\s*(k\b)?\s*(?:chf|fr\.?|francs?)/) ||
+    (payWorded ? masked.match(/(?:more than|greater than|higher than|over|above|at least|\bminimum\b|\bmin\b|atleast|>=?)\s*([0-9][0-9,.'_ ]*)\s*(k\b)?/) : null) ||
+    (payWorded ? masked.match(/([0-9][0-9,.'_ ]*)\s*(k\b)/) : null)
+  if (payMatch) {
+    // Thousands separators vary (1,000 / 1.000 / 1'000 / 1 000) — all one number.
+    const rawDigits = String(payMatch[1]).replace(/[,.'_ ]/g, "")
+    let n = parseInt(rawDigits, 10)
+    if (Number.isFinite(n) && n > 0) {
+      const hasK = !!payMatch[2]
+      const hasCurrency = /chf|fr\.?|francs?/.test(payMatch[0])
+      if (hasK) n = n * 1000                                  // "90k" -> 90000
+      // A bare pay-worded 0..100 with no currency/k marker stays a percentage.
+      if (hasCurrency || hasK || n > 100) {
+        slots.payMin = n
+        // A real pay figure must never also masquerade as a match percentage. The
+        // percent regex can stop at a thousands separator ("at least 85'000" -> 85), so
+        // compare against BOTH the stripped number and the raw leading digits.
+        const leading = parseInt(String(payMatch[1]), 10)
+        if (slots.threshold != null && (slots.threshold === n || slots.threshold === leading || slots.threshold === parseInt(rawDigits, 10))) {
+          delete slots.threshold
+        }
+      }
+    }
+  }
+
+  // --- location ---
+  // "in Zurich", "near Bern", "based in Geneva" — capture the place, not trailing filler.
+  const loc = t.match(/\b(?:based in|located in|in|near|around|within)\s+([a-z][a-z .'-]{1,40}?)(?=\s+(?:with|that|which|for|and|or|paying|pay|at least|over|more than|above|remote|jobs?|roles?|positions?)\b|[,.?!]|$)/)
+  if (loc) {
+    const place = loc[1].trim()
+    // Common words that follow "in"/"around" but are not places.
+    const NOT_PLACES = new Set(["the","a","an","my","this","that","it","them","chf","tech","total","general","order","fact","time","future","demand","person","house","office","charge","progress","touch","which","what","case","short","between","addition","particular"])
+    if (place.length >= 2 && !NOT_PLACES.has(place)) slots.location = place
+  }
   return slots
 }
 

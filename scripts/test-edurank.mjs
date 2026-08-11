@@ -256,6 +256,65 @@ const pureNotify = notifySrc.slice(0, notifySrc.indexOf("export interface Notify
   ok("every category has a default", nt.NOTIFICATION_CATEGORIES.every((c) => nt.CATEGORY_DEFAULTS[c]))
 }
 
+/* ---------- 11. Coach NLU: pay / location slots + multi-turn memory ---------- */
+{
+  // coach.ts pulls in the trained classifier; stub that import so slot extraction is pure.
+  let csrc = fs.readFileSync(path.join(ROOT, "lib/career/coach.ts"), "utf8")
+    .replace(/^import .*intentClassifier.*$/m, "const classifyLearned = () => ({ confident: false, intent: 'help' })")
+  const cout = ts.transpileModule(csrc, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019 } }).outputText
+  const cf = path.join(tmp, "coach_pure.cjs"); fs.writeFileSync(cf, cout)
+  const coach = require(cf)
+  const S = (q) => coach.extractSlots(q)
+
+  // THE audit bug: a pay threshold was silently swallowed by the 0..100 percent guard.
+  eq("pay: 'paying more than 90000' -> payMin", S("jobs paying more than 90000").payMin, 90000)
+  eq("pay: 'over 90k' -> 90000", S("roles paying over 90k").payMin, 90000)
+  eq("pay: 'CHF 120000' -> 120000", S("jobs with salary above CHF 120000").payMin, 120000)
+  eq("pay: swiss separator 85'000 CHF", S("show me jobs paying at least 85'000 CHF").payMin, 85000)
+  ok("pay figure does not leak into threshold", S("show me jobs paying at least 85'000 CHF").threshold === undefined, JSON.stringify(S("show me jobs paying at least 85'000 CHF")))
+
+  // percentages must still behave exactly as before (no regression)
+  eq("percent: 'more than 50%' still a threshold", S("any job with more than 50%").threshold, 50)
+  ok("percent: no phantom payMin", S("any job with more than 50%").payMin === undefined)
+  eq("percent: '60 percent match'", S("jobs over 60 percent match").threshold, 60)
+  ok("'5+ years' is neither a percent nor pay", S("am I ready for senior with 5+ years?").threshold === undefined && S("am I ready for senior with 5+ years?").payMin === undefined)
+
+  // location
+  eq("location: 'in Geneva'", S("jobs in Geneva").location, "geneva")
+  eq("location: 'near Bern'", S("internships near Bern").location, "bern")
+  const combo = S("remote jobs in Zurich paying more than 100k")
+  ok("combined: remote + location + pay all extracted", combo.remote === true && combo.location === "zurich" && combo.payMin === 100000, JSON.stringify(combo))
+  ok("no false location from a plain question", S("what is my salary potential").location === undefined, JSON.stringify(S("what is my salary potential")))
+
+  /* memory */
+  const mout = ts.transpileModule(fs.readFileSync(path.join(ROOT, "lib/career/memory.ts"), "utf8").replace(/^import .*$/gm, ""),
+    { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019 } }).outputText
+  const mf = path.join(tmp, "memory.cjs"); fs.writeFileSync(mf, mout)
+  const mem = require(mf)
+
+  const T0 = new Date("2026-08-11T12:00:00Z")
+  const recent = { intent: "matches", slots: { threshold: 60 }, createdAt: new Date("2026-08-11T11:55:00Z") }
+  const stale = { intent: "matches", slots: { threshold: 60 }, createdAt: new Date("2026-08-11T10:00:00Z") }
+
+  ok("fresh prior is eligible", mem.isFresh(recent, T0) && !mem.isFresh(stale, T0))
+
+  const follow = mem.resolveTurn({ intent: "help", slots: { remote: true }, text: "what about remote ones?" }, recent, T0)
+  ok("follow-up inherits the prior topic and merges filters",
+    follow.intent === "matches" && follow.slots.threshold === 60 && follow.slots.remote === true && follow.inherited === true, JSON.stringify(follow))
+
+  const ownTopic = mem.resolveTurn({ intent: "resume", slots: {}, text: "how do I improve my resume?" }, recent, T0)
+  ok("a clearly-stated new topic is NEVER overridden by memory", ownTopic.intent === "resume" && ownTopic.inherited === false, JSON.stringify(ownTopic))
+
+  const staleFollow = mem.resolveTurn({ intent: "help", slots: {}, text: "what about remote ones?" }, stale, T0)
+  ok("a stale prior turn is not inherited", staleFollow.intent === "help" && staleFollow.inherited === false, JSON.stringify(staleFollow))
+
+  const override = mem.resolveTurn({ intent: "help", slots: { threshold: 80 }, text: "what about 80% ones?" }, recent, T0)
+  eq("current slots win over inherited ones", override.slots.threshold, 80)
+
+  const noPrior = mem.resolveTurn({ intent: "matches", slots: {}, text: "best jobs for me" }, null, T0)
+  ok("no prior turn -> unchanged", noPrior.intent === "matches" && noPrior.inherited === false)
+}
+
 /* ---------- summary ---------- */
 fs.rmSync(tmp, { recursive: true, force: true })
 console.log(`\n${pass} passed, ${fail} failed`)

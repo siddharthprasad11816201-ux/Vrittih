@@ -2475,6 +2475,19 @@ model ReviewItem {
   @@index([userId, dueAt])
 }
 
+// Short rolling transcript of the career-coach conversation, so follow-ups resolve
+// ("what about remote ones?"). Deterministic slot/intent carry-over — no LLM state.
+model CoachTurn {
+  id        String   @id @default(cuid())
+  userId    String
+  role      String                        // "user" | "assistant"
+  message   String
+  intent    String?
+  slots     String?                       // JSON Slots snapshot
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
+}
+
 // Discount / waiver codes applied at checkout. All discount math is computed
 // server-side (never trust the client); a 100% coupon activates access through a
 // dedicated no-charge waiver path (see app/api/payment/redeem-waiver).

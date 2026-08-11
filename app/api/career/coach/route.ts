@@ -12,6 +12,7 @@ import { parseChfSalary } from "@/lib/career/salary"
 import { momentum, diffVectors, type SeriesPoint, type SkillVector } from "@/lib/career/progress"
 import { inputFromUser, resumeFromUser } from "@/lib/career/fromUser"
 import { FOLLOWUPS, list, type Intent } from "@/lib/career/coach"
+import { resolveTurn } from "@/lib/career/memory"
 import { resolveBrain } from "@/lib/career/nlu/brain"
 import "@/lib/career/nlu/selfhost" // registers the optional self-hosted-model provider (off unless COACH_BRAIN=selfhost)
 import "@/lib/career/nlu/transformer" // registers the optional own-trained transformer provider (off unless COACH_BRAIN=transformer)
@@ -51,7 +52,26 @@ export async function POST(req: NextRequest) {
       writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: `coach-brain:${usedBrain}`, inputsHash: inputsHash(message), outputs: { kind: "conversational" }, status: "ok", explanation: `Coach conversational (${usedBrain})` }).catch(() => {})
       return NextResponse.json({ intent: "help", reply: u.reply, cards: [], suggestions: u.suggestions, cta: null })
     }
-    const { intent, slots } = u
+    // Multi-turn memory: a follow-up like "what about remote ones?" carries no topic of
+    // its own, so inherit the previous turn's intent and filters. Deterministic — the
+    // current message's own intent/slots always win; nothing is guessed.
+    const prior = await (prisma as any).coachTurn.findFirst({
+      where: { userId: p.userId, role: "user" },
+      orderBy: { createdAt: "desc" },
+    }).catch(() => null)
+    const priorSlots = (() => { try { return prior?.slots ? JSON.parse(prior.slots) : null } catch { return null } })()
+    const resolved = resolveTurn(
+      { intent: u.intent, slots: u.slots, text: message },
+      prior ? { intent: prior.intent, slots: priorSlots, createdAt: prior.createdAt } : null,
+      new Date(),
+    )
+    const intent = resolved.intent
+    const slots = resolved.slots
+    // Record this turn so the NEXT message can refer back to it. Best-effort: memory is
+    // an enhancement and must never break an answer.
+    ;(prisma as any).coachTurn.create({
+      data: { userId: p.userId, role: "user", message, intent, slots: JSON.stringify(slots) },
+    }).catch(() => {})
     // AIOS §4 governance: audit every coach invocation as a registered-agent run.
     writeAiRun({ capId: "career.coach.answer", agentId: "agent:career-coach", subjectId: p.userId, modelId: `coach-brain:${usedBrain}`, inputsHash: inputsHash(message), outputs: { intent }, status: "ok", explanation: `Coach intent (${usedBrain}): ${intent}` }).catch(() => {})
 
@@ -127,18 +147,33 @@ export async function POST(req: NextRequest) {
         // Apply the query's structured filters (§NLP): a match threshold and/or remote.
         let pool = ranked
         if (slots.remote) pool = pool.filter((r) => (r.job as any).remote)
+        // Pay floor (CHF). Only roles whose posted salary PARSES as CHF can be judged —
+        // a role with no disclosed or non-CHF pay is excluded rather than guessed at, and
+        // nothing is ever converted. This is why "paying more than 90k" now works.
+        let payFiltered = false
+        if (slots.payMin != null) {
+          const withPay = pool.filter((r) => {
+            const parsedPay = parseChfSalary((r.job as any).salary || "")
+            const amount = parsedPay?.max ?? parsedPay?.min
+            return typeof amount === "number" && amount >= (slots.payMin as number)
+          })
+          payFiltered = true
+          pool = withPay
+        }
         const hasThreshold = slots.threshold != null
         const thr = hasThreshold ? (slots.threshold as number) : 35
         const above = pool.filter((r) => r.match.overall >= thr)
         const shown = (above.length ? above : pool).slice(0, hasThreshold ? 12 : 5)
         const rw = slots.remote ? " remote" : ""
+        const payTxt = slots.payMin != null ? ` paying CHF ${(slots.payMin as number).toLocaleString("de-CH")}+` : ""
         let lead: string
-        if (!pool.length) lead = `I don't see any${rw} roles to match against right now — check back shortly.`
+        if (!pool.length && payFiltered) lead = `No${rw} role with a disclosed CHF salary currently reaches CHF ${(slots.payMin as number).toLocaleString("de-CH")}. I only count roles that state their pay in CHF — I never estimate or convert it.`
+        else if (!pool.length) lead = `I don't see any${rw} roles to match against right now — check back shortly.`
         else if (hasThreshold) lead = above.length
-          ? `${above.length}${rw} role${above.length === 1 ? "" : "s"} match you at ${thr}% or higher — ranked by real fit:`
+          ? `${above.length}${rw} role${above.length === 1 ? "" : "s"}${payTxt} match you at ${thr}% or higher — ranked by real fit:`
           : `No${rw} roles currently reach ${thr}% for your profile. Your closest are below — ask me what to learn to raise them.`
         else lead = above.length
-          ? `Your strongest${rw} matches right now — ranked by real fit against your skills:`
+          ? `Your strongest${rw} matches${payTxt} right now — ranked by real fit against your skills:`
           : `Nothing${rw} is a strong fit yet, but these are your closest roles. Ask me what to learn to raise them.`
         const cards: Card[] = [
           { kind: "jobs", items: shown.map((r) => ({ id: r.job.id, title: r.job.title, subtitle: (r.job as any).company, score: r.match.overall })) },
