@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { resolveScheduledAt, normalizeTimeZone, formatForViewer } from "@/lib/interview/timezone"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { hasFeature } from "@/lib/entitlements"
@@ -57,6 +58,8 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json()
     const { title, type, scheduledAt, duration, participantIds, applicationId, notes } = body
+    // The IANA zone the scheduler meant the wall-clock time in (falls back to their profile).
+    const timezone: string | undefined = typeof body.timezone === "string" ? body.timezone : undefined
     const roleLevel: string | null = body.roleLevel || null
     const visibility: string = VISIBILITY.includes((body.visibility || "").toUpperCase()) ? body.visibility.toUpperCase() : "PARTICIPANTS"
     const confidential = !!body.confidential
@@ -73,7 +76,7 @@ export async function POST(req: NextRequest) {
 
     // Look up seniority for the host + every attendee to score the panel.
     const ids = Array.from(new Set([payload.userId, ...rawAttendees.map(a => a.userId)]))
-    const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, role: true, seniority: true } })
+    const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, role: true, seniority: true, timezone: true } })
     const uMap = new Map(users.map(u => [u.id, u]))
     const hostUser = uMap.get(payload.userId)
 
@@ -89,11 +92,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: gov.violations[0], governance: gov, needsOverride: requestedOverride && !canOverride }, { status: 422 })
     }
 
-    const roomCode = crypto.randomBytes(4).toString("hex").toUpperCase()
+    // TIMEZONE CORRECTNESS: the form posts a bare wall-clock string ("2026-08-11T10:00").
+    // new Date() on that parses it in the SERVER's zone, so a recruiter in IST who typed
+    // 10:00 previously got 10:00Z (= 15:30 IST). Resolve against the scheduler's zone and
+    // store the canonical UTC instant plus the zone it was meant in.
+    const schedulerTz = normalizeTimeZone(timezone || hostUser?.timezone)
+    const whenUtc = resolveScheduledAt(String(scheduledAt || ""), schedulerTz)
+    if (!whenUtc) return NextResponse.json({ error: "Invalid scheduled time." }, { status: 400 })
+
+    // roomCode was 4 bytes (32 bits) — guessable for a joinable meeting URL. 16 bytes now.
+    const roomCode = crypto.randomBytes(16).toString("hex").toUpperCase()
     const interview = await (prisma as any).interview.create({
       data: {
         title, type: type||"ONE_ON_ONE",
-        scheduledAt: new Date(scheduledAt),
+        scheduledAt: whenUtc,
+        timezone: schedulerTz,
         duration: duration||60,
         hostId: payload.userId,
         applicationId: applicationId||null,
@@ -109,21 +122,24 @@ export async function POST(req: NextRequest) {
       },
       include: {
         host: { select:{ id:true,name:true,email:true } },
-        participants: { include:{ user:{ select:{ id:true,name:true,email:true } } } },
+        participants: { include:{ user:{ select:{ id:true,name:true,email:true,timezone:true } } } },
       },
     })
     // Notify participants
+    // Render the time in EACH recipient's zone. This previously used a server-side
+    // toLocaleString("en-IN"), so every user worldwide saw Indian-locale times in the
+    // server's timezone.
     for (const p of interview.participants) {
-      if (p.userId !== payload.userId) {
-        await prisma.notification.create({
-          data: {
-            userId: p.userId,
-            title: `Interview scheduled: ${title}`,
-            body: `Scheduled for ${new Date(scheduledAt).toLocaleString("en-IN")}. Room code: ${roomCode}`,
-            link: `/interviews/${roomCode}`,
-          },
-        })
-      }
+      if (p.userId === payload.userId) continue
+      const localTime = formatForViewer(whenUtc, normalizeTimeZone(p.user?.timezone))
+      await prisma.notification.create({
+        data: {
+          userId: p.userId,
+          title: `Interview scheduled: ${title}`,
+          body: `Scheduled for ${localTime}. Room code: ${roomCode}`,
+          link: `/interviews/${roomCode}`,
+        },
+      })
     }
     return NextResponse.json({ success:true, interview }, { status: 201 })
   } catch (err: any) {

@@ -49,6 +49,9 @@ model User {
   jobs             Job[]
   applications     Application[]
   notifications    Notification[]
+  // IANA zone for rendering times in THIS user's local clock (notifications, reminders,
+  // calendar). Previously nothing existed and the server formatted with a hardcoded locale.
+  timezone         String         @default("UTC")
   savedSearches    SavedSearch[]
   connections      Connection[]   @relation("UserConnections")
   connectedTo      Connection[]   @relation("ConnectedToUser")
@@ -2137,9 +2140,113 @@ model Interview {
   roleLevel     String?   // seniority band of the position: IC | SENIOR | LEAD | EXECUTIVE
   confidential  Boolean   @default(false)          // hides notes/recording from OBSERVER-role attendees
   govJson       String?   // snapshot of the governance evaluation at schedule time (violations/warnings/overrides)
+  // scheduledAt is ALWAYS a UTC instant; `timezone` records the IANA zone the human meant
+  // it in, so it can be rendered back correctly and DST is handled (lib/interview/timezone).
+  timezone      String    @default("UTC")
+  planId        String?
+  roundNumber   Int       @default(1)
+  rescheduledFromId String?
+  cancelReason  String?
+  endedAt       DateTime?
+  remindersSent String    @default("[]")  // JSON string[] of fired reminder tiers — idempotency
   createdAt     DateTime  @default(now())
   host          User      @relation("InterviewHost", fields: [hostId], references: [id])
+  plan          InterviewPlan? @relation(fields: [planId], references: [id], onDelete: SetNull)
   participants  InterviewParticipant[]
+  consents      InterviewConsent[]
+  evidence      InterviewEvidence[]
+  @@index([status, scheduledAt])
+  @@index([applicationId])
+  @@index([hostId, scheduledAt])
+}
+
+// An interviewer's weekly bookable hours, expressed in THEIR local wall clock so a rule
+// survives DST unchanged. Expanded into concrete slots by lib/interview/slots.
+model AvailabilityRule {
+  id          String   @id @default(cuid())
+  userId      String
+  weekday     Int                      // 0=Sun .. 6=Sat, in `timezone`
+  startMinute Int                      // minutes from local midnight
+  endMinute   Int
+  timezone    String   @default("UTC")
+  active      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  @@index([userId, weekday])
+}
+
+// A one-off block: holiday, PTO, or an imported busy calendar event.
+model AvailabilityException {
+  id        String   @id @default(cuid())
+  userId    String
+  start     DateTime                   // UTC
+  end       DateTime                   // UTC
+  reason    String?
+  createdAt DateTime @default(now())
+  @@index([userId, start])
+}
+
+// A multi-round interview loop for a role: what to assess and in what order.
+model InterviewPlan {
+  id            String   @id @default(cuid())
+  jobId         String?
+  createdById   String
+  title         String
+  competencies  String   @default("[]")  // JSON string[] of competency keys the loop must cover
+  roundsJson    String   @default("[]")  // JSON [{ order, kind, durationMinutes, competencies[] }]
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  interviews    Interview[]
+  @@index([jobId])
+}
+
+// Recorded consent BEFORE any recording/transcription. Absence of a row means no consent.
+model InterviewConsent {
+  id          String   @id @default(cuid())
+  interviewId String
+  userId      String
+  scope       String                    // recording | transcription | ai_evaluation
+  granted     Boolean  @default(false)
+  grantedAt   DateTime?
+  ipHash      String?
+  policyRef   String?
+  interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  @@unique([interviewId, userId, scope])
+  @@index([interviewId])
+}
+
+// A single observed, quotable fact supporting a competency rating. A score is only ever
+// the arithmetic consequence of these rows (lib/interview/evidence).
+model InterviewEvidence {
+  id            String   @id @default(cuid())
+  interviewId   String
+  competencyKey String
+  source        String                  // interview_answer | code_sample | work_sample | assessment | reference | resume_claim
+  level         Int      @default(0)    // rubric 0..4
+  excerpt       String                  // verbatim justification — required for auditability
+  questionId    String?
+  recordedById  String?
+  createdAt     DateTime @default(now())
+  interview     Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
+  @@index([interviewId, competencyKey])
+}
+
+// The computed evaluation for an interview. AI may produce it; a human decides.
+model InterviewEvaluation {
+  id             String    @id @default(cuid())
+  interviewId    String    @unique
+  competenciesJson String  @default("[]")   // per-competency verdicts incl. confidence
+  overall        Float?
+  confidence     Float     @default(0)
+  recommendation String    @default("INSUFFICIENT_EVIDENCE")
+  coverageNote   String?
+  computedBy     String    @default("system")
+  humanReviewedById String?
+  humanDecision  String?                     // ADVANCE | REJECT | ANOTHER_ROUND | HOLD
+  humanNote      String?
+  decidedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  @@index([recommendation])
 }
 
 model InterviewParticipant {

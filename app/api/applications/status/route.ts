@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { checkStageTransition, type PipelineActor } from "@/lib/interview/state"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { createNotification } from "@/lib/notify"
@@ -27,21 +28,36 @@ export async function PATCH(req: NextRequest) {
     // Only the employer who owns the job (or an admin) may move an application.
     const existing = await prisma.application.findUnique({
       where: { id: applicationId },
-      select: { id: true, userId: true, job: { select: { postedById: true, title: true } } },
+      select: { id: true, userId: true, status: true, job: { select: { postedById: true, title: true } } },
     })
     if (!existing) return NextResponse.json({ error: "Application not found" }, { status: 404 })
     const isOwner = existing.job.postedById === payload.userId
     const isAdmin = payload.role === "ADMIN" || payload.role === "SUPER_ADMIN"
-    if (!isOwner && !isAdmin) return NextResponse.json({ error: "You can only manage applications to your own jobs." }, { status: 403 })
+    const isCandidate = existing.userId === payload.userId
+    // The candidate may withdraw their own application; otherwise only the owning
+    // employer (or an admin) may move it.
+    if (!isOwner && !isAdmin && !isCandidate) {
+      return NextResponse.json({ error: "You can only manage applications to your own jobs." }, { status: 403 })
+    }
+    const actor: PipelineActor = isAdmin ? "ADMIN" : isOwner ? "EMPLOYER" : "CANDIDATE"
 
-    const application = await prisma.application.update({
+    // The stage was previously written STRAIGHT FROM THE BODY with no enum and no
+    // transition check, so an application could jump APPLIED -> HIRED, or move back out
+    // of a terminal decision. Legality and authority are decided server-side now.
+    const check = checkStageTransition(existing.status, String(status), actor)
+    if (!check.ok) return NextResponse.json({ error: check.reason }, { status: 409 })
+
+    // Status-conditional update so two recruiters acting at once cannot both win.
+    const moved = await prisma.application.updateMany({
+      where: { id: applicationId, status: existing.status },
+      data: { status, updatedAt: new Date(), interview: interview ? new Date(interview) : undefined },
+    })
+    if (moved.count === 0) {
+      return NextResponse.json({ error: "This application was just updated by someone else. Reload and retry." }, { status: 409 })
+    }
+    await prisma.statusEvent.create({ data: { applicationId, status, note: note || STATUS_MESSAGES[status]?.body || "" } }).catch(() => {})
+    const application = await prisma.application.findUniqueOrThrow({
       where: { id: applicationId },
-      data: {
-        status,
-        updatedAt: new Date(),
-        interview: interview ? new Date(interview) : undefined,
-        timeline: { create: { status, note: note || STATUS_MESSAGES[status]?.body || "" } },
-      },
       include: { user: true, job: true },
     })
 

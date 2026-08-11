@@ -30,11 +30,12 @@
     "test": "node scripts/test-edurank.mjs",
     "test:e2e": "node scripts/test-edurank-e2e.mjs",
     "test:social": "node scripts/test-social-e2e.mjs",
-    "test:all": "node scripts/test-edurank.mjs && node scripts/test-security.mjs && node scripts/test-edurank-e2e.mjs && node scripts/test-social-e2e.mjs",
+    "test:all": "node scripts/test-edurank.mjs && node scripts/test-security.mjs && node scripts/test-interview.mjs && node scripts/test-edurank-e2e.mjs && node scripts/test-social-e2e.mjs && node scripts/test-interview-e2e.mjs",
     "test:security": "node scripts/test-security.mjs",
     "db:drift": "node scripts/db-drift.mjs",
     "db:migrate:deploy": "prisma migrate deploy",
-    "db:migrate:status": "prisma migrate status"
+    "db:migrate:status": "prisma migrate status",
+    "test:interview": "node scripts/test-interview.mjs && node scripts/test-interview-e2e.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

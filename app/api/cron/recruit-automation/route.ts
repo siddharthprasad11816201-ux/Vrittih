@@ -27,16 +27,10 @@ async function run(req: NextRequest) {
   const now = Date.now()
   let interviewReminders = 0, offerNudges = 0, slaAlerts = 0
 
-  // 1) Interview reminders — scheduled in the next 24h.
-  const soon = await prisma.interview.findMany({
-    where: { status: { in: ["SCHEDULED"] }, scheduledAt: { gte: new Date(now), lte: new Date(now + DAY) } },
-    include: { participants: { select: { userId: true } } }, take: 500,
-  }).catch(() => [] as any[])
-  for (const iv of soon as any[]) {
-    for (const p of iv.participants || []) {
-      await createNotification({ userId: p.userId, title: `Interview reminder — ${iv.title}`, body: `Your interview is scheduled for ${new Date(iv.scheduledAt).toLocaleString("en-GB", { dateStyle: "medium", timeStyle: "short" })}. Room: ${iv.roomCode}.`, link: `/interviews/${iv.roomCode}`, sendEmail: false }).then(() => interviewReminders++).catch(() => {})
-    }
-  }
+  // 1) Interview reminders MOVED to /api/cron/interviews.
+  // That route owns them now: tiered (24h / 1h / 15m), idempotent via a claimed
+  // remindersSent key, and rendered in each recipient's own timezone. Keeping a copy here
+  // would double-notify every participant.
 
   // 2) Offer-expiry nudges — SENT, unanswered, expiring within 2 days.
   const expiring = await prisma.offer.findMany({

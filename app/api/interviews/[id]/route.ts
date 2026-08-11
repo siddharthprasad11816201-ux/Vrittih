@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { checkInterviewTransition, type InterviewActor } from "@/lib/interview/state"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { mayView, mayJoin, maySeeConfidential } from "@/lib/interview/governance"
@@ -68,11 +69,47 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     const payload = verifyToken(token)
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
     const { status, notes, recordingUrl } = await req.json()
-    const interview = await (prisma as any).interview.updateMany({
-      where: { id: params.id, hostId: payload.userId },
-      data: { status, notes, recordingUrl },
+
+    // This PATCH previously accepted ANY string as a status, with no state machine: the
+    // browser drove the lifecycle, so a closed tab left an interview LIVE forever and
+    // nothing could ever reach CANCELLED. Legality and authority are now decided here.
+    const current = await (prisma as any).interview.findUnique({
+      where: { id: params.id },
+      select: { id: true, status: true, hostId: true, participants: { select: { userId: true, role: true } } },
     })
-    return NextResponse.json({ success:true })
+    if (!current) return NextResponse.json({ error: "Interview not found" }, { status: 404 })
+
+    const isHost = current.hostId === payload.userId
+    const me = current.participants.find((p: any) => p.userId === payload.userId)
+    const isAdmin = payload.role === "ADMIN" || payload.role === "SUPER_ADMIN"
+    if (!isHost && !me && !isAdmin) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+    const actor: InterviewActor = isHost ? "HOST" : isAdmin ? "ADMIN" : me?.role === "CANDIDATE" ? "CANDIDATE" : "PANELIST"
+
+    const data: any = {}
+    if (status !== undefined) {
+      const check = checkInterviewTransition(current.status, String(status), actor)
+      if (!check.ok) return NextResponse.json({ error: check.reason }, { status: 409 })
+      data.status = String(status)
+      if (status === "COMPLETED" || status === "ABANDONED" || status === "NO_SHOW") data.endedAt = new Date()
+    }
+    // Only the host or an admin may edit notes / attach a recording.
+    if (notes !== undefined) {
+      if (!isHost && !isAdmin) return NextResponse.json({ error: "Only the host can edit notes." }, { status: 403 })
+      data.notes = notes
+    }
+    if (recordingUrl !== undefined) {
+      if (!isHost && !isAdmin) return NextResponse.json({ error: "Only the host can attach a recording." }, { status: 403 })
+      data.recordingUrl = recordingUrl
+    }
+    if (!Object.keys(data).length) return NextResponse.json({ error: "Nothing to update" }, { status: 400 })
+
+    // Status-conditional so two concurrent transitions cannot both win.
+    const upd = await (prisma as any).interview.updateMany({
+      where: { id: params.id, ...(data.status ? { status: current.status } : {}) },
+      data,
+    })
+    if (upd.count === 0) return NextResponse.json({ error: "The interview changed while you were editing. Reload and retry." }, { status: 409 })
+    return NextResponse.json({ success: true, status: data.status ?? current.status })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
