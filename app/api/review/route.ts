@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { rateLimit } from "@/lib/ratelimit/store"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { review, dueCards, type Grade } from "@/lib/assessment/srs"
@@ -37,6 +38,8 @@ export async function POST(req: NextRequest) {
   const payload = auth(req)
   if (!payload) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   try {
+    const rl = await rateLimit("assessment_answer", payload.userId)
+    if (!rl.allowed) return NextResponse.json({ error: "Slow down a moment." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
     const body = await req.json()
     const id = String(body?.id || "")
     const value = String(body?.value ?? "")

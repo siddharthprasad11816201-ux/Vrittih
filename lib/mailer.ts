@@ -5,6 +5,7 @@
  * against the domain's published DNS key.
  */
 import { randomBytes } from "crypto"
+import { decryptSecret } from "@/lib/crypto/secretbox"
 import { prisma } from "@/lib/prisma"
 import { signMessage } from "@/lib/dkim"
 import { smtpSend } from "@/lib/smtp"
@@ -49,7 +50,9 @@ export async function buildSignedEmail(userId: string, mail: OutboundMail): Prom
   let dkimHeader: string | null = null
   if (canSign) {
     dkimHeader = signMessage({
-      privateKeyPem: record!.dkimPrivateKey,
+      // Stored encrypted at rest when SECRET_ENCRYPTION_KEY is set; decryptSecret is a
+      // no-op for rows written before encryption was enabled.
+      privateKeyPem: decryptSecret(record!.dkimPrivateKey),
       domain: mail.domain,
       selector: record!.selector,
       headers,

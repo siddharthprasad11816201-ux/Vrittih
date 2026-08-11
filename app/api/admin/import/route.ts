@@ -28,7 +28,7 @@ const cleanPhone = (p: string) => p.replace(/^['`\s]+/, "").trim()
 
 // GET -> employers the admin can assign imported positions to.
 export async function GET(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   const employers = await prisma.user.findMany({
     where: { role: { in: ["EMPLOYER", "ADMIN", "SUPER_ADMIN"] } },
@@ -40,7 +40,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
 
   try {

@@ -10,7 +10,7 @@ const slug = (s: string) => s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(
 
 // GET -> list issued keys (never returns the raw token).
 export async function GET(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   const keys = await prisma.apiKey.findMany({ orderBy: { createdAt: "desc" } })
   const emps = await prisma.user.findMany({ where: { id: { in: keys.map(k => k.employerId) } }, select: { id: true, name: true } })
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 // POST { company, label } -> auto-create the company (employer) if new, issue a key.
 // The raw token is returned ONCE.
 export async function POST(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   const { company, label } = await req.json()
   if (!company) return NextResponse.json({ error: "company is required" }, { status: 400 })

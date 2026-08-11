@@ -11,7 +11,9 @@ export async function POST(req: NextRequest) {
   const secret = process.env.WORKER_SECRET
   const provided = req.headers.get("x-worker-secret")
   const host = req.headers.get("host") || ""
-  const isLocal = host.startsWith("localhost") || host.startsWith("127.0.0.1")
+  // The Host header is attacker-controlled, so it cannot authorise on a deployed host —
+  // only accept it as a dev convenience when we are not running in production.
+  const isLocal = process.env.NODE_ENV !== "production" && (host.startsWith("localhost") || host.startsWith("127.0.0.1"))
   if (secret ? provided !== secret : !isLocal) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   }

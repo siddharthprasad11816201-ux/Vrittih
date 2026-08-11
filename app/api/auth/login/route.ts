@@ -4,8 +4,9 @@ import { verifyPassword } from "@/lib/hash"
 import { signToken } from "@/lib/jwt"
 import { setAuthCookie } from "@/lib/cookies"
 import { track } from "@/lib/analytics"
-import { checkRateLimit, resetRateLimit } from "@/lib/ratelimit"
+import { rateLimit, clearRateLimit } from "@/lib/ratelimit/store"
 import { recordLoginAttempt } from "@/lib/account/loginHistory"
+import { issueChallenge } from "@/lib/auth/challenge"
 
 export async function POST(req: NextRequest) {
   try {
@@ -16,10 +17,12 @@ export async function POST(req: NextRequest) {
     // Deliberately NOT per-IP: at scale, many legitimate users share one IP
     // (office/mobile NAT), so IP throttling would lock them out.
     const em = email.toLowerCase().trim()
-    const rl = checkRateLimit(`login:email:${em}`)
+    // failOpen:false — if the counter store is down we must NOT hand out unlimited
+    // credential attempts. Auth is the one place where failing closed is correct.
+    const rl = await rateLimit("auth", em, { failOpen: false })
     if (!rl.allowed) {
-      const mins = Math.ceil((rl.resetAt - Date.now()) / 60000)
-      return NextResponse.json({ error: `Too many attempts. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.` }, { status: 429 })
+      const mins = Math.ceil(rl.retryAfterSeconds / 60)
+      return NextResponse.json({ error: `Too many attempts. Try again in ${mins} minute${mins !== 1 ? "s" : ""}.` }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
     }
     const user = await prisma.user.findUnique({
       where: { email: email.toLowerCase().trim() },
@@ -33,18 +36,23 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Invalid email or password" }, { status: 401 })
     }
     // Correct password — clear the throttle so genuine users aren't locked out.
-    resetRateLimit(`login:email:${em}`)
+    await clearRateLimit("auth", em)
 
-    // If face vector enrolled — require face verification
+    // Step 2 endpoints require this challenge, which is ONLY issued once the password has
+    // verified. Previously they accepted a bare userId, so the second factor was the only
+    // factor and the password could be skipped entirely.
     if (user.faceVector) {
-      return NextResponse.json({ requiresFaceVerify: true, userId: user.id })
+      return NextResponse.json({ requiresFaceVerify: true, userId: user.id, challenge: issueChallenge(user.id, "face") })
     }
 
     // If 2FA enabled — require a second factor.
     // "totp:" secrets use the in-house authenticator flow; otherwise email OTP.
     if (user.twoFactorEnabled) {
       const method = user.twoFactorSecret?.startsWith("totp:") ? "totp" : "email"
-      return NextResponse.json({ requires2FA: true, method, userId: user.id })
+      return NextResponse.json({
+        requires2FA: true, method, userId: user.id,
+        challenge: issueChallenge(user.id, method === "totp" ? "2fa_totp" : "2fa_email"),
+      })
     }
 
     // Direct login

@@ -54,13 +54,13 @@ async function buildState() {
 }
 
 export async function GET(req: NextRequest) {
-  if (!requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+  if (!await requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   const { gateways } = await buildState()
   return NextResponse.json({ gateways })
 }
 
 export async function POST(req: NextRequest) {
-  if (!requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+  if (!await requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   const { action, gatewayId } = await req.json()
   const id = String(gatewayId || "")
   if (!DEFS.some((g) => g.id === id)) return NextResponse.json({ error: "Unknown gateway" }, { status: 400 })

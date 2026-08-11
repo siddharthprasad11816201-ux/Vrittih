@@ -17,6 +17,8 @@ function FaceLoginInner() {
   const router = useRouter()
   const params = useSearchParams()
   const userId = params.get("uid") || ""
+  // Proof that the password step succeeded — face is a SECOND factor, never the only one.
+  const authChallenge = params.get("ch") || ""
   const videoRef = useRef<HTMLVideoElement>(null)
   const streamRef = useRef<MediaStream|null>(null)
   const faceApiRef = useRef<any>(null)
@@ -95,7 +97,7 @@ function FaceLoginInner() {
       if(!det){setError("Could not extract face — try again");setStep("liveness");startLoop();return}
       const vector = Array.from(det.descriptor)
       stopCamera()
-      const res = await fetch("/api/verify/face-verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vector,userId,livenessScore:liveness,challengePassed:true})})
+      const res = await fetch("/api/verify/face-verify",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({vector,challenge:authChallenge,livenessScore:liveness,challengePassed:true})})
       const data = await res.json()
       if(data.success){setStep("success");setTimeout(()=>router.push("/dashboard"),1200)}
       else if(data.uncertain){setStep("uncertain")}
@@ -104,9 +106,9 @@ function FaceLoginInner() {
   }
 
   async function handleInjuryFallback() {
-    const res = await fetch("/api/auth/otp-request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({userId,note:injuryNote})})
+    const res = await fetch("/api/auth/otp-request",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({challenge:authChallenge,note:injuryNote})})
     const d = await res.json()
-    if(d.success) router.push(`/verify/2fa?uid=${userId}&mode=injury`)
+    if(d.success) router.push(`/verify/2fa?uid=${userId}&ch=${encodeURIComponent(authChallenge)}&mode=injury`)
     else setError(d.error||"Failed to send OTP")
   }
 

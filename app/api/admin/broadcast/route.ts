@@ -5,7 +5,7 @@ import { requireAdmin, logAction } from "@/lib/admin"
 /** Send a notification to every user (optionally filtered by role). */
 export async function POST(req: NextRequest) {
   try {
-    const admin = requireAdmin(req)
+    const admin = await requireAdmin(req)
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     const { title, body, link, role } = await req.json()
     if (!title?.trim() || !body?.trim()) {

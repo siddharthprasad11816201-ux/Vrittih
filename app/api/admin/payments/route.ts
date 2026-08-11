@@ -6,7 +6,7 @@ import { getSetting } from "@/lib/settings"
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = requireAdmin(req)
+    const admin = await requireAdmin(req)
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     const { searchParams } = new URL(req.url)
     const q = searchParams.get("q") || ""
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const admin = requireSuperAdmin(req)
+    const admin = await requireSuperAdmin(req)
     if (!admin) return NextResponse.json({ error: "Super-admin privileges required" }, { status: 403 })
     const { userId, action } = await req.json()
     if (action !== "refund") return NextResponse.json({ error: "Unknown action" }, { status: 400 })

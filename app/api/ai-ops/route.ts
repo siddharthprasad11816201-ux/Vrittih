@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
  * single operations view. All counts are real (no fabricated metrics). */
 
 export async function GET(req: NextRequest) {
-  const ctx = requireAdmin(req)
+  const ctx = await requireAdmin(req)
   if (!ctx) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const since = new Date(Date.now() - 7 * 86400000)

@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
 // engine can be proven without scraping a live portal. Dev only — the self-test
 // adapter isn't registered in production, and this route refuses to run there.
 export async function POST(req: NextRequest) {
-  if (!requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+  if (!await requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   if (process.env.NODE_ENV === "production") return NextResponse.json({ error: "Self-test is disabled in production." }, { status: 403 })
 
   const key = selfTestAdapter.key

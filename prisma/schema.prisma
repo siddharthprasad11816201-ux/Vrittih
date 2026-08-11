@@ -2488,6 +2488,46 @@ model CoachTurn {
   @@index([userId, createdAt])
 }
 
+// Email OTP challenge. Replaces the in-process Map, which (a) broke on serverless and
+// (b) had NO attempt counter, so a 6-digit code could be brute-forced outright.
+// The code is stored HASHED so a database read cannot reveal a live code.
+model OtpChallenge {
+  id        String    @id @default(cuid())
+  userId    String
+  purpose   String    @default("login")
+  codeHash  String
+  attempts  Int       @default(0)
+  expiresAt DateTime
+  consumedAt DateTime?
+  createdAt DateTime  @default(now())
+  @@index([userId, purpose])
+  @@index([expiresAt])
+}
+
+// Distributed fixed-window rate-limit counter. Lives in the DB (not process memory) so
+// the limit holds across serverless instances. Swept by /api/cron/maintenance.
+model RateHit {
+  key         String
+  windowStart DateTime
+  count       Int      @default(0)
+  expiresAt   DateTime
+  @@id([key, windowStart])
+  @@index([expiresAt])
+}
+
+// Atomic plan-quota counter. period = "YYYY-MM" for monthly quotas, "total" otherwise.
+// Incremented as a RESERVATION before the guarded work, so two concurrent requests cannot
+// both slip past the same cap (see lib/quota/reserve).
+model QuotaUsage {
+  userId    String
+  quota     String
+  period    String
+  used      Int      @default(0)
+  updatedAt DateTime @updatedAt
+  @@id([userId, quota, period])
+  @@index([userId])
+}
+
 // Discount / waiver codes applied at checkout. All discount math is computed
 // server-side (never trust the client); a 100% coupon activates access through a
 // dedicated no-charge waiver path (see app/api/payment/redeem-waiver).

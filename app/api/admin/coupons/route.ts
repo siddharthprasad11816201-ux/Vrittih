@@ -36,7 +36,7 @@ function clean(body: any) {
 }
 
 export async function GET(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Admin access required" }, { status: 403 })
   const coupons = await prisma.coupon.findMany({
     orderBy: { createdAt: "desc" },
@@ -46,7 +46,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Admin access required" }, { status: 403 })
   const body = await req.json().catch(() => ({}))
   const code = normalizeCode(body?.code)
@@ -61,7 +61,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Admin access required" }, { status: 403 })
   const body = await req.json().catch(() => ({}))
   const id = String(body?.id || "")
@@ -83,7 +83,7 @@ export async function PATCH(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Admin access required" }, { status: 403 })
   const body = await req.json().catch(() => ({}))
   const id = String(body?.id || "")

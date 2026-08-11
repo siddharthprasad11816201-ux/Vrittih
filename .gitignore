@@ -62,3 +62,5 @@ next-env.d.ts
 ml/data/
 ml/model/
 __pycache__/
+.tmp-drift/
+prisma/.drift-schema.prisma

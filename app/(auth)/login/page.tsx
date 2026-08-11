@@ -51,9 +51,9 @@ export default function LoginPage() {
       })
       const data = await res.json().catch(() => ({}))
       if (!res.ok) { setError(data.error || "Invalid credentials"); return }
-      if (data.requiresFaceVerify && data.userId) { router.push(`/verify/face-login?uid=${data.userId}`); return }
+      if (data.requiresFaceVerify && data.userId) { router.push(`/verify/face-login?uid=${data.userId}&ch=${encodeURIComponent(data.challenge || "")}`); return }
       if (data.requires2FA && data.userId) {
-        router.push(`/verify/2fa?uid=${data.userId}${data.method === "totp" ? "&method=totp" : ""}`); return
+        router.push(`/verify/2fa?uid=${data.userId}&ch=${encodeURIComponent(data.challenge || "")}${data.method === "totp" ? "&method=totp" : ""}`); return
       }
       succeed()
     } catch { setError("Couldn't reach the server. Check your connection and try again.") }

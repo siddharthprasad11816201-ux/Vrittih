@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { rateLimit } from "@/lib/ratelimit/store"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { analyzeCareer } from "@/lib/career/engine"
@@ -32,6 +33,8 @@ export async function POST(req: NextRequest) {
   const p = auth(req)
   if (!p) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   try {
+    const rl = await rateLimit("ai_generation", p.userId)
+    if (!rl.allowed) return NextResponse.json({ error: "You've made a lot of requests — please wait a moment before asking again." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
     const body = await req.json().catch(() => ({}))
     const message = String(body?.message || "").slice(0, 500)
 

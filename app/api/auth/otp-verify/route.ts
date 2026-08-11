@@ -1,25 +1,34 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { otpStore } from "@/lib/otpStore"
+import { verifyOtp } from "@/lib/auth/otp"
+import { verifyChallenge, challengeFrom } from "@/lib/auth/challenge"
+import { rateLimit } from "@/lib/ratelimit/store"
 import { signToken } from "@/lib/jwt"
 import { setAuthCookie } from "@/lib/cookies"
 import { recordLoginAttempt } from "@/lib/account/loginHistory"
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, otp, mode } = await req.json()
-    if (!userId || !otp) return NextResponse.json({ error: "userId and otp required" }, { status: 400 })
-    const key = `otp_${userId}`
-    const stored = otpStore.get(key)
-    if (!stored) return NextResponse.json({ error: "No OTP found. Please request a new one." }, { status: 400 })
-    if (Date.now() > stored.expiresAt) {
-      otpStore.delete(key)
-      return NextResponse.json({ error: "OTP expired. Please request a new one." }, { status: 400 })
+    const body = await req.json()
+    const { otp, mode } = body
+    if (!otp) return NextResponse.json({ error: "otp required" }, { status: 400 })
+    // The user comes from the signed post-password challenge, NOT the request body.
+    const chal = verifyChallenge(challengeFrom(body, req), ["2fa_email", "face"])
+    if (!chal.valid) return NextResponse.json({ error: "Sign in with your password first." }, { status: 401 })
+    const userId = chal.userId as string
+
+    const rl = await rateLimit("auth", userId, { scope: "otp", failOpen: false })
+    if (!rl.allowed) return NextResponse.json({ error: "Too many attempts. Please wait." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
+
+    // Attempt-limited + single-use + constant-time (lib/auth/otp).
+    const res0 = await verifyOtp(userId, "login", String(otp))
+    if (!res0.ok) {
+      const msg = res0.reason === "expired" ? "Code expired. Please request a new one."
+        : res0.reason === "too_many_attempts" ? "Too many incorrect attempts. Please request a new code."
+        : res0.reason === "not_found" ? "No code found. Please request a new one."
+        : "Incorrect code. Please try again."
+      return NextResponse.json({ error: msg }, { status: 400 })
     }
-    if (stored.otp !== otp.toString().trim()) {
-      return NextResponse.json({ error: "Incorrect code. Please try again." }, { status: 400 })
-    }
-    otpStore.delete(key)
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { id:true, email:true, role:true, paid:true, banned:true }

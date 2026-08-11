@@ -20,7 +20,7 @@ function cookieOpts() {
 /** Start impersonating a user: stash the super-admin token, swap in the target's token. */
 export async function POST(req: NextRequest) {
   try {
-    const admin = requireSuperAdmin(req)
+    const admin = await requireSuperAdmin(req)
     if (!admin) return NextResponse.json({ error: "Super-admin privileges required" }, { status: 403 })
     const { userId } = await req.json()
     if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 })

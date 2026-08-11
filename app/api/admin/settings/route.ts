@@ -4,7 +4,7 @@ import { getSettings, setSetting, SETTING_DEFAULTS, type SettingKey } from "@/li
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = requireAdmin(req)
+    const admin = await requireAdmin(req)
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     return NextResponse.json({ settings: await getSettings() })
   } catch (err: any) {
@@ -14,7 +14,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const admin = requireSuperAdmin(req)
+    const admin = await requireSuperAdmin(req)
     if (!admin) return NextResponse.json({ error: "Super-admin privileges required" }, { status: 403 })
     const body = await req.json()
     // Accept either { key, value } or { settings: { key: value, ... } }

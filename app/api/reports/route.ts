@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { rateLimit } from "@/lib/ratelimit/store"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { isValidReason, isValidTarget } from "@/lib/social/engage"
@@ -11,6 +12,8 @@ export async function POST(req: NextRequest) {
   const payload = auth(req)
   if (!payload) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
   try {
+    const rl = await rateLimit("report", payload.userId)
+    if (!rl.allowed) return NextResponse.json({ error: "Too many reports submitted. Please wait." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
     const body = await req.json()
     const targetType = String(body?.targetType || "")
     const targetId = String(body?.targetId || "")

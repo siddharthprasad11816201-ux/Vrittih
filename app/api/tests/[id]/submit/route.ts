@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { rateLimit } from "@/lib/ratelimit/store"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { skillScores, type GradedAnswer } from "@/lib/assessment/skillScore"
@@ -16,6 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
     const { attemptId, answers, tabSwitches } = await req.json()
     if (!attemptId || typeof attemptId !== "string") return NextResponse.json({ error: "attemptId is required" }, { status: 400 })
+    const rl = await rateLimit("assessment_submit", payload.userId)
+    if (!rl.allowed) return NextResponse.json({ error: "Too many submissions. Please wait a moment." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
     const test = await (prisma as any).test.findUnique({
       where: { id: params.id },
       include: { questions: true }

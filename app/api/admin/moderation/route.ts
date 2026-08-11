@@ -8,7 +8,7 @@ export const dynamic = "force-dynamic"
 // Moderation queue. Default view is the OPEN reports, newest first, with the reported
 // content resolved so a moderator can judge without extra lookups.
 export async function GET(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
 
   const status = new URL(req.url).searchParams.get("status") || "OPEN"
@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
 
 // Resolve or dismiss a report, optionally acting on the content (delete post / ban user).
 export async function PATCH(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   try {
     const body = await req.json()

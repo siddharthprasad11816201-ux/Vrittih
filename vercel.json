@@ -1,12 +1,37 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "crons": [
-    { "path": "/api/cron/worker", "schedule": "0 3 * * *" },
-    { "path": "/api/cron/ingest", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/calibrate", "schedule": "0 5 * * *" },
-    { "path": "/api/cron/ai", "schedule": "0 6 * * *" },
-    { "path": "/api/cron/discover", "schedule": "0 7 * * *" },
-    { "path": "/api/cron/recruit-automation", "schedule": "0 8 * * *" },
-    { "path": "/api/cron/alerts", "schedule": "0 9 * * *" }
+    {
+      "path": "/api/cron/worker",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/ingest",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/calibrate",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/ai",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/discover",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/recruit-automation",
+      "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/alerts",
+      "schedule": "0 9 * * *"
+    },
+    {
+      "path": "/api/cron/maintenance",
+      "schedule": "30 2 * * *"
+    }
   ]
 }

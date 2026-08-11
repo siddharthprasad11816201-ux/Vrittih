@@ -4,14 +4,25 @@ import { verifyTOTP } from "@/lib/totp"
 import { signToken } from "@/lib/jwt"
 import { setAuthCookie } from "@/lib/cookies"
 import { recordLoginAttempt } from "@/lib/account/loginHistory"
+import { verifyChallenge, challengeFrom } from "@/lib/auth/challenge"
+import { rateLimit } from "@/lib/ratelimit/store"
 
 export const dynamic = "force-dynamic"
 
 // Login step 2 for authenticator users: verify the TOTP code, issue session.
 export async function POST(req: NextRequest) {
   try {
-    const { userId, code } = await req.json()
-    if (!userId || !code) return NextResponse.json({ error: "userId and code required" }, { status: 400 })
+    const body = await req.json()
+    const { code } = body
+    if (!code) return NextResponse.json({ error: "code required" }, { status: 400 })
+    // Previously a TOTP code alone minted a 7-day session with no proof the password step
+    // ever happened. The user now comes from the signed post-password challenge.
+    const chal = verifyChallenge(challengeFrom(body, req), "2fa_totp")
+    if (!chal.valid) return NextResponse.json({ error: "Sign in with your password first." }, { status: 401 })
+    const userId = chal.userId as string
+
+    const rl = await rateLimit("auth", userId, { scope: "totp", failOpen: false })
+    if (!rl.allowed) return NextResponse.json({ error: "Too many attempts. Please wait." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
 
     const user = await prisma.user.findUnique({
       where: { id: userId },

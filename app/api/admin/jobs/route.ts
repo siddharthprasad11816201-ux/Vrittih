@@ -5,7 +5,7 @@ import { requireAdmin } from "@/lib/admin"
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = requireAdmin(req)
+    const admin = await requireAdmin(req)
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     const { searchParams } = new URL(req.url)
     const q = searchParams.get("q") || ""
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const admin = requireAdmin(req)
+    const admin = await requireAdmin(req)
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     const { jobId, active } = await req.json()
     const job = await prisma.job.update({ where:{ id:jobId }, data:{ active } })
@@ -41,7 +41,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const admin = requireAdmin(req)
+    const admin = await requireAdmin(req)
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     const { jobId } = await req.json()
     await prisma.job.delete({ where:{ id:jobId } })

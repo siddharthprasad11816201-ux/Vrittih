@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic"
 // GET -> registered sources with health, so a silently broken scraper is visible
 // rather than quietly serving stale notices.
 export async function GET(req: NextRequest) {
-  if (!requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+  if (!await requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   const rows = await prisma.jobSource.findMany({ orderBy: { key: "asc" } })
   const live = await prisma.job.groupBy({ by: ["sourceKey"], where: { active: true, sourceKey: { not: null } }, _count: { _all: true } })
   const liveBy: Record<string, number> = {}
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
 
 // POST { key } -> run one source. POST { expire: true } -> close past-deadline listings.
 export async function POST(req: NextRequest) {
-  if (!requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+  if (!await requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   const body = await req.json().catch(() => ({}))
 
   if (body.expire) return NextResponse.json({ ok: true, closed: await expireClosed() })

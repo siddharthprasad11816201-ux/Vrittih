@@ -10,7 +10,7 @@ export const dynamic = "force-dynamic"
  * self-approves. Applying an approved proposal is a separate, explicit step. */
 
 export async function GET(req: NextRequest) {
-  const ctx = requireAdmin(req)
+  const ctx = await requireAdmin(req)
   if (!ctx) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const status = new URL(req.url).searchParams.get("status") || undefined
   const rows = await prisma.changeProposal.findMany({
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
-  const ctx = requireAdmin(req)
+  const ctx = await requireAdmin(req)
   if (!ctx) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const body = await req.json().catch(() => ({}))
   const { id, decision } = body as { id?: string; decision?: "approved" | "rejected" }

@@ -11,7 +11,7 @@ const TYPE: Record<string, string> = { "Full-Time": "FULLTIME", "Internship": "I
 
 // Imports the EduRankAI hiring catalog as fully-active Vrittih job posts.
 export async function POST(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
 
   // Dedicated employer that owns the catalog jobs (auto-created).

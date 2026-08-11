@@ -4,7 +4,7 @@ import { requireAdmin } from "@/lib/admin"
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = requireAdmin(req)
+    const admin = await requireAdmin(req)
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     const [logs, logins] = await Promise.all([
       prisma.activityLog.findMany({

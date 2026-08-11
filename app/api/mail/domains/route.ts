@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { encryptSecret } from "@/lib/crypto/secretbox"
 import { randomBytes } from "crypto"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
   const created = await prisma.emailDomain.create({
     data: {
       userId: auth.payload.userId, domain: clean, selector,
-      dkimPrivateKey: keys.privateKeyPem, dkimPublicKey: keys.dnsPublicKey, verifyToken: vt,
+      dkimPrivateKey: encryptSecret(keys.privateKeyPem), dkimPublicKey: keys.dnsPublicKey, verifyToken: vt,
     },
     select: { id: true, domain: true, selector: true, verified: true, createdAt: true },
   })

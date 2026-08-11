@@ -8,7 +8,7 @@ const VALID_ROLES = ["JOBSEEKER", "EMPLOYER", "ADMIN", "SUPER_ADMIN"]
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = requireAdmin(req)
+    const admin = await requireAdmin(req)
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     const { searchParams } = new URL(req.url)
     const q = searchParams.get("q") || ""
@@ -44,14 +44,14 @@ export async function GET(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   try {
-    const admin = requireAdmin(req)
+    const admin = await requireAdmin(req)
     if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     const { userId, action, role, newPassword } = await req.json()
     if (!userId || !action) return NextResponse.json({ error: "Missing fields" }, { status: 400 })
 
     // Actions that grant/remove power or are destructive require SUPER_ADMIN.
     const superOnly = ["setRole", "ban", "unban", "resetPassword"]
-    if (superOnly.includes(action) && !requireSuperAdmin(req)) {
+    if (superOnly.includes(action) && !await requireSuperAdmin(req)) {
       return NextResponse.json({ error: "Super-admin privileges required" }, { status: 403 })
     }
     // Never let an admin lock themselves out or self-escalate via these actions.
@@ -91,7 +91,7 @@ export async function PATCH(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const admin = requireSuperAdmin(req)
+    const admin = await requireSuperAdmin(req)
     if (!admin) return NextResponse.json({ error: "Super-admin privileges required" }, { status: 403 })
     const { userId } = await req.json()
     if (!userId) return NextResponse.json({ error: "Missing userId" }, { status: 400 })

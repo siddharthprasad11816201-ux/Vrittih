@@ -8,6 +8,8 @@ function TwoFAContent() {
   const router = useRouter()
   const params = useSearchParams()
   const userId = params.get("uid") || ""
+  // Proof that the password step succeeded — step 2 is refused without it.
+  const challenge = params.get("ch") || ""
   const mode = params.get("mode") || "login"
   const method = params.get("method") || "email"   // "totp" = in-house authenticator app
   const nextRaw = params.get("next") || ""
@@ -34,7 +36,7 @@ function TwoFAContent() {
       const res = await fetch("/api/auth/otp-request", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId, note: mode === "injury" ? "Face recognition fallback — please verify with OTP" : undefined })
+        body: JSON.stringify({ challenge, note: mode === "injury" ? "Face recognition fallback — please verify with OTP" : undefined })
       })
       const data = await res.json().catch(() => ({}))
       if (data.success) {
@@ -74,7 +76,7 @@ function TwoFAContent() {
       const res = await fetch(method === "totp" ? "/api/auth/totp/verify" : "/api/auth/otp-verify", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(method === "totp" ? { userId, code: finalCode } : { userId, otp: finalCode, mode })
+        body: JSON.stringify(method === "totp" ? { challenge, code: finalCode } : { challenge, otp: finalCode, mode })
       })
       const data = await res.json().catch(() => ({}))
       if (data.success) {

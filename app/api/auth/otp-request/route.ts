@@ -1,17 +1,27 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { otpStore } from "@/lib/otpStore"
+import { createOtp } from "@/lib/auth/otp"
+import { verifyChallenge, challengeFrom } from "@/lib/auth/challenge"
+import { rateLimit } from "@/lib/ratelimit/store"
 import { sendMail } from "@/lib/smtp"
 
 export async function POST(req: NextRequest) {
   try {
-    const { userId, note } = await req.json()
-    if (!userId) return NextResponse.json({ error: "userId required" }, { status: 400 })
+    const body = await req.json()
+    const { note } = body
+    // Was: unauthenticated, arbitrary userId -> anyone could mail-bomb any account with
+    // OTPs. The user is now taken from a signed post-password challenge, never the body.
+    const chal = verifyChallenge(challengeFrom(body, req), ["2fa_email", "face"])
+    if (!chal.valid) return NextResponse.json({ error: "Sign in with your password first." }, { status: 401 })
+    const userId = chal.userId as string
+
+    const rl = await rateLimit("auth_reset", userId, { failOpen: false })
+    if (!rl.allowed) return NextResponse.json({ error: "Too many codes requested. Please wait." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
+
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { email:true, name:true } })
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
-    const otp = Math.floor(100000 + Math.random() * 900000).toString()
-    const key = `otp_${userId}`
-    otpStore.set(key, { otp, expiresAt: Date.now() + 10 * 60 * 1000, userId })
+    // Cryptographically secure, hashed at rest, attempt-limited (lib/auth/otp).
+    const otp = await createOtp(userId, "login")
     await sendMail({
       to: user.email,
       subject: "Your login verification code",

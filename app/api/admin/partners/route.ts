@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic"
  * alongside domain verification). */
 
 export async function GET(req: NextRequest) {
-  if (!requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+  if (!await requireAdmin(req)) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
 
   // Partners = accounts that have issued at least one API key.
   const keys = await prisma.apiKey.groupBy({ by: ["employerId"], _count: { _all: true } })
@@ -32,7 +32,7 @@ export async function GET(req: NextRequest) {
 
 // POST { employerId, approved } -> approve or revoke a partner for public posting.
 export async function POST(req: NextRequest) {
-  const admin = requireAdmin(req)
+  const admin = await requireAdmin(req)
   if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   const { employerId, approved } = await req.json().catch(() => ({}))
   if (!employerId) return NextResponse.json({ error: "employerId is required" }, { status: 400 })

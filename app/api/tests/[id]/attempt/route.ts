@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { rateLimit } from "@/lib/ratelimit/store"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 
@@ -8,6 +9,8 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
     const payload = verifyToken(token)
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
+    const rl = await rateLimit("assessment_start", payload.userId)
+    if (!rl.allowed) return NextResponse.json({ error: "Too many attempts started. Please wait." }, { status: 429, headers: { "Retry-After": String(rl.retryAfterSeconds) } })
     const existing = await (prisma as any).testAttempt.findFirst({
       where: { testId: params.id, userId: payload.userId, status: "IN_PROGRESS" }
     })

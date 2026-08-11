@@ -6,12 +6,15 @@ import { getPricing, setPlanPrice, resetPlanPrice, validatePrice } from "@/lib/p
 
 export const dynamic = "force-dynamic"
 
+// Local admin check (needs the admin's name for the audit trail). Mirrors lib/admin:
+// privilege is read from the DB per request and banned accounts are rejected, so a
+// demoted or banned admin cannot keep acting on a still-valid 7-day token.
 async function requireAdmin(req: NextRequest) {
   const t = req.cookies.get("er_token")?.value
   const id = t ? verifyToken(t)?.userId : null
   if (!id) return null
-  const u = await prisma.user.findUnique({ where: { id }, select: { id: true, name: true, role: true } })
-  return u && (u.role === "ADMIN" || u.role === "SUPER_ADMIN") ? u : null
+  const u = await prisma.user.findUnique({ where: { id }, select: { id: true, name: true, role: true, banned: true } })
+  return u && !u.banned && (u.role === "ADMIN" || u.role === "SUPER_ADMIN") ? u : null
 }
 
 // GET -> current effective prices alongside the shipped defaults, so the admin

@@ -18,7 +18,10 @@ async function run(req: NextRequest) {
   const okCron = cronSecret && (req.headers.get("authorization") || "") === `Bearer ${cronSecret}`
   const okWorker = workerSecret && (req.headers.get("x-worker-secret") || "") === workerSecret
   const host = req.headers.get("host") || ""
-  const okLocal = !cronSecret && !workerSecret && (host.startsWith("localhost") || host.startsWith("127.0.0.1"))
+  // The Host header is attacker-controlled, so it can never be an authorisation signal
+  // on a deployed host. Only honour it when no secret is configured AND we are not in
+  // production — i.e. genuine local development.
+  const okLocal = process.env.NODE_ENV !== "production" && !cronSecret && !workerSecret && (host.startsWith("localhost") || host.startsWith("127.0.0.1"))
   if (!okCron && !okWorker && !okLocal) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
 
   const now = Date.now()

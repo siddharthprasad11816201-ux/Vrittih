@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic"
  * only. Shows aggregate cohort stats (k-anonymity inputs) for audit — no PII. */
 
 export async function GET(req: NextRequest) {
-  const ctx = requireAdmin(req)
+  const ctx = await requireAdmin(req)
   if (!ctx) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const rows = await prisma.matchCalibration.findMany({
     select: { cohort: true, sampleSize: true, jobCount: true, employerCount: true, baseAdvRate: true, computedAt: true, version: true },
@@ -23,7 +23,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const ctx = requireAdmin(req)
+  const ctx = await requireAdmin(req)
   if (!ctx) return NextResponse.json({ error: "Forbidden" }, { status: 403 })
   const summary = await recomputeCalibration()
   await logAction(ctx.userId, "career.calibration.recompute", { scanned: summary.scanned, decided: summary.decided, cohorts: summary.cohorts.length }, req)

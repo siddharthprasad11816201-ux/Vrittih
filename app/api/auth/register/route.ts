@@ -4,7 +4,7 @@ import { hashPassword } from "@/lib/hash"
 import { signToken } from "@/lib/jwt"
 import { setAuthCookie } from "@/lib/cookies"
 import { registerSchema } from "@/lib/validate"
-import { checkRateLimit } from "@/lib/ratelimit"
+import { rateLimit, clientIp } from "@/lib/ratelimit/store"
 import { isTrue } from "@/lib/settings"
 
 export async function POST(req: NextRequest) {
@@ -17,7 +17,7 @@ export async function POST(req: NextRequest) {
     }
 
     const ip = req.headers.get("x-forwarded-for") ?? "unknown"
-    const limit = checkRateLimit("register:" + ip)
+    const limit = await rateLimit("register", ip)
     if (!limit.allowed) {
       return NextResponse.json(
         { error: "Too many attempts. Try again in 15 minutes." },
