@@ -26,7 +26,9 @@
     "gpu:check": "node scripts/gpu-check.mjs",
     "ml:sft": "node scripts/build-sft-data.mjs",
     "dev:coach-mini": "node scripts/dev-coach-mini.mjs",
-    "dev:coach-lora": "node scripts/dev-coach-lora.mjs"
+    "dev:coach-lora": "node scripts/dev-coach-lora.mjs",
+    "test": "node scripts/test-edurank.mjs",
+    "test:e2e": "node scripts/test-edurank-e2e.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

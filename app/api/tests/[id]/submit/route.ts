@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
+import { skillScores, type GradedAnswer } from "@/lib/assessment/skillScore"
+import { proficiencyFromEvidence, proficiencyBand } from "@/lib/learning/competency"
+import { awardXp, testXp, dayString, ZERO_PROGRESS } from "@/lib/gamification"
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -17,7 +20,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 })
     let totalPoints = 0
     let earnedPoints = 0
+    let correctCount = 0
     const answerRecords: any[] = []
+    const graded: GradedAnswer[] = []   // per-question, for the assessment -> skill pipeline
     for (const q of test.questions) {
       const userAnswer = answers[q.id]
       const autoScorable = q.correctAnswer != null && String(q.correctAnswer).trim() !== ""
@@ -27,6 +32,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         // count against the candidate. Keep it out of the auto-scored denominator
         // and mark the answer pending review (correct: null), never wrong.
         answerRecords.push({ attemptId, questionId: q.id, value: userAnswer?.toString() || "", correct: null, points: 0 })
+        graded.push({ skill: q.skill, possible: 0, earned: 0, graded: false, difficulty: q.difficulty })
         continue
       }
       totalPoints += q.points
@@ -34,9 +40,10 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       let pts = 0
       if (userAnswer) {
         correct = userAnswer.toString().trim().toLowerCase() === q.correctAnswer.toString().trim().toLowerCase()
-        if (correct) { pts = q.points; earnedPoints += pts }
+        if (correct) { pts = q.points; earnedPoints += pts; correctCount++ }
       }
       answerRecords.push({ attemptId, questionId: q.id, value: userAnswer?.toString() || "", correct, points: pts })
+      graded.push({ skill: q.skill, possible: q.points, earned: pts, graded: true, difficulty: q.difficulty })
     }
     const score = totalPoints > 0 ? Math.round((earnedPoints / totalPoints) * 100) : 0
     const passed = score >= test.passingScore
@@ -64,7 +71,68 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
         link: `/tests/${params.id}`
       }
     })
-    return NextResponse.json({ success: true, score, passed, earnedPoints, totalPoints })
+
+    // ---- EduRankAI enrichment (best-effort; the score above is already persisted) ----
+    // The atomic flip guarantees this runs at most once per attempt, so XP can't be farmed
+    // by re-submitting. Any failure here must NOT fail the submit, so it's isolated.
+    const userId = payload.userId
+    let verified: { skill: string; score: number; proctored: boolean }[] = []
+    let xpAwarded = 0, level = 1, streakDays = 0, leveledUp = false
+    try {
+      const attempt = await (prisma as any).testAttempt.findUnique({ where: { id: attemptId }, select: { proctored: true } })
+      const proctored = !!attempt?.proctored
+      const perSkill = skillScores(graded)
+
+      // 1) Verified skills: keep the BEST score per (user, skill). Feeds the ranking boost.
+      for (const s of perSkill) {
+        const existing = await (prisma as any).skillAssessment.findUnique({ where: { userId_skill: { userId, skill: s.skill } } })
+        const prev = existing?.score ?? 0
+        const isBest = s.score >= prev
+        await (prisma as any).skillAssessment.upsert({
+          where: { userId_skill: { userId, skill: s.skill } },
+          create: { userId, skill: s.skill, score: s.score, proctored, difficulty: s.difficulty, attemptId, testId: params.id },
+          update: {
+            score: Math.max(prev, s.score),
+            proctored: isBest ? proctored : (existing?.proctored ?? proctored),
+            difficulty: Math.max(existing?.difficulty ?? 1, s.difficulty),
+            attemptId, testId: params.id, takenAt: new Date(),
+          },
+        })
+
+        // 2) Feed competency evidence — this is the .45 "assessment" weight that received
+        // nothing before. Merge the best assessment score into the evidence and recompute.
+        const sp = await prisma.skillProficiency.findUnique({ where: { userId_skill: { userId, skill: s.skill } } })
+        let evidence: Record<string, number> = {}
+        try { evidence = sp?.evidence ? JSON.parse(sp.evidence) : {} } catch { evidence = {} }
+        evidence.assessment = Math.max(typeof evidence.assessment === "number" ? evidence.assessment : 0, s.score)
+        const confidence = proficiencyFromEvidence(Object.entries(evidence).map(([source, sc]) => ({ source, score: typeof sc === "number" ? sc : undefined })))
+        await prisma.skillProficiency.upsert({
+          where: { userId_skill: { userId, skill: s.skill } },
+          create: { userId, skill: s.skill, confidence, level: proficiencyBand(confidence), implied: false, evidence: JSON.stringify(evidence) },
+          update: { confidence, level: proficiencyBand(confidence), implied: false, evidence: JSON.stringify(evidence) },
+        })
+
+        verified.push({ skill: s.skill, score: s.score, proctored })
+      }
+
+      // 3) Gamification (XP / streak / level) — deterministic, pure math in lib/gamification.
+      const p = await (prisma as any).userProgress.findUnique({ where: { userId } })
+      const state = p
+        ? { xp: p.xp, level: p.level, streakDays: p.streakDays, longestStreak: p.longestStreak, freezes: p.freezes, lastActiveDay: p.lastActiveDay }
+        : { ...ZERO_PROGRESS }
+      const res = awardXp(state, testXp({ passed, scorePct: score, correctCount, proctored }), dayString())
+      await (prisma as any).userProgress.upsert({
+        where: { userId },
+        create: { userId, xp: res.state.xp, level: res.state.level, streakDays: res.state.streakDays, longestStreak: res.state.longestStreak, freezes: res.state.freezes, lastActiveDay: res.state.lastActiveDay },
+        update: { xp: res.state.xp, level: res.state.level, streakDays: res.state.streakDays, longestStreak: res.state.longestStreak, freezes: res.state.freezes, lastActiveDay: res.state.lastActiveDay },
+      })
+      await (prisma as any).xpEvent.create({ data: { userId, amount: res.xpAwarded, reason: `test:${params.id}` } })
+      xpAwarded = res.xpAwarded; level = res.state.level; streakDays = res.state.streakDays; leveledUp = res.leveledUp
+    } catch (e) {
+      // Swallow: enrichment is additive; the graded result is already saved and returned.
+    }
+
+    return NextResponse.json({ success: true, score, passed, earnedPoints, totalPoints, verified, gamification: { xpAwarded, level, streakDays, leveledUp } })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

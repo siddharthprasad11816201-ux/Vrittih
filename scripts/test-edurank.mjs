@@ -1,0 +1,146 @@
+/**
+ * In-house test for the EduRankAI assessment -> ranking loop + gamification.
+ * No test framework (in-house ethos): transpiles the pure TS libs to CJS with the local
+ * `typescript` (a devDependency / build tool) and asserts real behavior.
+ *
+ *   node scripts/test-edurank.mjs
+ *
+ * Exits non-zero on any failure.
+ */
+import fs from "node:fs"
+import os from "node:os"
+import path from "node:path"
+import { fileURLToPath } from "node:url"
+import { createRequire } from "node:module"
+
+const require = createRequire(import.meta.url)
+const ts = require("typescript")
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const ROOT = path.resolve(__dirname, "..")
+const tmp = fs.mkdtempSync(path.join(os.tmpdir(), "edurank-"))
+
+function load(rel) {
+  const src = fs.readFileSync(path.join(ROOT, rel), "utf8")
+  const out = ts.transpileModule(src, {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019 },
+  }).outputText
+  const file = path.join(tmp, rel.replace(/[\\/]/g, "__").replace(/\.ts$/, ".cjs"))
+  fs.writeFileSync(file, out)
+  return require(file)
+}
+
+const matching = load("lib/matching.ts")
+const gam = load("lib/gamification.ts")
+const ss = load("lib/assessment/skillScore.ts")
+
+let pass = 0, fail = 0
+const eq = (name, got, want) => {
+  const ok = JSON.stringify(got) === JSON.stringify(want)
+  console.log(`${ok ? "PASS" : "FAIL"}  ${name}${ok ? "" : `  got=${JSON.stringify(got)} want=${JSON.stringify(want)}`}`)
+  ok ? pass++ : fail++
+}
+const ok = (name, cond, detail = "") => {
+  console.log(`${cond ? "PASS" : "FAIL"}  ${name}${cond ? "" : "  " + detail}`)
+  cond ? pass++ : fail++
+}
+
+/* ---------- 1. Gamification: levels ---------- */
+eq("level @0xp = 1", gam.levelForXp(0), 1)
+eq("level @99xp = 1", gam.levelForXp(99), 1)
+eq("level @100xp = 2", gam.levelForXp(100), 2)
+eq("level @299xp = 2", gam.levelForXp(299), 2)
+eq("level @300xp = 3", gam.levelForXp(300), 3)
+eq("level @600xp = 4", gam.levelForXp(600), 4)
+
+/* ---------- 2. Gamification: streaks ---------- */
+const first = gam.rollStreak({ ...gam.ZERO_PROGRESS }, "2026-08-11")
+eq("first activity -> streak 1", first.streakDays, 1)
+const consec = gam.rollStreak({ ...first }, "2026-08-12")
+eq("consecutive day -> streak 2", consec.streakDays, 2)
+const same = gam.rollStreak({ ...first }, "2026-08-11")
+eq("same day -> unchanged streak 1", same.streakDays, 1)
+const broke = gam.rollStreak({ ...first, streakDays: 5 }, "2026-08-15")
+eq("4-day gap, no freeze -> reset to 1", broke.streakDays, 1)
+const frozen = gam.rollStreak({ ...first, streakDays: 5, freezes: 1 }, "2026-08-13")
+ok("2-day gap + freeze -> streak kept (5) & freeze spent (0)", frozen.streakDays === 5 && frozen.freezes === 0, JSON.stringify(frozen))
+
+/* ---------- 3. Gamification: award + testXp ---------- */
+const award = gam.awardXp({ ...gam.ZERO_PROGRESS, xp: 90, level: 1, lastActiveDay: "2026-08-10" }, 20, "2026-08-11")
+ok("award crosses to level 2 & flags leveledUp", award.state.xp === 110 && award.state.level === 2 && award.leveledUp === true, JSON.stringify(award))
+eq("testXp pass/100%/10-correct/proctored = 130", gam.testXp({ passed: true, scorePct: 100, correctCount: 10, proctored: true }), 130)
+eq("testXp fail/0/0/unproctored = 20", gam.testXp({ passed: false, scorePct: 0, correctCount: 0, proctored: false }), 20)
+
+/* ---------- 4. Per-skill scoring ---------- */
+const scored = ss.skillScores([
+  { skill: "Node.js", possible: 10, earned: 10, graded: true, difficulty: 3 },
+  { skill: "Node.js", possible: 10, earned: 0, graded: true, difficulty: 4 },
+  { skill: "PostgreSQL", possible: 10, earned: 5, graded: true, difficulty: 2 },
+  { skill: "Node.js", possible: 0, earned: 0, graded: false, difficulty: 3 },   // manual review -> excluded
+  { skill: null, possible: 10, earned: 10, graded: true, difficulty: 1 },        // untagged -> excluded
+])
+const node = scored.find((s) => s.skill === "Node.js")
+const pg = scored.find((s) => s.skill === "PostgreSQL")
+ok("Node.js aggregates 10/20 = 0.5 over 2 questions @ hardest diff 4", node && node.score === 0.5 && node.possible === 20 && node.count === 2 && node.difficulty === 4, JSON.stringify(node))
+ok("PostgreSQL 5/10 = 0.5", pg && pg.score === 0.5, JSON.stringify(pg))
+ok("untagged & manual-review excluded (exactly 2 skills)", scored.length === 2, JSON.stringify(scored.map((s) => s.skill)))
+
+/* ---------- 5. Verified-skill ranking boost (the EduRankAI core) ---------- */
+const job = { title: "Backend Engineer", description: "Build Node.js services on PostgreSQL", industry: "Software", location: "Zurich", type: "Full-time", remote: false, skills: ["Node.js", "PostgreSQL"] }
+const base = { headline: "Backend Engineer", bio: "Backend developer", location: "Zurich", skills: ["Node.js", "PostgreSQL"], experienceTitles: ["Backend Engineer"], experienceText: [], educationFields: ["Computer Science"], yearsExperience: 4 }
+const unverified = matching.computeMatch(job, { ...base })
+const verified = matching.computeMatch(job, { ...base, verifiedSkills: { "node.js": 0.9, "postgresql": 0.85 } })
+ok("verified candidate scores strictly higher than identical unverified", verified.score > unverified.score, `verified=${verified.score} unverified=${unverified.score}`)
+ok("unverified is non-regressive (verified breakdown = 0)", unverified.breakdown.verified === 0, JSON.stringify(unverified.breakdown))
+ok("verified bonus is bounded (1..12)", verified.breakdown.verified >= 1 && verified.breakdown.verified <= 12, String(verified.breakdown.verified))
+ok("verified score never exceeds 100", verified.score <= 100 && unverified.score <= 100, `${verified.score}/${unverified.score}`)
+ok("both required skills reported verified", verified.verifiedSkills.includes("node.js") && verified.verifiedSkills.includes("postgresql"), JSON.stringify(verified.verifiedSkills))
+// A skill the job does NOT require, even if verified, must not add points.
+const irrelevant = matching.computeMatch(job, { ...base, verifiedSkills: { "kubernetes": 1 } })
+ok("verifying a non-required skill adds nothing", irrelevant.breakdown.verified === 0, JSON.stringify(irrelevant.breakdown))
+
+/* ---------- 6. Saved searches + job alerts (Indeed retention loop) ---------- */
+const al = load("lib/alerts.ts")
+
+// query normalization must bound and sanitize arbitrary client input
+const nq = al.normalizeQuery({ q: "  engineer  ", industry: "Software", type: "Full-time", remote: true, minMatch: 250, junk: "x" })
+ok("normalizeQuery trims, keeps known keys, clamps minMatch to 100", nq.q === "engineer" && nq.minMatch === 100 && nq.remote === true && nq.junk === undefined, JSON.stringify(nq))
+eq("normalizeQuery ignores non-boolean remote", al.normalizeQuery({ remote: "yes" }).remote, undefined)
+eq("normalizeFreq defaults unknown to daily", al.normalizeFreq("hourly"), "daily")
+eq("normalizeFreq keeps off", al.normalizeFreq("off"), "off")
+eq("describeQuery builds a label", al.describeQuery({ q: "node", remote: true, minMatch: 70 }), '"node" · Remote · 70%+ match')
+eq("describeQuery empty -> All jobs", al.describeQuery({}), "All jobs")
+
+// due-ness
+const NOW = new Date("2026-08-11T09:00:00Z")
+eq("off is never due", al.isDue("off", null, NOW), false)
+eq("never-run daily is due", al.isDue("daily", null, NOW), true)
+eq("daily run 2h ago not due", al.isDue("daily", new Date("2026-08-11T07:00:00Z"), NOW), false)
+eq("daily run 24h ago is due", al.isDue("daily", new Date("2026-08-10T09:00:00Z"), NOW), true)
+eq("weekly run 2 days ago not due", al.isDue("weekly", new Date("2026-08-09T09:00:00Z"), NOW), false)
+eq("weekly run 8 days ago is due", al.isDue("weekly", new Date("2026-08-03T09:00:00Z"), NOW), true)
+
+// diffing: only genuinely NEW jobs, respecting minMatch, and the cursor always advances
+const cursor0 = new Date("2026-08-10T00:00:00Z")
+const jobs = [
+  { id: "old", createdAt: new Date("2026-08-09T00:00:00Z"), score: 99 },  // before cursor
+  { id: "new-hi", createdAt: new Date("2026-08-11T00:00:00Z"), score: 80 },
+  { id: "new-lo", createdAt: new Date("2026-08-11T06:00:00Z"), score: 20 }, // below minMatch
+]
+const r1 = al.newMatches(jobs, cursor0, 70)
+eq("only the new, high-scoring job matches", r1.matches.map((m) => m.id), ["new-hi"])
+ok("cursor advances past ALL considered jobs (incl. rejected) so they never resurface",
+  r1.cursor.getTime() === new Date("2026-08-11T06:00:00Z").getTime(), String(r1.cursor))
+const r2 = al.newMatches(jobs, r1.cursor, 70)
+eq("re-running after the cursor yields nothing (no duplicate alerts)", r2.matches.length, 0)
+const r3 = al.newMatches(jobs, null, 0)
+eq("no cursor + no minMatch -> all jobs, newest first", r3.matches.map((m) => m.id), ["new-lo", "new-hi", "old"])
+eq("unscored jobs pass when minMatch is 0", al.newMatches([{ id: "a", createdAt: new Date("2026-08-11T00:00:00Z") }], null, 0).matches.length, 1)
+
+const copy = al.alertNotification("Backend roles", [{ id: "a", createdAt: NOW }])
+eq("singular notification copy", copy.title, '1 new job for "Backend roles"')
+eq("plural notification copy", al.alertNotification("X", [{ id: "a", createdAt: NOW }, { id: "b", createdAt: NOW }]).title, '2 new jobs for "X"')
+
+/* ---------- summary ---------- */
+fs.rmSync(tmp, { recursive: true, force: true })
+console.log(`\n${pass} passed, ${fail} failed`)
+process.exit(fail ? 1 : 0)

@@ -49,6 +49,7 @@ model User {
   jobs             Job[]
   applications     Application[]
   notifications    Notification[]
+  savedSearches    SavedSearch[]
   connections      Connection[]   @relation("UserConnections")
   connectedTo      Connection[]   @relation("ConnectedToUser")
   education        Education[]
@@ -1800,6 +1801,23 @@ model Notification {
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
+// Saved search + job alert (the Indeed retention loop). Stores the exact filter set the
+// /jobs UI already builds; the daily cron re-runs it, diffs against what the user has
+// already been told about, and notifies on genuinely new matches.
+model SavedSearch {
+  id           String    @id @default(cuid())
+  userId       String
+  name         String
+  query        String    @default("{}")     // JSON filters: { q, industry, type, remote, minMatch }
+  alertFreq    String    @default("daily")  // "off" | "daily" | "weekly"
+  lastRunAt    DateTime?
+  lastNotified DateTime?                     // newest job createdAt already notified — the diff cursor
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
+  @@index([alertFreq])
+}
+
 model Connection {
   id          String   @id @default(cuid())
   userId      String
@@ -2273,6 +2291,8 @@ model Question {
   correctAnswer String?
   points        Int      @default(10)
   order         Int      @default(0)
+  skill         String?                 // canonical skill this question assesses (lib/career/taxonomy) — enables the assessment -> ranking loop
+  difficulty    Int      @default(3)    // 1..5, for adaptive / mastery weighting
   test          Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
   answers       Answer[]
 }
@@ -2302,6 +2322,47 @@ model Answer {
   points      Int         @default(0)
   attempt     TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question    Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+}
+
+// EduRankAI core loop: a demonstrated, scored skill from a completed test. One row per
+// (user, skill) holding the BEST score; feeds SkillProficiency evidence and the ranking
+// engine's verified-skill boost (lib/matching). Relation-less userId mirrors SkillProficiency.
+model SkillAssessment {
+  id         String   @id @default(cuid())
+  userId     String
+  skill      String                    // canonical skill name (matches SkillProficiency.skill)
+  score      Float    @default(0)      // best 0..1 across attempts
+  proctored  Boolean  @default(false)  // integrity signal — unproctored counts for less in ranking
+  difficulty Int      @default(3)      // hardest question difficulty covered for this skill
+  attemptId  String?
+  testId     String?
+  takenAt    DateTime @default(now())
+  @@unique([userId, skill])
+  @@index([userId])
+  @@index([skill])
+}
+
+// Gamification (Duolingo axis) — one progress row per user. Day is stored as a "YYYY-MM-DD"
+// UTC string so streak math never touches timezones. Pure logic lives in lib/gamification.
+model UserProgress {
+  userId        String   @id
+  xp            Int      @default(0)
+  level         Int      @default(1)
+  streakDays    Int      @default(0)
+  longestStreak Int      @default(0)
+  freezes       Int      @default(0)    // streak-freeze tokens
+  lastActiveDay String?                 // "YYYY-MM-DD" (UTC)
+  updatedAt     DateTime @updatedAt
+}
+
+// Append-only audit of every XP award (why it was granted). Relation-less userId.
+model XpEvent {
+  id        String   @id @default(cuid())
+  userId    String
+  amount    Int
+  reason    String
+  createdAt DateTime @default(now())
+  @@index([userId, createdAt])
 }
 
 // Discount / waiver codes applied at checkout. All discount math is computed

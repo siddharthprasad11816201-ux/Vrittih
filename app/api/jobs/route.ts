@@ -131,6 +131,9 @@ export async function GET(req: NextRequest) {
         },
       })
       if (user) {
+        // Verified skills (relation-less SkillAssessment) so the seeker's own match scores
+        // reflect any assessments they've passed — same EduRankAI boost, candidate side.
+        ;(user as any).skillAssessments = await (prisma as any).skillAssessment.findMany({ where: { userId: user.id } })
         const cand = candidateFromUser(user)
         jobsOut = jobs
           .map((j) => {

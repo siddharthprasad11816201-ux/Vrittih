@@ -49,6 +49,16 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
       applicationByUser = new Map(apps.map((a) => [a.userId, a]))
     }
 
+    // Attach verified-skill evidence. SkillAssessment is relation-less by design (like
+    // SkillProficiency), so we fetch it in one query and stitch it onto each user before
+    // ranking — this is what powers the EduRankAI verified-skill boost in computeMatch.
+    if (users.length) {
+      const saRows = await (prisma as any).skillAssessment.findMany({ where: { userId: { in: users.map((u) => u.id) } } })
+      const saByUser = new Map<string, any[]>()
+      for (const sa of saRows) { const arr = saByUser.get(sa.userId) || []; arr.push(sa); saByUser.set(sa.userId, arr) }
+      for (const u of users) { u.skillAssessments = saByUser.get(u.id) || [] }
+    }
+
     const mj = jobFromRecord(job)
     const ranked = users
       .map((u) => {

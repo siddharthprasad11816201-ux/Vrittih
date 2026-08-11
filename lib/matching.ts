@@ -17,6 +17,7 @@ export interface MatchCandidate {
   experienceText: string[]    // free-text from experience descriptions
   educationFields: string[]   // fields of study
   yearsExperience: number
+  verifiedSkills?: Record<string, number> // normalized skill name -> assessment score 0..1 (EduRankAI)
 }
 
 export interface MatchJob {
@@ -32,13 +33,18 @@ export interface MatchJob {
 export interface MatchResult {
   score: number               // 0–100
   label: "Excellent" | "Strong" | "Good" | "Fair" | "Low"
-  breakdown: { skills: number; keywords: number; industry: number; location: number; seniority: number }
+  breakdown: { skills: number; keywords: number; industry: number; location: number; seniority: number; verified: number }
   matchedSkills: string[]
   missingSkills: string[]
+  verifiedSkills: string[]    // required skills the candidate has proven via assessment
   reasons: string[]
 }
 
 const WEIGHTS = { skills: 40, keywords: 20, industry: 15, location: 15, seniority: 10 }
+// Assessment-verified skills add a bounded bonus ON TOP of the base 100 (then clamped to 100),
+// so verification meaningfully reorders candidates without silently deflating everyone who has
+// not tested yet — non-regressive when no SkillAssessment rows exist.
+const VERIFIED_BONUS = 12
 
 const STOPWORDS = new Set([
   "the","and","for","with","you","your","our","are","will","who","has","have","this","that","from",
@@ -133,12 +139,30 @@ export function computeMatch(job: MatchJob, cand: MatchCandidate): MatchResult {
   const seniorityScore = gap === 0 ? 1 : gap === 1 ? 0.7 : gap === 2 ? 0.45 : 0.2
   if (gap === 0) reasons.push("Seniority level is a strong fit")
 
+  // ---- 6. Verified-skill bonus (EduRankAI: proven skills rank higher) ----
+  // Only REQUIRED skills the candidate has both matched AND verified by assessment count,
+  // weighted by their score and divided by the number of required skills. A candidate who has
+  // verified every required skill at 100% earns the full VERIFIED_BONUS; no verification -> 0.
+  const verifiedMap = cand.verifiedSkills || {}
+  const verifiedSkills: string[] = []
+  let verifiedSum = 0
+  if (jobSkills.length) {
+    for (const s of matchedSkills) {
+      const v = verifiedMap[s]
+      if (typeof v === "number" && v > 0) { verifiedSum += Math.max(0, Math.min(1, v)); verifiedSkills.push(s) }
+    }
+    if (verifiedSkills.length) reasons.push(`${verifiedSkills.length} required skill${verifiedSkills.length > 1 ? "s" : ""} verified by assessment`)
+  }
+  const verifiedScore = jobSkills.length ? verifiedSum / jobSkills.length : 0
+  const verifiedPoints = verifiedScore * VERIFIED_BONUS
+
   const raw =
     skillScore * WEIGHTS.skills +
     keywordScore * WEIGHTS.keywords +
     industryScore * WEIGHTS.industry +
     locationScore * WEIGHTS.location +
-    seniorityScore * WEIGHTS.seniority
+    seniorityScore * WEIGHTS.seniority +
+    verifiedPoints
 
   const score = Math.round(Math.max(0, Math.min(100, raw)))
   const label: MatchResult["label"] =
@@ -153,9 +177,11 @@ export function computeMatch(job: MatchJob, cand: MatchCandidate): MatchResult {
       industry: Math.round(industryScore * WEIGHTS.industry),
       location: Math.round(locationScore * WEIGHTS.location),
       seniority: Math.round(seniorityScore * WEIGHTS.seniority),
+      verified: Math.round(verifiedPoints),
     },
     matchedSkills,
     missingSkills,
+    verifiedSkills,
     reasons,
   }
 }
@@ -169,6 +195,16 @@ export function candidateFromUser(u: any): MatchCandidate {
     const end = e.endDate ? new Date(e.endDate).getTime() : Date.now()
     if (start) years += Math.max(0, (end - start) / (1000 * 60 * 60 * 24 * 365))
   }
+  // Verified skills come from completed assessments (SkillAssessment). Unproctored attempts
+  // are weaker evidence, so they count at 60%. Keyed by the SAME normalization the matcher uses.
+  const verifiedSkills: Record<string, number> = {}
+  for (const sa of (u.skillAssessments ?? [])) {
+    const name = norm(sa.skill ?? "")
+    if (!name) continue
+    const eff = Math.max(0, Math.min(1, sa.score ?? 0)) * (sa.proctored ? 1 : 0.6)
+    if (eff > (verifiedSkills[name] ?? 0)) verifiedSkills[name] = eff
+  }
+
   return {
     headline: u.headline,
     bio: u.bio,
@@ -178,6 +214,7 @@ export function candidateFromUser(u: any): MatchCandidate {
     experienceText: experiences.map((e: any) => e.description).filter(Boolean),
     educationFields: (u.education ?? []).map((e: any) => e.field).filter(Boolean),
     yearsExperience: Math.round(years * 10) / 10,
+    verifiedSkills,
   }
 }
 
