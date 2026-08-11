@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { endorsementWeight } from "@/lib/social/engage"
+import { createNotification } from "@/lib/notify"
 
 export const dynamic = "force-dynamic"
 const auth = (req: NextRequest) => { const t = req.cookies.get("er_token")?.value; return t ? verifyToken(t) : null }
@@ -60,14 +61,13 @@ export async function POST(req: NextRequest) {
     })
     const count = await (prisma as any).skillEndorsement.count({ where: { userId, skill } })
 
-    await prisma.notification.create({
-      data: {
-        userId,
-        title: "You were endorsed",
-        body: `Someone in your network endorsed you for ${skill}.`,
-        link: `/u/${userId}`,
-      },
-    })
+    await createNotification({
+      userId,
+      title: "You were endorsed",
+      body: `Someone in your network endorsed you for ${skill}.`,
+      link: `/u/${userId}`,
+      type: "endorsement",
+    }).catch(() => {})
     return NextResponse.json({ ok: true, skill, count, weight: endorsementWeight(count) }, { status: 201 })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 400 })

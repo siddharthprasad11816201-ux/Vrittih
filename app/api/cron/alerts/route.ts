@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { computeMatch, candidateFromUser, jobFromRecord } from "@/lib/matching"
 import { isDue, newMatches, normalizeQuery, alertNotification, type AlertFreq } from "@/lib/alerts"
+import { createNotification } from "@/lib/notify"
 
 export const dynamic = "force-dynamic"
 
@@ -74,14 +75,14 @@ async function run(req: NextRequest) {
 
     if (matches.length) {
       const copy = alertNotification(s.name, matches)
-      await prisma.notification.create({
-        data: {
-          userId: s.userId,
-          title: copy.title,
-          body: copy.body,
-          link: `/jobs?savedSearch=${s.id}`,
-        },
-      })
+      await createNotification({
+        userId: s.userId,
+        title: copy.title,
+        body: copy.body,
+        link: `/jobs?savedSearch=${s.id}`,
+        type: "job_alert",
+        sendEmail: true,
+      }).catch(() => {})
       fired++
       notified += matches.length
     }

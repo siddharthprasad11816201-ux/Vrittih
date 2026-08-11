@@ -1,25 +1,86 @@
 import { prisma } from "@/lib/prisma"
 import { sendMail } from "@/lib/smtp"
 
+/* Notification categories a user can tune. "general" is the catch-all and is always
+ * delivered in-app, so a critical message can never be silenced by preferences. */
+export const NOTIFICATION_CATEGORIES = [
+  "general", "job_alert", "application", "message", "connection", "endorsement", "assessment", "moderation",
+] as const
+export type NotificationCategory = (typeof NOTIFICATION_CATEGORIES)[number]
+
+export function normalizeCategory(v: any): NotificationCategory {
+  return (NOTIFICATION_CATEGORIES as readonly string[]).includes(v) ? (v as NotificationCategory) : "general"
+}
+
+/** Category defaults, used when the user has no explicit preference row. */
+export const CATEGORY_DEFAULTS: Record<NotificationCategory, { inApp: boolean; email: boolean }> = {
+  general:     { inApp: true,  email: false },
+  job_alert:   { inApp: true,  email: true  },
+  application: { inApp: true,  email: true  },
+  message:     { inApp: true,  email: false },
+  connection:  { inApp: true,  email: false },
+  endorsement: { inApp: true,  email: false },
+  assessment:  { inApp: true,  email: false },
+  moderation:  { inApp: true,  email: false },
+}
+
+/**
+ * Resolve delivery for a category given a (possibly absent) stored preference. PURE.
+ *
+ * IMPORTANT semantics, chosen so adding preferences cannot silently break existing sends:
+ *  - inApp: falls back to the category default when the user has no preference row.
+ *  - emailAllowed: an ABSENT preference means "allowed". The caller passing sendEmail
+ *    already decided the message warrants an email; preferences only ever act as an
+ *    explicit OPT-OUT. (CATEGORY_DEFAULTS.email describes what a fresh preferences UI
+ *    should show as checked — it never suppresses a caller-requested email.)
+ *  - "general" is never fully silenced in-app: it carries account-critical messages.
+ */
+export function resolveDelivery(
+  category: NotificationCategory,
+  pref: { inApp: boolean; email: boolean } | null | undefined,
+): { inApp: boolean; emailAllowed: boolean } {
+  const def = CATEGORY_DEFAULTS[category] ?? CATEGORY_DEFAULTS.general
+  if (!pref) return { inApp: def.inApp, emailAllowed: true }
+  return { inApp: category === "general" ? true : pref.inApp, emailAllowed: pref.email }
+}
+
 export interface NotifyPayload {
   userId: string
   title: string
   body: string
   link?: string
   sendEmail?: boolean
+  type?: string
 }
 
 export async function createNotification(payload: NotifyPayload) {
-  const notification = await prisma.notification.create({
-    data: {
-      userId: payload.userId,
-      title: payload.title,
-      body: payload.body,
-      link: payload.link,
-    },
-  })
+  const category = normalizeCategory(payload.type)
 
-  if (payload.sendEmail) {
+  // Consult the user preference before writing/emailing. A failure to read prefs must not
+  // lose the notification, so it falls back to the category default.
+  let pref: { inApp: boolean; email: boolean } | null = null
+  try {
+    pref = await (prisma as any).notificationPref.findUnique({
+      where: { userId_category: { userId: payload.userId, category } },
+      select: { inApp: true, email: true },
+    })
+  } catch { pref = null }
+  const delivery = resolveDelivery(category, pref)
+
+  const notification = delivery.inApp
+    ? await prisma.notification.create({
+        data: {
+          userId: payload.userId,
+          title: payload.title,
+          body: payload.body,
+          link: payload.link,
+          type: category,
+        },
+      })
+    : null
+
+  // Email when the caller asked for it AND the user has not explicitly opted out.
+  if (payload.sendEmail && delivery.emailAllowed) {
     try {
       const user = await prisma.user.findUnique({
         where: { id: payload.userId },

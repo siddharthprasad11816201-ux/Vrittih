@@ -227,6 +227,35 @@ eq("correct on a hard item grades highest", srs.gradeFromAnswer(true, 5), 5)
 const due = srs.dueCards([{ dueAt: new Date("2026-08-12") }, { dueAt: new Date("2026-08-10") }, { dueAt: new Date("2026-08-09") }], NOWD)
 eq("only past-due cards, soonest first", due.map((c) => c.dueAt.toISOString().slice(0, 10)), ["2026-08-09", "2026-08-10"])
 
+/* ---------- 10. Notification categories & preference semantics ---------- */
+// lib/notify imports prisma/smtp, so exercise the pure exports via a stripped copy: we
+// only need the category tables + resolveDelivery, which have no I/O.
+const notifySrc = fs.readFileSync(path.join(ROOT, "lib/notify.ts"), "utf8")
+const pureNotify = notifySrc.slice(0, notifySrc.indexOf("export interface NotifyPayload"))
+  .replace(/^import .*$/gm, "")
+{
+  const out = ts.transpileModule(pureNotify, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2019 } }).outputText
+  const f = path.join(tmp, "notify_pure.cjs"); fs.writeFileSync(f, out)
+  const nt = require(f)
+
+  eq("unknown category falls back to general", nt.normalizeCategory("gossip"), "general")
+  eq("known category kept", nt.normalizeCategory("job_alert"), "job_alert")
+
+  // THE regression this guards: a caller passing sendEmail must still email when the user
+  // has expressed no preference. An absent row means "allowed", never "denied".
+  ok("no stored pref -> email allowed (existing senders keep working)",
+    nt.resolveDelivery("general", null).emailAllowed === true && nt.resolveDelivery("assessment", undefined).emailAllowed === true)
+  ok("no stored pref -> inApp uses the category default",
+    nt.resolveDelivery("job_alert", null).inApp === true)
+  ok("explicit opt-out suppresses email",
+    nt.resolveDelivery("job_alert", { inApp: true, email: false }).emailAllowed === false)
+  ok("explicit opt-out suppresses in-app for a normal category",
+    nt.resolveDelivery("job_alert", { inApp: false, email: false }).inApp === false)
+  ok("general can never be silenced in-app (account-critical)",
+    nt.resolveDelivery("general", { inApp: false, email: false }).inApp === true)
+  ok("every category has a default", nt.NOTIFICATION_CATEGORIES.every((c) => nt.CATEGORY_DEFAULTS[c]))
+}
+
 /* ---------- summary ---------- */
 fs.rmSync(tmp, { recursive: true, force: true })
 console.log(`\n${pass} passed, ${fail} failed`)

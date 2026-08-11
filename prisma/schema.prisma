@@ -1856,10 +1856,38 @@ model Notification {
   userId    String
   title     String
   body      String
+  type      String   @default("general")   // category, see lib/notify NOTIFICATION_CATEGORIES
   read      Boolean  @default(false)
   link      String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId, type])
+}
+
+// Per-category delivery preferences. A MISSING row means "use the category default",
+// so existing behaviour is preserved until a user actually changes something.
+model NotificationPref {
+  userId   String
+  category String
+  inApp    Boolean @default(true)
+  email    Boolean @default(false)
+  @@id([userId, category])
+}
+
+// Glassdoor-class employer reviews. One review per user per company, moderated before
+// it counts toward the public rating.
+model CompanyReview {
+  id        String   @id @default(cuid())
+  companyId String
+  authorId  String
+  rating    Int                              // 1..5
+  title     String?
+  pros      String?
+  cons      String?
+  status    String   @default("PENDING")     // PENDING | PUBLISHED | REJECTED
+  createdAt DateTime @default(now())
+  @@unique([companyId, authorId])
+  @@index([companyId, status])
 }
 
 // Saved search + job alert (the Indeed retention loop). Stores the exact filter set the

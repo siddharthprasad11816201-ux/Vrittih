@@ -6,6 +6,7 @@ import { proficiencyFromEvidence, proficiencyBand } from "@/lib/learning/compete
 import { awardXp, testXp, dayString, ZERO_PROGRESS } from "@/lib/gamification"
 import { checkTiming } from "@/lib/assessment/integrity"
 import { review, gradeFromAnswer, NEW_CARD } from "@/lib/assessment/srs"
+import { createNotification } from "@/lib/notify"
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -83,14 +84,13 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
     })
     if (flip.count === 0) return NextResponse.json({ error: "Attempt not found or already submitted" }, { status: 404 })
     await (prisma as any).answer.createMany({ data: answerRecords })
-    await prisma.notification.create({
-      data: {
-        userId: payload.userId,
-        title: `Test completed: ${test.title}`,
-        body: `Your score: ${score}% — ${passed ? "Passed ✓" : "Not passed"}`,
-        link: `/tests/${params.id}`
-      }
-    })
+    await createNotification({
+      userId: payload.userId,
+      title: `Test completed: ${test.title}`,
+      body: `Your score: ${score}% — ${passed ? "Passed ✓" : "Not passed"}`,
+      link: `/tests/${params.id}`,
+      type: "assessment",
+    }).catch(() => {})
 
     // ---- EduRankAI enrichment (best-effort; the score above is already persisted) ----
     // The atomic flip guarantees this runs at most once per attempt, so XP can't be farmed

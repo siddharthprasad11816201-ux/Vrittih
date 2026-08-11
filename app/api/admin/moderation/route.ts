@@ -34,8 +34,18 @@ export async function GET(req: NextRequest) {
   const postMap = Object.fromEntries(posts.map((p) => [p.id, p]))
   const userMap = Object.fromEntries(users.map((u) => [u.id, u]))
 
+  // Company reviews awaiting moderation ride in the same queue — one place to review
+  // everything that gates public content.
+  const pendingReviews = status === "OPEN"
+    ? await (prisma as any).companyReview.findMany({ where: { status: "PENDING" }, orderBy: { createdAt: "desc" }, take: 50 })
+    : []
+
   return NextResponse.json({
     status,
+    pendingReviews: pendingReviews.map((r: any) => ({
+      id: r.id, companyId: r.companyId, authorId: r.authorId, rating: r.rating,
+      title: r.title, pros: r.pros, cons: r.cons, createdAt: r.createdAt,
+    })),
     count: reports.length,
     reports: reports.map((r: any) => ({
       id: r.id, targetType: r.targetType, targetId: r.targetId, reason: r.reason, detail: r.detail,
@@ -56,9 +66,22 @@ export async function PATCH(req: NextRequest) {
     const status = String(body?.status || "")
     const action = String(body?.action || "none")   // none | delete_post | ban_user
     const resolution = typeof body?.resolution === "string" ? body.resolution.trim().slice(0, 500) : null
-    if (!id) return NextResponse.json({ error: "id is required" }, { status: 400 })
     if (status !== "RESOLVED" && status !== "DISMISSED") {
       return NextResponse.json({ error: "status must be RESOLVED or DISMISSED" }, { status: 400 })
+    }
+    if (!id && !body?.reviewId) return NextResponse.json({ error: "id or reviewId is required" }, { status: 400 })
+
+    // Reviewing a company review rather than a report: { reviewId, status }.
+    const reviewId = String(body?.reviewId || "")
+    if (reviewId) {
+      const publish = status === "RESOLVED"
+      const upd = await (prisma as any).companyReview.updateMany({
+        where: { id: reviewId, status: "PENDING" },
+        data: { status: publish ? "PUBLISHED" : "REJECTED" },
+      })
+      if (!upd.count) return NextResponse.json({ error: "Review not found or already moderated" }, { status: 404 })
+      await logAction(admin.userId, "moderation.review", { reviewId, published: publish }, req)
+      return NextResponse.json({ ok: true, published: publish })
     }
 
     const report = await (prisma as any).report.findUnique({ where: { id } })
