@@ -172,6 +172,61 @@ ok("1 endorsement is meaningful", soc.endorsementWeight(1) === 0.25, String(soc.
 ok("weight rises but with diminishing returns", soc.endorsementWeight(5) > soc.endorsementWeight(2) && (soc.endorsementWeight(5) - soc.endorsementWeight(4)) < (soc.endorsementWeight(2) - soc.endorsementWeight(1)))
 ok("weight is bounded below 1 even at high volume", soc.endorsementWeight(1000) < 1)
 
+/* ---------- 8. Assessment integrity: seeded shuffle + server timing ---------- */
+const integ = load("lib/assessment/integrity.ts")
+
+const qs = Array.from({ length: 10 }, (_, i) => ({ id: `q${i}`, options: ["a", "b", "c", "d"] }))
+const shuffledA = integ.prepareQuestions(qs, "attempt-A", { shuffleQuestions: true })
+const shuffledA2 = integ.prepareQuestions(qs, "attempt-A", { shuffleQuestions: true })
+const shuffledB = integ.prepareQuestions(qs, "attempt-B", { shuffleQuestions: true })
+eq("same attempt -> identical order (refresh cannot reshuffle)", shuffledA.map((q) => q.id), shuffledA2.map((q) => q.id))
+ok("different attempts -> different order", JSON.stringify(shuffledA.map((q) => q.id)) !== JSON.stringify(shuffledB.map((q) => q.id)))
+eq("shuffle preserves every question", shuffledA.map((q) => q.id).sort(), qs.map((q) => q.id).sort())
+ok("input array is not mutated", qs[0].id === "q0")
+
+const sampled = integ.prepareQuestions(qs, "attempt-A", { shuffleQuestions: true, sampleN: 4 })
+eq("sampleN draws exactly N", sampled.length, 4)
+ok("sampled ids are all real", sampled.every((q) => qs.some((o) => o.id === q.id)))
+const sampledNoShuffle = integ.prepareQuestions(qs, "attempt-C", { sampleN: 3 })
+ok("sampleN without shuffleQuestions still randomizes (not just first N)", sampledNoShuffle.length === 3)
+
+const opts = integ.prepareQuestions([{ id: "q", options: ["a", "b", "c", "d"] }], "attempt-A", { shuffleOptions: true })
+eq("option shuffle keeps all options", opts[0].options.slice().sort(), ["a", "b", "c", "d"])
+const twoQ = integ.prepareQuestions([{ id: "q1", options: ["a","b","c","d"] }, { id: "q2", options: ["a","b","c","d"] }], "seed-x", { shuffleOptions: true })
+ok("different questions get different option orders", JSON.stringify(twoQ[0].options) !== JSON.stringify(twoQ[1].options))
+
+// server timing
+const start = new Date("2026-08-11T10:00:00Z")
+eq("within limit is not expired", integ.checkTiming(start, 60, new Date("2026-08-11T10:59:00Z")).expired, false)
+eq("just past limit but inside grace is not expired", integ.checkTiming(start, 60, new Date("2026-08-11T11:00:20Z")).expired, false)
+eq("well past limit is expired", integ.checkTiming(start, 60, new Date("2026-08-11T11:05:00Z")).expired, true)
+eq("duration 0 means untimed", integ.checkTiming(start, 0, new Date("2027-01-01T00:00:00Z")).expired, false)
+
+/* ---------- 9. Spaced repetition (SM-2) ---------- */
+const srs = load("lib/assessment/srs.ts")
+const NOWD = new Date("2026-08-11T00:00:00Z")
+
+const srs1 = srs.review({ ...srs.NEW_CARD }, 4, NOWD)
+eq("first success -> 1 day", srs1.intervalDays, 1)
+const srs2 = srs.review({ repetitions: 1, intervalDays: 1, ease: 2.5 }, 4, NOWD)
+eq("second success -> 6 days", srs2.intervalDays, 6)
+const srs3 = srs.review({ repetitions: 2, intervalDays: 6, ease: 2.5 }, 4, NOWD)
+eq("third success -> interval * ease", srs3.intervalDays, 15)
+ok("dueAt is interval days out", Math.round((srs3.dueAt - NOWD) / 86400000) === 15, String(srs3.dueAt))
+
+const failed = srs.review({ repetitions: 5, intervalDays: 40, ease: 2.5 }, 2, NOWD)
+ok("failure resets repetitions and returns tomorrow", failed.repetitions === 0 && failed.intervalDays === 1, JSON.stringify(failed))
+ok("failure lowers ease (item stays harder)", failed.ease < 2.5, String(failed.ease))
+
+let hard = { repetitions: 0, intervalDays: 0, ease: 2.5 }
+for (let i = 0; i < 20; i++) hard = srs.review(hard, 0, NOWD)
+ok("ease never drops below the 1.3 floor", hard.ease >= 1.3, String(hard.ease))
+
+eq("wrong answer grades as a failure", srs.gradeFromAnswer(false, 3) < 3, true)
+eq("correct on a hard item grades highest", srs.gradeFromAnswer(true, 5), 5)
+const due = srs.dueCards([{ dueAt: new Date("2026-08-12") }, { dueAt: new Date("2026-08-10") }, { dueAt: new Date("2026-08-09") }], NOWD)
+eq("only past-due cards, soonest first", due.map((c) => c.dueAt.toISOString().slice(0, 10)), ["2026-08-09", "2026-08-10"])
+
 /* ---------- summary ---------- */
 fs.rmSync(tmp, { recursive: true, force: true })
 console.log(`\n${pass} passed, ${fail} failed`)

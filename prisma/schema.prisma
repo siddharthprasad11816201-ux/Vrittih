@@ -2333,6 +2333,9 @@ model Test {
   type         String
   duration     Int          @default(60)
   passingScore Int          @default(70)
+  shuffleQuestions Boolean  @default(false)  // per-attempt seeded order (anti-cheat)
+  shuffleOptions   Boolean  @default(false)
+  sampleN          Int?                       // draw N questions from the bank per attempt
   createdById  String
   jobId        String?
   active        Boolean       @default(true)
@@ -2356,6 +2359,7 @@ model Question {
   difficulty    Int      @default(3)    // 1..5, for adaptive / mastery weighting
   test          Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
   answers       Answer[]
+  reviewItems   ReviewItem[]
 }
 
 model TestAttempt {
@@ -2424,6 +2428,23 @@ model XpEvent {
   reason    String
   createdAt DateTime @default(now())
   @@index([userId, createdAt])
+}
+
+// Spaced-repetition card (SM-2). One per (user, question); auto-created from wrong answers
+// so missed items come back until they stick. Scheduling math lives in lib/assessment/srs.
+model ReviewItem {
+  id          String   @id @default(cuid())
+  userId      String
+  questionId  String
+  repetitions Int      @default(0)
+  intervalDays Int     @default(0)
+  ease        Float    @default(2.5)
+  dueAt       DateTime @default(now())
+  lastResult  String?                        // "correct" | "wrong"
+  updatedAt   DateTime @updatedAt
+  question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  @@unique([userId, questionId])
+  @@index([userId, dueAt])
 }
 
 // Discount / waiver codes applied at checkout. All discount math is computed

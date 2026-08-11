@@ -4,6 +4,8 @@ import { verifyToken } from "@/lib/jwt"
 import { skillScores, type GradedAnswer } from "@/lib/assessment/skillScore"
 import { proficiencyFromEvidence, proficiencyBand } from "@/lib/learning/competency"
 import { awardXp, testXp, dayString, ZERO_PROGRESS } from "@/lib/gamification"
+import { checkTiming } from "@/lib/assessment/integrity"
+import { review, gradeFromAnswer, NEW_CARD } from "@/lib/assessment/srs"
 
 export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
   try {
@@ -18,6 +20,24 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       include: { questions: true }
     })
     if (!test) return NextResponse.json({ error: "Test not found" }, { status: 404 })
+
+    // SERVER-side time enforcement — the client timer is advisory only. A late submit is
+    // rejected here rather than silently accepted (the attempt stays open for review).
+    const openAttempt = await (prisma as any).testAttempt.findFirst({
+      where: { id: attemptId, userId: payload.userId, testId: params.id, status: "IN_PROGRESS" },
+      select: { startedAt: true },
+    })
+    if (openAttempt) {
+      const timing = checkTiming(openAttempt.startedAt, test.duration, new Date())
+      if (timing.expired) {
+        await (prisma as any).testAttempt.updateMany({
+          where: { id: attemptId, userId: payload.userId, testId: params.id, status: "IN_PROGRESS" },
+          data: { status: "EXPIRED", completedAt: new Date() },
+        })
+        return NextResponse.json({ error: "Time limit exceeded — this attempt has expired.", ...timing }, { status: 400 })
+      }
+    }
+
     let totalPoints = 0
     let earnedPoints = 0
     let correctCount = 0
