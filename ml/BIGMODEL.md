@@ -29,6 +29,8 @@ pip install torch transformers peft bitsandbytes datasets accelerate trl
 python ml/finetune_qlora.py --base mistralai/Mistral-7B-Instruct-v0.3      # ≥12 GB
 #   or:  --base Qwen/Qwen2.5-3B-Instruct       (≥8 GB)
 #   or:  --base meta-llama/Llama-3.1-8B-Instruct
+#   add --merge to ALSO emit ml/model/merged (one self-contained model; needs the base's full
+#   fp16 footprint, ~14 GB VRAM for a 7B) — the easiest single artifact to scp/hand off.
 
 # serve base + your LoRA adapter, OpenAI-compatible on :8078
 python ml/serve_lora.py
@@ -59,8 +61,12 @@ QLoRA fine-tune is easy. Flow:
 5. **Submit the job:** `sbatch ml/hpc_finetune.slurm` (adapt the `#SBATCH` partition/account/
    module lines to your cluster — `sinfo`, `module avail`). It runs `finetune_qlora.py`,
    which builds training data straight from `ml/sft_seed.jsonl` (no Node needed).
-6. **Copy the adapter back:** `scp -r <cluster>:.../ml/model/lora ./ml/model/` and serve with
-   `python ml/serve_lora.py`.
+6. **Copy the model back:** the job runs with `--merge`, so it emits **one self-contained
+   folder** `ml/model/merged` (LoRA folded into full-precision weights) — easiest to move:
+   `scp -r <cluster>:.../ml/model/merged ./ml/model/` then
+   `BASE_MODEL=ml/model/merged python ml/serve_lora.py`. (serve_lora auto-skips the adapter dir
+   when the base is the merged model, so there's no double-apply. You can instead copy just
+   `ml/model/lora` and serve base+adapter with plain `python ml/serve_lora.py`.)
 
 Note: **Claude Code runs on your laptop, not the cluster** — it writes these scripts, but you
 run them over SSH. (You *can* install Claude Code on the login node for direct help there.)

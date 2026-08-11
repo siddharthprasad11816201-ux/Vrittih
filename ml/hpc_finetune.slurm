@@ -36,6 +36,9 @@ export HF_HUB_DISABLE_XET=1
 export HF_HUB_OFFLINE=1               # compute node is offline; use the pre-downloaded cache
 
 # --- fine-tune (data comes from the committed ml/sft_seed.jsonl — no Node needed) ---
-python ml/finetune_qlora.py --base mistralai/Mistral-7B-Instruct-v0.3 --epochs 3
+# --merge folds the LoRA into ONE self-contained model folder (ml/model/merged), which is the
+# easiest single artifact to copy back. A datacenter GPU has ample VRAM for the fp16 merge.
+python ml/finetune_qlora.py --base mistralai/Mistral-7B-Instruct-v0.3 --epochs 3 --merge
 
-echo "Done. LoRA adapter saved to ml/model/lora/  — copy it back with scp/rsync."
+echo "Done. Copy back ml/model/merged/ (self-contained) with scp/rsync — or ml/model/lora/ for"
+echo "the standalone adapter. Serve with:  BASE_MODEL=ml/model/merged python ml/serve_lora.py"

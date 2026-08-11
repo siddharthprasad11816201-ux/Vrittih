@@ -35,6 +35,11 @@ def main():
     ap.add_argument("--epochs", type=int, default=3)
     ap.add_argument("--maxlen", type=int, default=1024)
     ap.add_argument("--force", action="store_true", help="skip the VRAM preflight (may OOM)")
+    ap.add_argument("--merge", action="store_true",
+                    help="after training, fold the LoRA into ONE full-precision model folder "
+                         "(ml/model/merged) — a single self-contained model that's easy to scp "
+                         "off a cluster and serve. Needs the base's full fp16 footprint of "
+                         "VRAM/RAM (~14 GB for a 7B); meant for a datacenter GPU, not the 4 GB laptop.")
     args = ap.parse_args()
 
     import torch
@@ -106,7 +111,35 @@ def main():
     trainer.train()
     model.save_pretrained(OUT)
     tok.save_pretrained(OUT)
-    print(f"Saved LoRA adapters -> {OUT}. Merge/serve with your inference stack (vLLM/llama.cpp/TGI).")
+    print(f"Saved LoRA adapters -> {OUT}.")
+
+    if not args.merge:
+        print("Serve base + adapter with serve_lora.py, or re-run with --merge for one folder.")
+        return
+
+    # --merge: fold the LoRA into ONE full-precision model folder.
+    # IMPORTANT: you CANNOT merge into a 4-bit base — peft can't write LoRA deltas back into
+    # quantized weights, and merge_and_unload() on a 4-bit model silently produces a broken
+    # model. So we free the 4-bit training model and RELOAD the base in bf16, apply the freshly
+    # saved adapter, then merge. This needs the base's full fp16 footprint (~14 GB VRAM for a 7B).
+    from peft import PeftModel
+    MERGED = os.path.join(HERE, "model", "merged")
+    print("Merging LoRA into a full-precision model (reloading base in bf16)…")
+    del model, trainer
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    dtype = torch.bfloat16 if torch.cuda.is_available() else torch.float32
+    base = AutoModelForCausalLM.from_pretrained(args.base, torch_dtype=dtype,
+                                                device_map="auto", low_cpu_mem_usage=True)
+    merged = PeftModel.from_pretrained(base, OUT).merge_and_unload()
+    os.makedirs(MERGED, exist_ok=True)
+    merged.save_pretrained(MERGED, safe_serialization=True)
+    tok.save_pretrained(MERGED)
+    print(f"Merged model -> {MERGED}\n"
+          f"  Self-contained (LoRA folded in). ml/model/lora is kept as the standalone adapter.\n"
+          f"  Copy that ONE folder off the cluster and serve it — serve_lora auto-skips the\n"
+          f"  adapter dir when the base is the merged model, so no double-apply:\n"
+          f"    BASE_MODEL={MERGED} python ml/serve_lora.py")
 
 
 if __name__ == "__main__":

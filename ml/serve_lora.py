@@ -22,6 +22,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, BitsAndBytesConfig
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ADAPTER = os.path.join(HERE, "model", "lora")
+MERGED = os.path.join(HERE, "model", "merged")   # a --merge output already has the LoRA folded in
 
 
 def _resolve_base():
@@ -41,6 +42,11 @@ def _resolve_base():
 
 
 BASE = _resolve_base()
+# Apply the LoRA dir ONLY when the base isn't already a merged model. Serving the merged
+# folder (BASE_MODEL=.../model/merged) with a leftover ml/model/lora next to it would re-inject
+# the same LoRA a SECOND time (W + 2*delta) and silently degrade output — so skip it there.
+SERVING_MERGED = os.path.abspath(BASE) == os.path.abspath(MERGED)
+APPLY_ADAPTER = os.path.isdir(ADAPTER) and not SERVING_MERGED
 
 bnb = BitsAndBytesConfig(load_in_4bit=True, bnb_4bit_quant_type="nf4",
                          bnb_4bit_compute_dtype=torch.bfloat16, bnb_4bit_use_double_quant=True)
@@ -48,10 +54,12 @@ tok = AutoTokenizer.from_pretrained(BASE)
 if tok.pad_token is None:
     tok.pad_token = tok.eos_token
 model = AutoModelForCausalLM.from_pretrained(BASE, quantization_config=bnb, device_map="auto")
-if os.path.isdir(ADAPTER):
+if APPLY_ADAPTER:
     from peft import PeftModel
     model = PeftModel.from_pretrained(model, ADAPTER)
     print(f"Loaded LoRA adapter from {ADAPTER}")
+elif SERVING_MERGED:
+    print(f"Serving merged model {BASE} as-is (LoRA already folded in; adapter dir skipped).")
 else:
     print(f"No adapter at {ADAPTER} — serving the base model {BASE}.")
 model.eval()
@@ -78,7 +86,7 @@ class Handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         # Friendly health check — opening the URL in a browser (GET) shouldn't look broken.
-        self._send(200, {"status": "ok", "model": "fine-tuned (base + LoRA)" if os.path.isdir(ADAPTER) else "base",
+        self._send(200, {"status": "ok", "model": "fine-tuned (base + LoRA)" if APPLY_ADAPTER else "fine-tuned (merged)" if SERVING_MERGED else "base",
                          "endpoint": "/v1/chat/completions", "method": "POST",
                          "usage": 'POST JSON {"messages":[{"role":"user","content":"hi"}]}'})
 
