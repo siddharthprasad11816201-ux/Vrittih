@@ -52,6 +52,7 @@ model User {
   // IANA zone for rendering times in THIS user's local clock (notifications, reminders,
   // calendar). Previously nothing existed and the server formatted with a hardcoded locale.
   timezone         String         @default("UTC")
+  candidate        Candidate?
   savedSearches    SavedSearch[]
   connections      Connection[]   @relation("UserConnections")
   connectedTo      Connection[]   @relation("ConnectedToUser")
@@ -1236,9 +1237,85 @@ model JobSource {
   updatedAt   DateTime  @updatedAt
 }
 
+// ---------- Candidate master (§52-55) ----------
+// ONE person, however many sources they arrived from. Applications from EduRankAI,
+// LinkedIn, Indeed, AICTE, a CSV import or a recruiter typing them in all converge here
+// instead of creating a separate record per source.
+// `userId` is optional: a sourced candidate may never have created an account.
+model Candidate {
+  id              String   @id @default(cuid())
+  userId          String?  @unique
+  displayName     String
+  primaryEmail    String?               // normalized (lib/candidate/identity)
+  location        String?
+  currentEmployer String?
+  headline        String?
+  // Set when this record was merged INTO another. The row is kept, never deleted, so
+  // links from applications and audit trails still resolve after a merge.
+  mergedIntoId    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  user            User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  identities      CandidateIdentity[]
+  sources         CandidateSource[]
+  applications    Application[]
+  @@index([primaryEmail])
+  @@index([mergedIntoId])
+}
+
+// A normalized identifier. Uniqueness is on the NORMALIZED value, so the same mailbox
+// written two ways cannot create two candidates.
+model CandidateIdentity {
+  id          String    @id @default(cuid())
+  candidateId String
+  kind        String                     // email | phone | linkedin | github | national_id | external
+  value       String                     // normalized
+  verified    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  @@unique([kind, value])
+  @@index([candidateId])
+}
+
+// Where this person came from — preserved forever, including after a merge (§54).
+// Collapsing these would destroy the attribution that justifies a sourcing channel.
+model CandidateSource {
+  id          String    @id @default(cuid())
+  candidateId String
+  source      String                     // edurankai | linkedin | indeed | aicte | referral | csv | api | manual | career_fair | email
+  campaign    String?
+  externalId  String?                    // the id this person has IN that source
+  referrerId  String?
+  trackingJson String?                   // utm_* and similar, as received
+  firstSeenAt DateTime  @default(now())
+  candidate   Candidate @relation(fields: [candidateId], references: [id], onDelete: Cascade)
+  @@unique([source, externalId])
+  @@index([candidateId])
+  @@index([source, campaign])
+}
+
+// Every merge is audited and REVERSIBLE: the moved identity ids are recorded so a wrong
+// merge can be undone rather than being a permanent, unexplained fusion of two people.
+model CandidateMerge {
+  id           String   @id @default(cuid())
+  survivorId   String
+  mergedId     String
+  confidence   Float    @default(0)
+  evidenceJson String   @default("[]")
+  movedJson    String   @default("{}")   // { identityIds[], sourceIds[], applicationIds[] }
+  decidedById  String?                   // null = automatic (only ever above the auto bar)
+  automatic    Boolean  @default(false)
+  revertedAt   DateTime?
+  revertedById String?
+  createdAt    DateTime @default(now())
+  @@index([survivorId])
+  @@index([mergedId])
+}
+
 model Application {
   id          String        @id @default(cuid())
   userId      String
+  candidateId String?
   jobId       String
   status      String        @default("APPLIED")
   coverLetter String?
@@ -1253,6 +1330,7 @@ model Application {
   snapshot    String?       // JSON { name, headline, email, phone, location, experience[], education[], skills[] }
   resumeUrl   String?       // the résumé attached to THIS application
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  candidate   Candidate?    @relation(fields: [candidateId], references: [id], onDelete: SetNull)
   job         Job           @relation(fields: [jobId], references: [id], onDelete: Cascade)
   timeline    StatusEvent[]
   answers     ApplicationAnswer[]
@@ -1260,6 +1338,7 @@ model Application {
   offers      Offer[]
   @@index([jobId, status])
   @@index([userId])
+  @@index([candidateId])
 }
 
 // EROS Module 8 — Offer Management. An Offer is a first-class entity, NOT an
