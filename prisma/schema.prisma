@@ -1025,7 +1025,8 @@ model Employee {
   userId         String                          // the person (User)
   employerId     String                          // the company (employer User)
   employeeCode   String                          // e.g. EMP-0001
-  department     String?
+  department     String?                         // legacy free text — kept for compatibility
+  orgUnitId      String?                         // structured placement in the OrgUnit tree
   designation    String?
   employmentType String    @default("Full-time") // Full-time/Part-time/Contract/Intern
   status         String    @default("ONBOARDING")// ONBOARDING/ACTIVE/ON_LEAVE/EXITED
@@ -1235,6 +1236,52 @@ model JobSource {
   imported    Int       @default(0)              // created + updated on the last run
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+// ---------- Organizational talent graph (§56-58) ----------
+// ONE self-referencing tree (organization -> department -> team) rather than three
+// parallel models. Employee.department was a free-text string, so the org had no queryable
+// structure at all; this gives departments identity without breaking that column.
+model OrgUnit {
+  id         String     @id @default(cuid())
+  employerId String                              // owning company (employer User id)
+  parentId   String?
+  kind       String     @default("DEPARTMENT")   // ORGANIZATION | DEPARTMENT | TEAM
+  name       String
+  headId     String?                             // leader (User id)
+  active     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  parent     OrgUnit?   @relation("OrgTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children   OrgUnit[]  @relation("OrgTree")
+  positions  Position[]
+  @@index([employerId, kind])
+  @@index([parentId])
+}
+
+// A ROLE SLOT, not a job posting. `state` is what a human recorded; the PREVIOUS/CURRENT/
+// UPCOMING/FORECAST bucket is DERIVED from state + dates in lib/org/graph, so modelled
+// demand can never be counted as approved headcount (§57).
+model Position {
+  id            String    @id @default(cuid())
+  employerId    String
+  orgUnitId     String?
+  title         String
+  level         String?                          // IC | SENIOR | LEAD | EXECUTIVE ...
+  state         String    @default("PLANNED")    // FILLED | OPEN | PLANNED | FORECAST | CLOSED
+  headcount     Int       @default(1)
+  effectiveFrom DateTime?
+  effectiveTo   DateTime?
+  skills        String    @default("[]")         // JSON string[] of canonical skill names
+  competencies  String    @default("[]")         // JSON string[] of Competency keys
+  employeeId    String?                          // who fills it, when FILLED
+  jobId         String?                          // the posting opened for it, if any
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  orgUnit       OrgUnit?  @relation(fields: [orgUnitId], references: [id], onDelete: SetNull)
+  @@index([employerId, state])
+  @@index([orgUnitId])
+  @@index([jobId])
 }
 
 // ---------- Candidate master (§52-55) ----------
