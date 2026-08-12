@@ -33,6 +33,7 @@ CREATE TABLE "User" (
     "banned" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "timezone" TEXT NOT NULL DEFAULT 'UTC',
     "calendarToken" TEXT,
     "trialStartedAt" TIMESTAMP(3),
     "trialEndsAt" TIMESTAMP(3),
@@ -927,6 +928,7 @@ CREATE TABLE "Employee" (
     "employerId" TEXT NOT NULL,
     "employeeCode" TEXT NOT NULL,
     "department" TEXT,
+    "orgUnitId" TEXT,
     "designation" TEXT,
     "employmentType" TEXT NOT NULL DEFAULT 'Full-time',
     "status" TEXT NOT NULL DEFAULT 'ONBOARDING',
@@ -1107,9 +1109,105 @@ CREATE TABLE "JobSource" (
 );
 
 -- CreateTable
+CREATE TABLE "OrgUnit" (
+    "id" TEXT NOT NULL,
+    "employerId" TEXT NOT NULL,
+    "parentId" TEXT,
+    "kind" TEXT NOT NULL DEFAULT 'DEPARTMENT',
+    "name" TEXT NOT NULL,
+    "headId" TEXT,
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "OrgUnit_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Position" (
+    "id" TEXT NOT NULL,
+    "employerId" TEXT NOT NULL,
+    "orgUnitId" TEXT,
+    "title" TEXT NOT NULL,
+    "level" TEXT,
+    "state" TEXT NOT NULL DEFAULT 'PLANNED',
+    "headcount" INTEGER NOT NULL DEFAULT 1,
+    "effectiveFrom" TIMESTAMP(3),
+    "effectiveTo" TIMESTAMP(3),
+    "skills" TEXT NOT NULL DEFAULT '[]',
+    "competencies" TEXT NOT NULL DEFAULT '[]',
+    "employeeId" TEXT,
+    "jobId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Position_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Candidate" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT,
+    "displayName" TEXT NOT NULL,
+    "primaryEmail" TEXT,
+    "location" TEXT,
+    "currentEmployer" TEXT,
+    "headline" TEXT,
+    "mergedIntoId" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Candidate_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CandidateIdentity" (
+    "id" TEXT NOT NULL,
+    "candidateId" TEXT NOT NULL,
+    "kind" TEXT NOT NULL,
+    "value" TEXT NOT NULL,
+    "verified" BOOLEAN NOT NULL DEFAULT false,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CandidateIdentity_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CandidateSource" (
+    "id" TEXT NOT NULL,
+    "candidateId" TEXT NOT NULL,
+    "source" TEXT NOT NULL,
+    "campaign" TEXT,
+    "externalId" TEXT,
+    "referrerId" TEXT,
+    "trackingJson" TEXT,
+    "firstSeenAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CandidateSource_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "CandidateMerge" (
+    "id" TEXT NOT NULL,
+    "survivorId" TEXT NOT NULL,
+    "mergedId" TEXT NOT NULL,
+    "confidence" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "evidenceJson" TEXT NOT NULL DEFAULT '[]',
+    "movedJson" TEXT NOT NULL DEFAULT '{}',
+    "decidedById" TEXT,
+    "automatic" BOOLEAN NOT NULL DEFAULT false,
+    "revertedAt" TIMESTAMP(3),
+    "revertedById" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "CandidateMerge_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "Application" (
     "id" TEXT NOT NULL,
     "userId" TEXT NOT NULL,
+    "candidateId" TEXT,
     "jobId" TEXT NOT NULL,
     "status" TEXT NOT NULL DEFAULT 'APPLIED',
     "coverLetter" TEXT,
@@ -2007,9 +2105,105 @@ CREATE TABLE "Interview" (
     "roleLevel" TEXT,
     "confidential" BOOLEAN NOT NULL DEFAULT false,
     "govJson" TEXT,
+    "timezone" TEXT NOT NULL DEFAULT 'UTC',
+    "planId" TEXT,
+    "roundNumber" INTEGER NOT NULL DEFAULT 1,
+    "rescheduledFromId" TEXT,
+    "cancelReason" TEXT,
+    "endedAt" TIMESTAMP(3),
+    "remindersSent" TEXT NOT NULL DEFAULT '[]',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "Interview_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AvailabilityRule" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "weekday" INTEGER NOT NULL,
+    "startMinute" INTEGER NOT NULL,
+    "endMinute" INTEGER NOT NULL,
+    "timezone" TEXT NOT NULL DEFAULT 'UTC',
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AvailabilityRule_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "AvailabilityException" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "start" TIMESTAMP(3) NOT NULL,
+    "end" TIMESTAMP(3) NOT NULL,
+    "reason" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "AvailabilityException_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "InterviewPlan" (
+    "id" TEXT NOT NULL,
+    "jobId" TEXT,
+    "createdById" TEXT NOT NULL,
+    "title" TEXT NOT NULL,
+    "competencies" TEXT NOT NULL DEFAULT '[]',
+    "roundsJson" TEXT NOT NULL DEFAULT '[]',
+    "active" BOOLEAN NOT NULL DEFAULT true,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "InterviewPlan_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "InterviewConsent" (
+    "id" TEXT NOT NULL,
+    "interviewId" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "scope" TEXT NOT NULL,
+    "granted" BOOLEAN NOT NULL DEFAULT false,
+    "grantedAt" TIMESTAMP(3),
+    "ipHash" TEXT,
+    "policyRef" TEXT,
+
+    CONSTRAINT "InterviewConsent_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "InterviewEvidence" (
+    "id" TEXT NOT NULL,
+    "interviewId" TEXT NOT NULL,
+    "competencyKey" TEXT NOT NULL,
+    "source" TEXT NOT NULL,
+    "level" INTEGER NOT NULL DEFAULT 0,
+    "excerpt" TEXT NOT NULL,
+    "questionId" TEXT,
+    "recordedById" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "InterviewEvidence_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "InterviewEvaluation" (
+    "id" TEXT NOT NULL,
+    "interviewId" TEXT NOT NULL,
+    "competenciesJson" TEXT NOT NULL DEFAULT '[]',
+    "overall" DOUBLE PRECISION,
+    "confidence" DOUBLE PRECISION NOT NULL DEFAULT 0,
+    "recommendation" TEXT NOT NULL DEFAULT 'INSUFFICIENT_EVIDENCE',
+    "coverageNote" TEXT,
+    "computedBy" TEXT NOT NULL DEFAULT 'system',
+    "humanReviewedById" TEXT,
+    "humanDecision" TEXT,
+    "humanNote" TEXT,
+    "decidedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "InterviewEvaluation_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -2894,10 +3088,22 @@ CREATE INDEX "Company_name_idx" ON "Company"("name");
 CREATE INDEX "Company_industry_idx" ON "Company"("industry");
 
 -- CreateIndex
+CREATE INDEX "Company_ownerId_idx" ON "Company"("ownerId");
+
+-- CreateIndex
+CREATE INDEX "CompanyFollow_companyId_idx" ON "CompanyFollow"("companyId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "CompanyFollow_userId_companyId_key" ON "CompanyFollow"("userId", "companyId");
 
 -- CreateIndex
 CREATE INDEX "MediaAsset_ownerId_kind_idx" ON "MediaAsset"("ownerId", "kind");
+
+-- CreateIndex
+CREATE INDEX "Workspace_ownerId_idx" ON "Workspace"("ownerId");
+
+-- CreateIndex
+CREATE INDEX "WorkspaceMember_userId_idx" ON "WorkspaceMember"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "WorkspaceMember_workspaceId_userId_key" ON "WorkspaceMember"("workspaceId", "userId");
@@ -2912,7 +3118,13 @@ CREATE INDEX "Contact_workspaceId_stage_idx" ON "Contact"("workspaceId", "stage"
 CREATE INDEX "Activity_contactId_createdAt_idx" ON "Activity"("contactId", "createdAt");
 
 -- CreateIndex
+CREATE INDEX "Activity_workspaceId_idx" ON "Activity"("workspaceId");
+
+-- CreateIndex
 CREATE INDEX "ContactMessage_contactId_createdAt_idx" ON "ContactMessage"("contactId", "createdAt");
+
+-- CreateIndex
+CREATE INDEX "ContactMessage_workspaceId_idx" ON "ContactMessage"("workspaceId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Form_slug_key" ON "Form"("slug");
@@ -2927,6 +3139,9 @@ CREATE INDEX "FormSubmission_formId_submittedAt_idx" ON "FormSubmission"("formId
 CREATE UNIQUE INDEX "EmailDomain_domain_key" ON "EmailDomain"("domain");
 
 -- CreateIndex
+CREATE INDEX "EmailDomain_userId_idx" ON "EmailDomain"("userId");
+
+-- CreateIndex
 CREATE INDEX "BackgroundJob_status_runAt_idx" ON "BackgroundJob"("status", "runAt");
 
 -- CreateIndex
@@ -2934,6 +3149,9 @@ CREATE INDEX "Post_createdAt_idx" ON "Post"("createdAt");
 
 -- CreateIndex
 CREATE INDEX "Post_repostOfId_idx" ON "Post"("repostOfId");
+
+-- CreateIndex
+CREATE INDEX "Post_authorId_idx" ON "Post"("authorId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Hashtag_tag_key" ON "Hashtag"("tag");
@@ -2963,6 +3181,9 @@ CREATE UNIQUE INDEX "SkillEndorsement_userId_skill_endorserId_key" ON "SkillEndo
 CREATE INDEX "PostComment_postId_createdAt_idx" ON "PostComment"("postId", "createdAt");
 
 -- CreateIndex
+CREATE INDEX "PostComment_userId_idx" ON "PostComment"("userId");
+
+-- CreateIndex
 CREATE INDEX "ProfileView_profileId_createdAt_idx" ON "ProfileView"("profileId", "createdAt");
 
 -- CreateIndex
@@ -2972,10 +3193,22 @@ CREATE INDEX "AnalyticsEvent_name_createdAt_idx" ON "AnalyticsEvent"("name", "cr
 CREATE INDEX "AnalyticsEvent_createdAt_idx" ON "AnalyticsEvent"("createdAt");
 
 -- CreateIndex
+CREATE INDEX "AnalyticsEvent_userId_idx" ON "AnalyticsEvent"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "WebAuthnCredential_credentialId_key" ON "WebAuthnCredential"("credentialId");
 
 -- CreateIndex
+CREATE INDEX "WebAuthnCredential_userId_idx" ON "WebAuthnCredential"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Session_token_key" ON "Session"("token");
+
+-- CreateIndex
+CREATE INDEX "Session_userId_idx" ON "Session"("userId");
+
+-- CreateIndex
+CREATE INDEX "LoginAttempt_userId_idx" ON "LoginAttempt"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ApiKey_keyHash_key" ON "ApiKey"("keyHash");
@@ -3110,6 +3343,9 @@ CREATE INDEX "PlatformEvent_type_createdAt_idx" ON "PlatformEvent"("type", "crea
 CREATE INDEX "PlatformEvent_processed_idx" ON "PlatformEvent"("processed");
 
 -- CreateIndex
+CREATE INDEX "PlatformEvent_subjectId_idx" ON "PlatformEvent"("subjectId");
+
+-- CreateIndex
 CREATE INDEX "EvalRun_metric_createdAt_idx" ON "EvalRun"("metric", "createdAt");
 
 -- CreateIndex
@@ -3125,7 +3361,13 @@ CREATE INDEX "RecommendationFeedback_recId_idx" ON "RecommendationFeedback"("rec
 CREATE INDEX "RecommendationFeedback_signal_createdAt_idx" ON "RecommendationFeedback"("signal", "createdAt");
 
 -- CreateIndex
+CREATE INDEX "RecommendationFeedback_subjectId_idx" ON "RecommendationFeedback"("subjectId");
+
+-- CreateIndex
 CREATE INDEX "Employee_employerId_status_idx" ON "Employee"("employerId", "status");
+
+-- CreateIndex
+CREATE INDEX "Employee_userId_idx" ON "Employee"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Employee_employerId_userId_key" ON "Employee"("employerId", "userId");
@@ -3185,16 +3427,67 @@ CREATE INDEX "Job_sourceKey_idx" ON "Job"("sourceKey");
 CREATE UNIQUE INDEX "Job_sourceKey_externalId_key" ON "Job"("sourceKey", "externalId");
 
 -- CreateIndex
+CREATE INDEX "OrgUnit_employerId_kind_idx" ON "OrgUnit"("employerId", "kind");
+
+-- CreateIndex
+CREATE INDEX "OrgUnit_parentId_idx" ON "OrgUnit"("parentId");
+
+-- CreateIndex
+CREATE INDEX "Position_employerId_state_idx" ON "Position"("employerId", "state");
+
+-- CreateIndex
+CREATE INDEX "Position_orgUnitId_idx" ON "Position"("orgUnitId");
+
+-- CreateIndex
+CREATE INDEX "Position_jobId_idx" ON "Position"("jobId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Candidate_userId_key" ON "Candidate"("userId");
+
+-- CreateIndex
+CREATE INDEX "Candidate_primaryEmail_idx" ON "Candidate"("primaryEmail");
+
+-- CreateIndex
+CREATE INDEX "Candidate_mergedIntoId_idx" ON "Candidate"("mergedIntoId");
+
+-- CreateIndex
+CREATE INDEX "CandidateIdentity_candidateId_idx" ON "CandidateIdentity"("candidateId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CandidateIdentity_kind_value_key" ON "CandidateIdentity"("kind", "value");
+
+-- CreateIndex
+CREATE INDEX "CandidateSource_candidateId_idx" ON "CandidateSource"("candidateId");
+
+-- CreateIndex
+CREATE INDEX "CandidateSource_source_campaign_idx" ON "CandidateSource"("source", "campaign");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "CandidateSource_source_externalId_key" ON "CandidateSource"("source", "externalId");
+
+-- CreateIndex
+CREATE INDEX "CandidateMerge_survivorId_idx" ON "CandidateMerge"("survivorId");
+
+-- CreateIndex
+CREATE INDEX "CandidateMerge_mergedId_idx" ON "CandidateMerge"("mergedId");
+
+-- CreateIndex
 CREATE INDEX "Application_jobId_status_idx" ON "Application"("jobId", "status");
 
 -- CreateIndex
 CREATE INDEX "Application_userId_idx" ON "Application"("userId");
 
 -- CreateIndex
+CREATE INDEX "Application_candidateId_idx" ON "Application"("candidateId");
+
+-- CreateIndex
 CREATE INDEX "Offer_candidateId_status_idx" ON "Offer"("candidateId", "status");
 
 -- CreateIndex
 CREATE INDEX "Offer_createdById_status_idx" ON "Offer"("createdById", "status");
+
+-- CreateIndex
+CREATE INDEX "Offer_applicationId_idx" ON "Offer"("applicationId");
 
 -- CreateIndex
 CREATE INDEX "OfferEvent_offerId_idx" ON "OfferEvent"("offerId");
@@ -3210,6 +3503,9 @@ CREATE INDEX "TalentPool_ownerId_kind_idx" ON "TalentPool"("ownerId", "kind");
 
 -- CreateIndex
 CREATE INDEX "TalentPoolMember_poolId_stage_idx" ON "TalentPoolMember"("poolId", "stage");
+
+-- CreateIndex
+CREATE INDEX "TalentPoolMember_userId_idx" ON "TalentPoolMember"("userId");
 
 -- CreateIndex
 CREATE INDEX "Referral_referrerId_idx" ON "Referral"("referrerId");
@@ -3239,6 +3535,9 @@ CREATE UNIQUE INDEX "Course_slug_key" ON "Course"("slug");
 CREATE INDEX "Course_status_category_idx" ON "Course"("status", "category");
 
 -- CreateIndex
+CREATE INDEX "Course_authorId_idx" ON "Course"("authorId");
+
+-- CreateIndex
 CREATE INDEX "Lesson_courseId_order_idx" ON "Lesson"("courseId", "order");
 
 -- CreateIndex
@@ -3266,6 +3565,12 @@ CREATE INDEX "ResearchOutput_status_kind_idx" ON "ResearchOutput"("status", "kin
 CREATE INDEX "ResearchOutput_authorId_idx" ON "ResearchOutput"("authorId");
 
 -- CreateIndex
+CREATE INDEX "ResearchOutput_projectId_idx" ON "ResearchOutput"("projectId");
+
+-- CreateIndex
+CREATE INDEX "ResearchReview_reviewerId_idx" ON "ResearchReview"("reviewerId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ResearchReview_outputId_reviewerId_key" ON "ResearchReview"("outputId", "reviewerId");
 
 -- CreateIndex
@@ -3278,10 +3583,22 @@ CREATE INDEX "Citation_fromOutputId_idx" ON "Citation"("fromOutputId");
 CREATE INDEX "Grant_status_idx" ON "Grant"("status");
 
 -- CreateIndex
+CREATE INDEX "Grant_postedById_idx" ON "Grant"("postedById");
+
+-- CreateIndex
+CREATE INDEX "GrantApplication_applicantId_idx" ON "GrantApplication"("applicantId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "GrantApplication_grantId_applicantId_key" ON "GrantApplication"("grantId", "applicantId");
 
 -- CreateIndex
 CREATE INDEX "InnovationChallenge_status_idx" ON "InnovationChallenge"("status");
+
+-- CreateIndex
+CREATE INDEX "InnovationChallenge_sponsorId_idx" ON "InnovationChallenge"("sponsorId");
+
+-- CreateIndex
+CREATE INDEX "ChallengeSubmission_userId_idx" ON "ChallengeSubmission"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ChallengeSubmission_challengeId_userId_key" ON "ChallengeSubmission"("challengeId", "userId");
@@ -3309,6 +3626,9 @@ CREATE INDEX "SuccessionPlan_ownerId_idx" ON "SuccessionPlan"("ownerId");
 
 -- CreateIndex
 CREATE INDEX "Project_ownerId_status_idx" ON "Project"("ownerId", "status");
+
+-- CreateIndex
+CREATE INDEX "Project_employerId_idx" ON "Project"("employerId");
 
 -- CreateIndex
 CREATE INDEX "Milestone_projectId_idx" ON "Milestone"("projectId");
@@ -3344,10 +3664,16 @@ CREATE INDEX "ApplicationAnswer_applicationId_idx" ON "ApplicationAnswer"("appli
 CREATE INDEX "ApplicationDocument_applicationId_idx" ON "ApplicationDocument"("applicationId");
 
 -- CreateIndex
+CREATE INDEX "StatusEvent_applicationId_idx" ON "StatusEvent"("applicationId");
+
+-- CreateIndex
 CREATE INDEX "Notification_userId_type_idx" ON "Notification"("userId", "type");
 
 -- CreateIndex
 CREATE INDEX "CompanyReview_companyId_status_idx" ON "CompanyReview"("companyId", "status");
+
+-- CreateIndex
+CREATE INDEX "CompanyReview_authorId_idx" ON "CompanyReview"("authorId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "CompanyReview_companyId_authorId_key" ON "CompanyReview"("companyId", "authorId");
@@ -3359,6 +3685,18 @@ CREATE INDEX "SavedSearch_userId_idx" ON "SavedSearch"("userId");
 CREATE INDEX "SavedSearch_alertFreq_idx" ON "SavedSearch"("alertFreq");
 
 -- CreateIndex
+CREATE INDEX "Connection_userId_idx" ON "Connection"("userId");
+
+-- CreateIndex
+CREATE INDEX "Connection_connectedId_idx" ON "Connection"("connectedId");
+
+-- CreateIndex
+CREATE INDEX "Education_userId_idx" ON "Education"("userId");
+
+-- CreateIndex
+CREATE INDEX "Experience_userId_idx" ON "Experience"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "Skill_name_key" ON "Skill"("name");
 
 -- CreateIndex
@@ -3368,13 +3706,52 @@ CREATE UNIQUE INDEX "EmployerGuarantee_employerId_key" ON "EmployerGuarantee"("e
 CREATE UNIQUE INDEX "ApplicantGuarantee_applicantId_key" ON "ApplicantGuarantee"("applicantId");
 
 -- CreateIndex
+CREATE INDEX "ActivityLog_userId_idx" ON "ActivityLog"("userId");
+
+-- CreateIndex
+CREATE INDEX "ConversationParticipant_userId_idx" ON "ConversationParticipant"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ConversationParticipant_conversationId_userId_key" ON "ConversationParticipant"("conversationId", "userId");
+
+-- CreateIndex
+CREATE INDEX "Message_conversationId_idx" ON "Message"("conversationId");
+
+-- CreateIndex
+CREATE INDEX "Message_senderId_idx" ON "Message"("senderId");
+
+-- CreateIndex
+CREATE INDEX "Mail_fromId_idx" ON "Mail"("fromId");
+
+-- CreateIndex
+CREATE INDEX "Mail_toId_idx" ON "Mail"("toId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "Channel_name_key" ON "Channel"("name");
 
 -- CreateIndex
+CREATE INDEX "Channel_createdById_idx" ON "Channel"("createdById");
+
+-- CreateIndex
+CREATE INDEX "ChannelMember_userId_idx" ON "ChannelMember"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ChannelMember_channelId_userId_key" ON "ChannelMember"("channelId", "userId");
+
+-- CreateIndex
+CREATE INDEX "ChannelPost_channelId_idx" ON "ChannelPost"("channelId");
+
+-- CreateIndex
+CREATE INDEX "ChannelPost_userId_idx" ON "ChannelPost"("userId");
+
+-- CreateIndex
+CREATE INDEX "ChannelReply_postId_idx" ON "ChannelReply"("postId");
+
+-- CreateIndex
+CREATE INDEX "ChannelReply_userId_idx" ON "ChannelReply"("userId");
+
+-- CreateIndex
+CREATE INDEX "FaceVectorHistory_userId_idx" ON "FaceVectorHistory"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "IdentityVerification_userId_key" ON "IdentityVerification"("userId");
@@ -3383,10 +3760,55 @@ CREATE UNIQUE INDEX "IdentityVerification_userId_key" ON "IdentityVerification"(
 CREATE UNIQUE INDEX "Interview_roomCode_key" ON "Interview"("roomCode");
 
 -- CreateIndex
+CREATE INDEX "Interview_status_scheduledAt_idx" ON "Interview"("status", "scheduledAt");
+
+-- CreateIndex
+CREATE INDEX "Interview_applicationId_idx" ON "Interview"("applicationId");
+
+-- CreateIndex
+CREATE INDEX "Interview_hostId_scheduledAt_idx" ON "Interview"("hostId", "scheduledAt");
+
+-- CreateIndex
+CREATE INDEX "Interview_planId_idx" ON "Interview"("planId");
+
+-- CreateIndex
+CREATE INDEX "AvailabilityRule_userId_weekday_idx" ON "AvailabilityRule"("userId", "weekday");
+
+-- CreateIndex
+CREATE INDEX "AvailabilityException_userId_start_idx" ON "AvailabilityException"("userId", "start");
+
+-- CreateIndex
+CREATE INDEX "InterviewPlan_jobId_idx" ON "InterviewPlan"("jobId");
+
+-- CreateIndex
+CREATE INDEX "InterviewConsent_interviewId_idx" ON "InterviewConsent"("interviewId");
+
+-- CreateIndex
+CREATE INDEX "InterviewConsent_userId_idx" ON "InterviewConsent"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "InterviewConsent_interviewId_userId_scope_key" ON "InterviewConsent"("interviewId", "userId", "scope");
+
+-- CreateIndex
+CREATE INDEX "InterviewEvidence_interviewId_competencyKey_idx" ON "InterviewEvidence"("interviewId", "competencyKey");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "InterviewEvaluation_interviewId_key" ON "InterviewEvaluation"("interviewId");
+
+-- CreateIndex
+CREATE INDEX "InterviewEvaluation_recommendation_idx" ON "InterviewEvaluation"("recommendation");
+
+-- CreateIndex
+CREATE INDEX "InterviewParticipant_userId_idx" ON "InterviewParticipant"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "InterviewParticipant_interviewId_userId_key" ON "InterviewParticipant"("interviewId", "userId");
 
 -- CreateIndex
 CREATE INDEX "InterviewScorecard_applicationId_idx" ON "InterviewScorecard"("applicationId");
+
+-- CreateIndex
+CREATE INDEX "InterviewScorecard_panelistId_idx" ON "InterviewScorecard"("panelistId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "InterviewScorecard_interviewId_panelistId_key" ON "InterviewScorecard"("interviewId", "panelistId");
@@ -3410,7 +3832,22 @@ CREATE INDEX "ProctorEvent_type_idx" ON "ProctorEvent"("type");
 CREATE UNIQUE INDEX "JobCommunity_jobId_key" ON "JobCommunity"("jobId");
 
 -- CreateIndex
+CREATE INDEX "JobCommunityMember_userId_idx" ON "JobCommunityMember"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "JobCommunityMember_communityId_userId_key" ON "JobCommunityMember"("communityId", "userId");
+
+-- CreateIndex
+CREATE INDEX "JobCommunityPost_communityId_idx" ON "JobCommunityPost"("communityId");
+
+-- CreateIndex
+CREATE INDEX "JobCommunityPost_userId_idx" ON "JobCommunityPost"("userId");
+
+-- CreateIndex
+CREATE INDEX "JobCommunityReply_postId_idx" ON "JobCommunityReply"("postId");
+
+-- CreateIndex
+CREATE INDEX "JobCommunityReply_userId_idx" ON "JobCommunityReply"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProfessionalSpace_name_key" ON "ProfessionalSpace"("name");
@@ -3419,13 +3856,61 @@ CREATE UNIQUE INDEX "ProfessionalSpace_name_key" ON "ProfessionalSpace"("name");
 CREATE UNIQUE INDEX "ProfessionalSpace_slug_key" ON "ProfessionalSpace"("slug");
 
 -- CreateIndex
+CREATE INDEX "ProfessionalSpace_createdById_idx" ON "ProfessionalSpace"("createdById");
+
+-- CreateIndex
+CREATE INDEX "ProfessionalSpaceMember_userId_idx" ON "ProfessionalSpaceMember"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "ProfessionalSpaceMember_spaceId_userId_key" ON "ProfessionalSpaceMember"("spaceId", "userId");
+
+-- CreateIndex
+CREATE INDEX "ProfessionalSpacePost_spaceId_idx" ON "ProfessionalSpacePost"("spaceId");
+
+-- CreateIndex
+CREATE INDEX "ProfessionalSpacePost_userId_idx" ON "ProfessionalSpacePost"("userId");
+
+-- CreateIndex
+CREATE INDEX "ProfessionalSpaceReply_postId_idx" ON "ProfessionalSpaceReply"("postId");
+
+-- CreateIndex
+CREATE INDEX "ProfessionalSpaceReply_userId_idx" ON "ProfessionalSpaceReply"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ProfessionalPage_userId_key" ON "ProfessionalPage"("userId");
 
 -- CreateIndex
+CREATE INDEX "PageFollow_userId_idx" ON "PageFollow"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "PageFollow_pageId_userId_key" ON "PageFollow"("pageId", "userId");
+
+-- CreateIndex
+CREATE INDEX "PagePost_pageId_idx" ON "PagePost"("pageId");
+
+-- CreateIndex
+CREATE INDEX "PagePostReply_postId_idx" ON "PagePostReply"("postId");
+
+-- CreateIndex
+CREATE INDEX "PagePostReply_userId_idx" ON "PagePostReply"("userId");
+
+-- CreateIndex
+CREATE INDEX "Test_createdById_idx" ON "Test"("createdById");
+
+-- CreateIndex
+CREATE INDEX "Question_testId_idx" ON "Question"("testId");
+
+-- CreateIndex
+CREATE INDEX "TestAttempt_testId_idx" ON "TestAttempt"("testId");
+
+-- CreateIndex
+CREATE INDEX "TestAttempt_userId_idx" ON "TestAttempt"("userId");
+
+-- CreateIndex
+CREATE INDEX "Answer_attemptId_idx" ON "Answer"("attemptId");
+
+-- CreateIndex
+CREATE INDEX "Answer_questionId_idx" ON "Answer"("questionId");
 
 -- CreateIndex
 CREATE INDEX "SkillAssessment_userId_idx" ON "SkillAssessment"("userId");
@@ -3441,6 +3926,9 @@ CREATE INDEX "XpEvent_userId_createdAt_idx" ON "XpEvent"("userId", "createdAt");
 
 -- CreateIndex
 CREATE INDEX "ReviewItem_userId_dueAt_idx" ON "ReviewItem"("userId", "dueAt");
+
+-- CreateIndex
+CREATE INDEX "ReviewItem_questionId_idx" ON "ReviewItem"("questionId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "ReviewItem_userId_questionId_key" ON "ReviewItem"("userId", "questionId");
@@ -3533,6 +4021,9 @@ CREATE INDEX "Patient_facilityId_idx" ON "Patient"("facilityId");
 CREATE INDEX "Appointment_facilityId_status_idx" ON "Appointment"("facilityId", "status");
 
 -- CreateIndex
+CREATE INDEX "Appointment_patientId_idx" ON "Appointment"("patientId");
+
+-- CreateIndex
 CREATE INDEX "MedicalRecord_facilityId_idx" ON "MedicalRecord"("facilityId");
 
 -- CreateIndex
@@ -3555,6 +4046,9 @@ CREATE UNIQUE INDEX "MarketplaceInstall_itemId_userId_key" ON "MarketplaceInstal
 
 -- CreateIndex
 CREATE INDEX "MarketplaceReview_itemId_idx" ON "MarketplaceReview"("itemId");
+
+-- CreateIndex
+CREATE INDEX "MarketplaceReview_userId_idx" ON "MarketplaceReview"("userId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "MarketplaceReview_itemId_userId_key" ON "MarketplaceReview"("itemId", "userId");
@@ -3594,6 +4088,9 @@ CREATE INDEX "PlacementRequest_status_idx" ON "PlacementRequest"("status");
 
 -- CreateIndex
 CREATE INDEX "PlacementCandidate_requestId_stage_idx" ON "PlacementCandidate"("requestId", "stage");
+
+-- CreateIndex
+CREATE INDEX "PlacementCandidate_candidateId_idx" ON "PlacementCandidate"("candidateId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "PlacementCandidate_requestId_candidateId_key" ON "PlacementCandidate"("requestId", "candidateId");
@@ -3665,13 +4162,25 @@ ALTER TABLE "Post" ADD CONSTRAINT "Post_repostOfId_fkey" FOREIGN KEY ("repostOfI
 ALTER TABLE "PostLike" ADD CONSTRAINT "PostLike_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "PostLike" ADD CONSTRAINT "PostLike_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "PostHashtag" ADD CONSTRAINT "PostHashtag_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "PostHashtag" ADD CONSTRAINT "PostHashtag_hashtagId_fkey" FOREIGN KEY ("hashtagId") REFERENCES "Hashtag"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "SkillEndorsement" ADD CONSTRAINT "SkillEndorsement_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "PostComment" ADD CONSTRAINT "PostComment_postId_fkey" FOREIGN KEY ("postId") REFERENCES "Post"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "PostComment" ADD CONSTRAINT "PostComment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AnalyticsEvent" ADD CONSTRAINT "AnalyticsEvent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "WebAuthnCredential" ADD CONSTRAINT "WebAuthnCredential_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -3686,6 +4195,21 @@ ALTER TABLE "LoginAttempt" ADD CONSTRAINT "LoginAttempt_userId_fkey" FOREIGN KEY
 ALTER TABLE "WebhookDelivery" ADD CONSTRAINT "WebhookDelivery_webhookId_fkey" FOREIGN KEY ("webhookId") REFERENCES "Webhook"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "CareerDocument" ADD CONSTRAINT "CareerDocument_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SkillProficiency" ADD CONSTRAINT "SkillProficiency_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CareerProfile" ADD CONSTRAINT "CareerProfile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CareerSnapshot" ADD CONSTRAINT "CareerSnapshot_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "RoadmapProgress" ADD CONSTRAINT "RoadmapProgress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Compensation" ADD CONSTRAINT "Compensation_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -3698,13 +4222,34 @@ ALTER TABLE "Attendance" ADD CONSTRAINT "Attendance_employeeId_fkey" FOREIGN KEY
 ALTER TABLE "LeaveRequest" ADD CONSTRAINT "LeaveRequest_employeeId_fkey" FOREIGN KEY ("employeeId") REFERENCES "Employee"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "SavedJob" ADD CONSTRAINT "SavedJob_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Profile" ADD CONSTRAINT "Profile_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Job" ADD CONSTRAINT "Job_postedById_fkey" FOREIGN KEY ("postedById") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "OrgUnit" ADD CONSTRAINT "OrgUnit_parentId_fkey" FOREIGN KEY ("parentId") REFERENCES "OrgUnit"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Position" ADD CONSTRAINT "Position_orgUnitId_fkey" FOREIGN KEY ("orgUnitId") REFERENCES "OrgUnit"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Candidate" ADD CONSTRAINT "Candidate_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CandidateIdentity" ADD CONSTRAINT "CandidateIdentity_candidateId_fkey" FOREIGN KEY ("candidateId") REFERENCES "Candidate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CandidateSource" ADD CONSTRAINT "CandidateSource_candidateId_fkey" FOREIGN KEY ("candidateId") REFERENCES "Candidate"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "Application" ADD CONSTRAINT "Application_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Application" ADD CONSTRAINT "Application_candidateId_fkey" FOREIGN KEY ("candidateId") REFERENCES "Candidate"("id") ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "Application" ADD CONSTRAINT "Application_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "Job"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -3812,6 +4357,9 @@ ALTER TABLE "StatusEvent" ADD CONSTRAINT "StatusEvent_applicationId_fkey" FOREIG
 ALTER TABLE "Notification" ADD CONSTRAINT "Notification_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "NotificationPref" ADD CONSTRAINT "NotificationPref_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "SavedSearch" ADD CONSTRAINT "SavedSearch_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
@@ -3894,6 +4442,24 @@ ALTER TABLE "IdentityVerification" ADD CONSTRAINT "IdentityVerification_userId_f
 
 -- AddForeignKey
 ALTER TABLE "Interview" ADD CONSTRAINT "Interview_hostId_fkey" FOREIGN KEY ("hostId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Interview" ADD CONSTRAINT "Interview_planId_fkey" FOREIGN KEY ("planId") REFERENCES "InterviewPlan"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AvailabilityRule" ADD CONSTRAINT "AvailabilityRule_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "AvailabilityException" ADD CONSTRAINT "AvailabilityException_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "InterviewConsent" ADD CONSTRAINT "InterviewConsent_interviewId_fkey" FOREIGN KEY ("interviewId") REFERENCES "Interview"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "InterviewConsent" ADD CONSTRAINT "InterviewConsent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "InterviewEvidence" ADD CONSTRAINT "InterviewEvidence_interviewId_fkey" FOREIGN KEY ("interviewId") REFERENCES "Interview"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "InterviewParticipant" ADD CONSTRAINT "InterviewParticipant_interviewId_fkey" FOREIGN KEY ("interviewId") REFERENCES "Interview"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -3989,7 +4555,28 @@ ALTER TABLE "Answer" ADD CONSTRAINT "Answer_attemptId_fkey" FOREIGN KEY ("attemp
 ALTER TABLE "Answer" ADD CONSTRAINT "Answer_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "SkillAssessment" ADD CONSTRAINT "SkillAssessment_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "UserProgress" ADD CONSTRAINT "UserProgress_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "XpEvent" ADD CONSTRAINT "XpEvent_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "ReviewItem" ADD CONSTRAINT "ReviewItem_questionId_fkey" FOREIGN KEY ("questionId") REFERENCES "Question"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "ReviewItem" ADD CONSTRAINT "ReviewItem_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "CoachTurn" ADD CONSTRAINT "CoachTurn_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "OtpChallenge" ADD CONSTRAINT "OtpChallenge_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "QuotaUsage" ADD CONSTRAINT "QuotaUsage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "SocialLink" ADD CONSTRAINT "SocialLink_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -4019,7 +4606,13 @@ ALTER TABLE "MedicalRecord" ADD CONSTRAINT "MedicalRecord_patientId_fkey" FOREIG
 ALTER TABLE "MarketplaceInstall" ADD CONSTRAINT "MarketplaceInstall_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "MarketplaceItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "MarketplaceInstall" ADD CONSTRAINT "MarketplaceInstall_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "MarketplaceReview" ADD CONSTRAINT "MarketplaceReview_itemId_fkey" FOREIGN KEY ("itemId") REFERENCES "MarketplaceItem"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "MarketplaceReview" ADD CONSTRAINT "MarketplaceReview_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "AutomationRun" ADD CONSTRAINT "AutomationRun_ruleId_fkey" FOREIGN KEY ("ruleId") REFERENCES "AutomationRule"("id") ON DELETE CASCADE ON UPDATE CASCADE;

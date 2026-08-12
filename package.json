@@ -30,14 +30,19 @@
     "test": "node scripts/test-edurank.mjs",
     "test:e2e": "node scripts/test-edurank-e2e.mjs",
     "test:social": "node scripts/test-social-e2e.mjs",
-    "test:all": "node scripts/test-edurank.mjs && node scripts/test-security.mjs && node scripts/test-interview.mjs && node scripts/test-candidate.mjs && node scripts/test-org.mjs && node scripts/test-edurank-e2e.mjs && node scripts/test-social-e2e.mjs && node scripts/test-interview-e2e.mjs && node scripts/test-candidate-e2e.mjs",
+    "test:all": "node scripts/db-migrations-check.mjs && node scripts/db-schema-audit.mjs && node scripts/test-edurank.mjs && node scripts/test-security.mjs && node scripts/test-interview.mjs && node scripts/test-candidate.mjs && node scripts/test-org.mjs && node scripts/test-db-integrity.mjs && node scripts/test-edurank-e2e.mjs && node scripts/test-social-e2e.mjs && node scripts/test-interview-e2e.mjs && node scripts/test-candidate-e2e.mjs",
     "test:security": "node scripts/test-security.mjs",
     "db:drift": "node scripts/db-drift.mjs",
     "db:migrate:deploy": "prisma migrate deploy",
     "db:migrate:status": "prisma migrate status",
     "test:interview": "node scripts/test-interview.mjs && node scripts/test-interview-e2e.mjs",
     "test:candidate": "node scripts/test-candidate.mjs && node scripts/test-candidate-e2e.mjs",
-    "test:org": "node scripts/test-org.mjs"
+    "test:org": "node scripts/test-org.mjs",
+    "db:migrations:build": "node scripts/db-migrations-build.mjs",
+    "db:check": "node scripts/db-migrations-check.mjs",
+    "db:audit": "node scripts/db-schema-audit.mjs",
+    "db:audit:fix": "node scripts/db-schema-fix.mjs",
+    "test:db": "node scripts/test-db-integrity.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

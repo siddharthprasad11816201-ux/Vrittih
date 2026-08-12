@@ -1,35 +1,62 @@
 # Migration history
 
-Until now the schema evolved with `prisma db push`, which leaves **no history**: there was
-no way to reproduce a database from scratch, no review of what a deploy would do to
-production, and no drift detection. `0_init` is the baseline that fixes that.
+`0_init` is the complete baseline: **202 tables, 346 indexes, 175 foreign keys**, generated
+from `prisma/schema.prisma`.
+
+## The rule that keeps this trustworthy
+
+The schema used to evolve with `prisma db push` while the committed migration stayed
+frozen. It silently fell **12 models behind**, so `prisma migrate deploy` against a fresh
+database would have built the wrong schema and nothing would have complained until runtime.
+
+That can no longer happen: **`npm run test:all` runs `db:check` first**, which fails the
+whole suite if the committed migration does not match the schema exactly.
+
+```bash
+npm run db:check              # freshness + round-trip. Runs automatically in test:all.
+npm run db:migrations:build   # regenerate after ANY schema change
+npm run db:audit              # indexes + orphan risk (also in test:all)
+npm run db:audit:fix          # add missing indexes
+npm run db:drift              # compare a LIVE database to the schema
+```
+
+**Workflow after changing `schema.prisma`:**
+
+```bash
+npx prisma db push            # local sqlite
+npm run db:migrations:build   # regenerate the migration  <-- do not skip
+npm run test:all              # db:check will fail if you did skip it
+```
 
 ## Provider: these migrations are POSTGRES
 
-Local development runs SQLite (`prisma/schema.prisma` has `provider = "sqlite"`, flipped by
-`scripts/use-db.mjs`). Migration SQL is **provider-specific**, and migration history only
-matters for the deployed database, so this directory is generated against **PostgreSQL**.
+Local development runs SQLite; `scripts/use-db.mjs` flips the provider. Migration SQL is
+provider-specific and only matters for the deployed database, so this directory is always
+generated for **PostgreSQL** regardless of what the local schema is currently set to.
 
-Consequence, stated plainly: **do not run `prisma migrate` against your local SQLite DB.**
-Local stays on `npm run db:push`. Migrations are for staging/production Postgres.
+`db:migrations:build` handles that for you — it never edits `schema.prisma`.
 
-## Adopting the baseline on an EXISTING database (production/staging)
+**Do not run `prisma migrate` against local SQLite.** Local stays on `db push`.
+
+`db:check` validates in two independent ways, neither needing a database server:
+1. **Freshness** — regenerates the DDL and compares it to what is committed.
+2. **Round-trip** — builds a throwaway SQLite migration, applies it to a shadow file, and
+   diffs the result back at the schema. An empty diff proves the migrations actually
+   reproduce the model graph. (SQLite is used because its shadow database is just a file.
+   The Postgres DDL cannot be executed here without a server; it is generated from the same
+   validated datamodel.)
+
+## Deploying to an EXISTING database (production/staging)
 
 The tables already exist, so the baseline must be recorded as applied — **never re-run**,
-which would fail on existing tables or, worse, be "fixed" with a reset that destroys data.
+and never "fixed" with a reset, which destroys data.
 
 ```bash
-# 1. Point DATABASE_URL at the target and switch the schema provider
 export DATABASE_URL="postgresql://..."
 node scripts/use-db.mjs postgres
 
-# 2. Verify the baseline matches what is actually deployed (expect: no difference)
-npm run db:drift
-
-# 3. Record the baseline as already applied — this only writes _prisma_migrations
-npx prisma migrate resolve --applied 0_init
-
-# 4. Confirm
+npm run db:drift                              # expect: no difference
+npx prisma migrate resolve --applied 0_init   # writes _prisma_migrations only
 npx prisma migrate status
 ```
 
@@ -38,37 +65,43 @@ npx prisma migrate status
 ```bash
 export DATABASE_URL="postgresql://..."
 node scripts/use-db.mjs postgres
-npx prisma migrate deploy      # runs 0_init and every later migration in order
+npx prisma migrate deploy
 ```
 
-## Adding a migration from here on
+## Adding a migration later
+
+Once `0_init` is applied somewhere real, do **not** regenerate it — that would rewrite
+history. Create an incremental migration instead:
 
 ```bash
-node scripts/use-db.mjs postgres      # against a scratch/staging Postgres, never prod
+node scripts/use-db.mjs postgres     # against a scratch/staging DB, never prod
 npx prisma migrate dev --name add_something
-node scripts/use-db.mjs sqlite        # back to local dev before committing
+node scripts/use-db.mjs sqlite       # back to local dev before committing
 ```
 
-Commit the generated folder. Review the SQL before it reaches production — in particular
-any `DROP`, `NOT NULL` added to a populated column, or a type change, each of which needs a
-backfill step rather than a bare column alteration.
+Review the SQL before it reaches production, especially any `DROP`, a `NOT NULL` added to a
+populated column, or a type change — each needs a backfill step, not a bare alteration.
 
-## Deploying
+## Deletion policy (right to erasure)
 
-`npx prisma migrate deploy` is the only command that should touch production. It is
-forward-only and never resets.
+22 models carry a `onDelete: Cascade` foreign key to `User`, so deleting a user erases their
+personal data — assessments, career profile, coach transcript, consent records, saved jobs,
+preferences, OTP challenges and quota counters. `scripts/test-db-integrity.mjs` proves this
+against a real database.
 
-**Never run `prisma migrate reset` against a production URL** — it drops every table.
+Two deliberate exceptions:
 
-## Drift detection
-
-`npm run db:drift` diffs the live database against the schema and prints the SQL that would
-be required to reconcile them. Empty output means no drift. Run it before every deploy and
-in CI; non-empty output on production means something changed outside migration history and
-must be reconciled deliberately.
+- **`AnalyticsEvent` uses `SetNull`.** Deleting telemetry would corrupt historical metrics,
+  so the anonymous event survives and only the personal link is severed.
+- **`Employee`, `CouponRedemption`, `PlacementRequest` retain rows.** Employment, financial
+  and placement records carry statutory retention obligations; cascade-deleting payroll
+  history would be worse than keeping it. Erasure for these is a documented
+  anonymisation process, not an automatic cascade. Recorded in the `db:audit` allowlist.
 
 ## Rollback
 
-Prisma has no automatic down-migrations. To roll back, write a new forward migration that
-reverses the change, and restore from backup for destructive changes. Take a backup before
+Prisma has no automatic down-migrations. Roll back with a new forward migration that
+reverses the change, and restore from backup for anything destructive. Take a backup before
 any migration that drops or rewrites data.
+
+**Never run `prisma migrate reset` against production** — it drops every table.

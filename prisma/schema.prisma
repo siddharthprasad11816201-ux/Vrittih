@@ -53,6 +53,31 @@ model User {
   // calendar). Previously nothing existed and the server formatted with a hardcoded locale.
   timezone         String         @default("UTC")
   candidate        Candidate?
+  // Personal-data back-relations. These exist so a user deletion CASCADES instead of
+  // leaving orphaned rows behind (see scripts/db-add-user-relations.mjs).
+  postLikeRows          PostLike[] @relation("UserPostLike")
+  skillEndorsementRows  SkillEndorsement[] @relation("UserSkillEndorsement")
+  postCommentRows       PostComment[] @relation("UserPostComment")
+  careerDocumentRows    CareerDocument[] @relation("UserCareerDocument")
+  skillProficiencyRows  SkillProficiency[] @relation("UserSkillProficiency")
+  careerProfileRows     CareerProfile[] @relation("UserCareerProfile")
+  careerSnapshotRows    CareerSnapshot[] @relation("UserCareerSnapshot")
+  roadmapProgressRows   RoadmapProgress[] @relation("UserRoadmapProgress")
+  savedJobRows          SavedJob[] @relation("UserSavedJob")
+  notificationPrefRows  NotificationPref[] @relation("UserNotificationPref")
+  availabilityRuleRows  AvailabilityRule[] @relation("UserAvailabilityRule")
+  availabilityExceptionRows AvailabilityException[] @relation("UserAvailabilityException")
+  interviewConsentRows  InterviewConsent[] @relation("UserInterviewConsent")
+  skillAssessmentRows   SkillAssessment[] @relation("UserSkillAssessment")
+  userProgressRows      UserProgress[] @relation("UserUserProgress")
+  xpEventRows           XpEvent[] @relation("UserXpEvent")
+  reviewItemRows        ReviewItem[] @relation("UserReviewItem")
+  coachTurnRows         CoachTurn[] @relation("UserCoachTurn")
+  otpChallengeRows      OtpChallenge[] @relation("UserOtpChallenge")
+  quotaUsageRows        QuotaUsage[] @relation("UserQuotaUsage")
+  marketplaceInstallRows MarketplaceInstall[] @relation("UserMarketplaceInstall")
+  marketplaceReviewRows MarketplaceReview[] @relation("UserMarketplaceReview")
+  analyticsEventRows    AnalyticsEvent[] @relation("UserAnalyticsEvent")
   savedSearches    SavedSearch[]
   connections      Connection[]   @relation("UserConnections")
   connectedTo      Connection[]   @relation("ConnectedToUser")
@@ -212,6 +237,7 @@ model Company {
 
   @@index([name])
   @@index([industry])
+  @@index([ownerId])
 }
 
 model CompanyFollow {
@@ -223,6 +249,7 @@ model CompanyFollow {
   company   Company  @relation(fields: [companyId], references: [id], onDelete: Cascade)
 
   @@unique([userId, companyId])
+  @@index([companyId])
 }
 
 // Uploaded media (avatars, company logos, résumés, photos). Bytes live in the DB
@@ -264,6 +291,7 @@ model Workspace {
   activities Activity[]
   messages  ContactMessage[]
   forms     Form[]
+  @@index([ownerId])
 }
 
 model WorkspaceMember {
@@ -275,6 +303,7 @@ model WorkspaceMember {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([workspaceId, userId])
+  @@index([userId])
 }
 
 model Contact {
@@ -320,6 +349,7 @@ model Activity {
   workspace   Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   contact     Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
   @@index([contactId, createdAt])
+  @@index([workspaceId])
 }
 
 model ContactMessage {
@@ -335,6 +365,7 @@ model ContactMessage {
   workspace    Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
   contact      Contact   @relation(fields: [contactId], references: [id], onDelete: Cascade)
   @@index([contactId, createdAt])
+  @@index([workspaceId])
 }
 
 model Form {
@@ -378,6 +409,7 @@ model EmailDomain {
   verifiedAt    DateTime?
   createdAt     DateTime  @default(now())
   user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model AuthChallenge {
@@ -419,6 +451,7 @@ model Post {
   hashtags   PostHashtag[]
   @@index([createdAt])
   @@index([repostOfId])
+  @@index([authorId])
 }
 
 model PostLike {
@@ -428,6 +461,7 @@ model PostLike {
   createdAt DateTime @default(now())
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   @@id([postId, userId])
+  user      User     @relation("UserPostLike", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Hashtags parsed from post content on create (topic pages / feed shaping).
@@ -482,6 +516,7 @@ model SkillEndorsement {
   createdAt  DateTime @default(now())
   @@unique([userId, skill, endorserId])
   @@index([userId, skill])
+  user      User     @relation("UserSkillEndorsement", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PostComment {
@@ -492,6 +527,8 @@ model PostComment {
   createdAt DateTime @default(now())
   post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
   @@index([postId, createdAt])
+  @@index([userId])
+  user      User     @relation("UserPostComment", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model ProfileView {
@@ -511,6 +548,8 @@ model AnalyticsEvent {
   createdAt DateTime @default(now())
   @@index([name, createdAt])
   @@index([createdAt])
+  @@index([userId])
+  user      User?     @relation("UserAnalyticsEvent", fields: [userId], references: [id], onDelete: SetNull)
 }
 
 model WebAuthnCredential {
@@ -524,6 +563,7 @@ model WebAuthnCredential {
   createdAt    DateTime  @default(now())
   lastUsedAt   DateTime?
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model Session {
@@ -535,6 +575,7 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model LoginAttempt {
@@ -545,6 +586,7 @@ model LoginAttempt {
   success   Boolean
   createdAt DateTime @default(now())
   user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  @@index([userId])
 }
 
 // Public API keys — companies integrate and upload jobs / connect systems.
@@ -663,6 +705,7 @@ model CareerDocument {
   parsed    String   @default("{}")       // JSON structured extraction
   createdAt DateTime @default(now())
   @@index([userId])
+  user      User     @relation("UserCareerDocument", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Per-applicant, per-skill proficiency with evidence (§5). One row per (user,skill).
@@ -680,6 +723,7 @@ model SkillProficiency {
   @@unique([userId, skill])
   @@index([userId])
   @@index([skill])
+  user      User     @relation("UserSkillProficiency", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // The assembled professional knowledge graph + summary for an applicant (§3).
@@ -690,6 +734,7 @@ model CareerProfile {
   summary    String   @default("{}")       // JSON strengths, growth areas, stats
   computedAt DateTime @default(now())
   updatedAt  DateTime @updatedAt
+  user      User     @relation("UserCareerProfile", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // §20 continuous learning — immutable time series of proficiency snapshots. Gated
@@ -707,6 +752,7 @@ model CareerSnapshot {
   dna           String   @default("{}")      // JSON compact DNA signature for drift
   createdAt     DateTime @default(now())
   @@index([userId, createdAt])
+  user      User     @relation("UserCareerSnapshot", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // §20 — per-(user,job) roadmap progress. Self-reported task ticks live in `phases`;
@@ -723,6 +769,7 @@ model RoadmapProgress {
   updatedAt     DateTime @updatedAt
   @@unique([userId, jobId])                   // IDOR guard: key on token userId + jobId
   @@index([userId])
+  user      User     @relation("UserRoadmapProgress", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // §21 — aggregate, PII-free match calibration per cohort ("global"|"family:backend"…).
@@ -964,6 +1011,7 @@ model PlatformEvent {
   processedAt DateTime?
   @@index([type, createdAt])
   @@index([processed])
+  @@index([subjectId])
 }
 
 // §25/§29 Self-evaluation runs + metrics (trends over time).
@@ -1017,6 +1065,7 @@ model RecommendationFeedback {
   createdAt DateTime @default(now())
   @@index([recId])
   @@index([signal, createdAt])
+  @@index([subjectId])
 }
 
 // ---- HRMS ----
@@ -1045,6 +1094,7 @@ model Employee {
   compensation   Compensation?
   @@unique([employerId, userId])
   @@index([employerId, status])
+  @@index([userId])
 }
 
 // ===================== Payroll =====================
@@ -1151,6 +1201,7 @@ model SavedJob {
   createdAt DateTime @default(now())
   @@unique([userId, jobId])
   @@index([userId, createdAt])
+  user      User     @relation("UserSavedJob", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Profile {
@@ -1431,6 +1482,7 @@ model Offer {
   events         OfferEvent[]
   @@index([candidateId, status])
   @@index([createdById, status])
+  @@index([applicationId])
 }
 
 model OfferEvent {
@@ -1502,6 +1554,7 @@ model TalentPoolMember {
   pool           TalentPool @relation(fields: [poolId], references: [id], onDelete: Cascade)
   member         User?      @relation("TalentPoolMemberUser", fields: [userId], references: [id], onDelete: SetNull)
   @@index([poolId, stage])
+  @@index([userId])
 }
 
 model Referral {
@@ -1577,6 +1630,7 @@ model Course {
   lessons      Lesson[]
   enrollments  Enrollment[]
   @@index([status, category])
+  @@index([authorId])
 }
 
 model Lesson {
@@ -1676,6 +1730,7 @@ model ResearchOutput {
   reviews      ResearchReview[]
   @@index([status, kind])
   @@index([authorId])
+  @@index([projectId])
 }
 
 model ResearchReview {
@@ -1689,6 +1744,7 @@ model ResearchReview {
   output         ResearchOutput @relation(fields: [outputId], references: [id], onDelete: Cascade)
   reviewer       User           @relation("ResearchReviewer", fields: [reviewerId], references: [id], onDelete: Cascade)
   @@unique([outputId, reviewerId])
+  @@index([reviewerId])
 }
 
 model Citation {
@@ -1717,6 +1773,7 @@ model Grant {
   postedBy    User     @relation("GrantPoster", fields: [postedById], references: [id], onDelete: Cascade)
   applications GrantApplication[]
   @@index([status])
+  @@index([postedById])
 }
 
 model GrantApplication {
@@ -1730,6 +1787,7 @@ model GrantApplication {
   grant       Grant    @relation(fields: [grantId], references: [id], onDelete: Cascade)
   applicant   User     @relation("GrantApplicant", fields: [applicantId], references: [id], onDelete: Cascade)
   @@unique([grantId, applicantId])
+  @@index([applicantId])
 }
 
 model InnovationChallenge {
@@ -1745,6 +1803,7 @@ model InnovationChallenge {
   sponsor     User     @relation("ChallengeSponsor", fields: [sponsorId], references: [id], onDelete: Cascade)
   submissions ChallengeSubmission[]
   @@index([status])
+  @@index([sponsorId])
 }
 
 model ChallengeSubmission {
@@ -1759,6 +1818,7 @@ model ChallengeSubmission {
   challenge   InnovationChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
   user        User     @relation("ChallengeSubmitter", fields: [userId], references: [id], onDelete: Cascade)
   @@unique([challengeId, userId])
+  @@index([userId])
 }
 
 // ===== Phase 4 — HRMS Performance & Development lifecycle =====
@@ -1841,6 +1901,7 @@ model Project {
   updatedAt   DateTime @updatedAt
   milestones  Milestone[]
   @@index([ownerId, status])
+  @@index([employerId])
 }
 
 model Milestone {
@@ -1978,6 +2039,7 @@ model StatusEvent {
   note          String?
   createdAt     DateTime    @default(now())
   application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  @@index([applicationId])
 }
 
 model Notification {
@@ -2001,6 +2063,7 @@ model NotificationPref {
   inApp    Boolean @default(true)
   email    Boolean @default(false)
   @@id([userId, category])
+  user      User     @relation("UserNotificationPref", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Glassdoor-class employer reviews. One review per user per company, moderated before
@@ -2017,6 +2080,7 @@ model CompanyReview {
   createdAt DateTime @default(now())
   @@unique([companyId, authorId])
   @@index([companyId, status])
+  @@index([authorId])
 }
 
 // Saved search + job alert (the Indeed retention loop). Stores the exact filter set the
@@ -2043,6 +2107,8 @@ model Connection {
   status      String   @default("PENDING")
   user        User     @relation("UserConnections", fields: [userId], references: [id])
   connected   User     @relation("ConnectedToUser", fields: [connectedId], references: [id])
+  @@index([userId])
+  @@index([connectedId])
 }
 
 model Education {
@@ -2054,6 +2120,7 @@ model Education {
   startYear Int
   endYear   Int?
   user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model Experience {
@@ -2066,6 +2133,7 @@ model Experience {
   endDate     DateTime?
   description String?
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model Skill {
@@ -2122,6 +2190,7 @@ model ActivityLog {
   userAgent String?
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 
@@ -2142,6 +2211,7 @@ model ConversationParticipant {
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([conversationId, userId])
+  @@index([userId])
 }
 
 model Message {
@@ -2154,6 +2224,8 @@ model Message {
   createdAt      DateTime     @default(now())
   conversation   Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
   sender         User         @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  @@index([conversationId])
+  @@index([senderId])
 }
 
 // Platform-wide key/value settings, controlled from the super-admin panel.
@@ -2178,6 +2250,8 @@ model Mail {
   createdAt   DateTime @default(now())
   from        User     @relation("MailFrom", fields: [fromId], references: [id], onDelete: Cascade)
   to          User     @relation("MailTo", fields: [toId], references: [id], onDelete: Cascade)
+  @@index([fromId])
+  @@index([toId])
 }
 
 
@@ -2191,6 +2265,7 @@ model Channel {
   createdBy   User            @relation("ChannelCreator", fields: [createdById], references: [id])
   members     ChannelMember[]
   posts       ChannelPost[]
+  @@index([createdById])
 }
 
 model ChannelMember {
@@ -2202,6 +2277,7 @@ model ChannelMember {
   channel   Channel  @relation(fields: [channelId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([channelId, userId])
+  @@index([userId])
 }
 
 model ChannelPost {
@@ -2214,6 +2290,8 @@ model ChannelPost {
   channel   Channel       @relation(fields: [channelId], references: [id], onDelete: Cascade)
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   replies   ChannelReply[]
+  @@index([channelId])
+  @@index([userId])
 }
 
 model ChannelReply {
@@ -2224,6 +2302,8 @@ model ChannelReply {
   createdAt DateTime    @default(now())
   post      ChannelPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([postId])
+  @@index([userId])
 }
 
 
@@ -2234,6 +2314,7 @@ model FaceVectorHistory {
   reason           String?
   createdAt        DateTime @default(now())
   user             User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([userId])
 }
 
 model IdentityVerification {
@@ -2284,6 +2365,7 @@ model Interview {
   @@index([status, scheduledAt])
   @@index([applicationId])
   @@index([hostId, scheduledAt])
+  @@index([planId])
 }
 
 // An interviewer's weekly bookable hours, expressed in THEIR local wall clock so a rule
@@ -2298,6 +2380,7 @@ model AvailabilityRule {
   active      Boolean  @default(true)
   createdAt   DateTime @default(now())
   @@index([userId, weekday])
+  user      User     @relation("UserAvailabilityRule", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // A one-off block: holiday, PTO, or an imported busy calendar event.
@@ -2309,6 +2392,7 @@ model AvailabilityException {
   reason    String?
   createdAt DateTime @default(now())
   @@index([userId, start])
+  user      User     @relation("UserAvailabilityException", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // A multi-round interview loop for a role: what to assess and in what order.
@@ -2338,6 +2422,8 @@ model InterviewConsent {
   interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
   @@unique([interviewId, userId, scope])
   @@index([interviewId])
+  @@index([userId])
+  user      User     @relation("UserInterviewConsent", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // A single observed, quotable fact supporting a competency rating. A score is only ever
@@ -2385,6 +2471,7 @@ model InterviewParticipant {
   interview   Interview @relation(fields: [interviewId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([interviewId, userId])
+  @@index([userId])
 }
 
 // EROS Module 6 — structured, competency-based interview evaluation. One scorecard per
@@ -2404,6 +2491,7 @@ model InterviewScorecard {
   panelist       User     @relation("ScorecardPanelist", fields: [panelistId], references: [id], onDelete: Cascade)
   @@unique([interviewId, panelistId])
   @@index([applicationId])
+  @@index([panelistId])
 }
 
 // EROS Module 6/7 — Semantic Proctoring (Phase 1). A session groups typed, consented
@@ -2469,6 +2557,7 @@ model JobCommunityMember {
   community   JobCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([communityId, userId])
+  @@index([userId])
 }
 
 model JobCommunityPost {
@@ -2481,6 +2570,8 @@ model JobCommunityPost {
   community   JobCommunity @relation(fields: [communityId], references: [id], onDelete: Cascade)
   user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
   replies     JobCommunityReply[]
+  @@index([communityId])
+  @@index([userId])
 }
 
 model JobCommunityReply {
@@ -2491,6 +2582,8 @@ model JobCommunityReply {
   createdAt DateTime         @default(now())
   post      JobCommunityPost @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([postId])
+  @@index([userId])
 }
 
 model ProfessionalSpace {
@@ -2506,6 +2599,7 @@ model ProfessionalSpace {
   createdBy   User                    @relation("SpaceCreator", fields: [createdById], references: [id])
   members     ProfessionalSpaceMember[]
   posts       ProfessionalSpacePost[]
+  @@index([createdById])
 }
 
 model ProfessionalSpaceMember {
@@ -2518,6 +2612,7 @@ model ProfessionalSpaceMember {
   space     ProfessionalSpace @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([spaceId, userId])
+  @@index([userId])
 }
 
 model ProfessionalSpacePost {
@@ -2530,6 +2625,8 @@ model ProfessionalSpacePost {
   space     ProfessionalSpace @relation(fields: [spaceId], references: [id], onDelete: Cascade)
   user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   replies   ProfessionalSpaceReply[]
+  @@index([spaceId])
+  @@index([userId])
 }
 
 model ProfessionalSpaceReply {
@@ -2540,6 +2637,8 @@ model ProfessionalSpaceReply {
   createdAt DateTime              @default(now())
   post      ProfessionalSpacePost @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([postId])
+  @@index([userId])
 }
 
 model ProfessionalPage {
@@ -2564,6 +2663,7 @@ model PageFollow {
   page      ProfessionalPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   @@unique([pageId, userId])
+  @@index([userId])
 }
 
 model PagePost {
@@ -2573,6 +2673,7 @@ model PagePost {
   createdAt DateTime         @default(now())
   page      ProfessionalPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
   replies   PagePostReply[]
+  @@index([pageId])
 }
 
 model PagePostReply {
@@ -2583,6 +2684,8 @@ model PagePostReply {
   createdAt DateTime @default(now())
   post      PagePost @relation(fields: [postId], references: [id], onDelete: Cascade)
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@index([postId])
+  @@index([userId])
 }
 
 
@@ -2605,6 +2708,7 @@ model Test {
   createdBy    User         @relation("TestCreator", fields: [createdById], references: [id])
   questions    Question[]
   attempts     TestAttempt[]
+  @@index([createdById])
 }
 
 model Question {
@@ -2621,6 +2725,7 @@ model Question {
   test          Test     @relation(fields: [testId], references: [id], onDelete: Cascade)
   answers       Answer[]
   reviewItems   ReviewItem[]
+  @@index([testId])
 }
 
 model TestAttempt {
@@ -2637,6 +2742,8 @@ model TestAttempt {
   test        Test      @relation(fields: [testId], references: [id], onDelete: Cascade)
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   answers     Answer[]
+  @@index([testId])
+  @@index([userId])
 }
 
 model Answer {
@@ -2648,6 +2755,8 @@ model Answer {
   points      Int         @default(0)
   attempt     TestAttempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
   question    Question    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  @@index([attemptId])
+  @@index([questionId])
 }
 
 // EduRankAI core loop: a demonstrated, scored skill from a completed test. One row per
@@ -2666,6 +2775,7 @@ model SkillAssessment {
   @@unique([userId, skill])
   @@index([userId])
   @@index([skill])
+  user      User     @relation("UserSkillAssessment", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Gamification (Duolingo axis) — one progress row per user. Day is stored as a "YYYY-MM-DD"
@@ -2679,6 +2789,7 @@ model UserProgress {
   freezes       Int      @default(0)    // streak-freeze tokens
   lastActiveDay String?                 // "YYYY-MM-DD" (UTC)
   updatedAt     DateTime @updatedAt
+  user      User     @relation("UserUserProgress", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Append-only audit of every XP award (why it was granted). Relation-less userId.
@@ -2689,6 +2800,7 @@ model XpEvent {
   reason    String
   createdAt DateTime @default(now())
   @@index([userId, createdAt])
+  user      User     @relation("UserXpEvent", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Spaced-repetition card (SM-2). One per (user, question); auto-created from wrong answers
@@ -2706,6 +2818,8 @@ model ReviewItem {
   question    Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
   @@unique([userId, questionId])
   @@index([userId, dueAt])
+  @@index([questionId])
+  user      User     @relation("UserReviewItem", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Short rolling transcript of the career-coach conversation, so follow-ups resolve
@@ -2719,6 +2833,7 @@ model CoachTurn {
   slots     String?                       // JSON Slots snapshot
   createdAt DateTime @default(now())
   @@index([userId, createdAt])
+  user      User     @relation("UserCoachTurn", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Email OTP challenge. Replaces the in-process Map, which (a) broke on serverless and
@@ -2735,6 +2850,7 @@ model OtpChallenge {
   createdAt DateTime  @default(now())
   @@index([userId, purpose])
   @@index([expiresAt])
+  user      User     @relation("UserOtpChallenge", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Distributed fixed-window rate-limit counter. Lives in the DB (not process memory) so
@@ -2759,6 +2875,7 @@ model QuotaUsage {
   updatedAt DateTime @updatedAt
   @@id([userId, quota, period])
   @@index([userId])
+  user      User     @relation("UserQuotaUsage", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // Discount / waiver codes applied at checkout. All discount math is computed
@@ -3063,6 +3180,7 @@ model Appointment {
   createdAt   DateTime @default(now())
   patient     Patient? @relation(fields: [patientId], references: [id], onDelete: SetNull)
   @@index([facilityId, status])
+  @@index([patientId])
 }
 
 model MedicalRecord {
@@ -3113,6 +3231,7 @@ model MarketplaceInstall {
   item      MarketplaceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
   @@unique([itemId, userId])
   @@index([userId])
+  user      User     @relation("UserMarketplaceInstall", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model MarketplaceReview {
@@ -3125,6 +3244,8 @@ model MarketplaceReview {
   item      MarketplaceItem @relation(fields: [itemId], references: [id], onDelete: Cascade)
   @@unique([itemId, userId])
   @@index([itemId])
+  @@index([userId])
+  user      User     @relation("UserMarketplaceReview", fields: [userId], references: [id], onDelete: Cascade)
 }
 
 // ============================================================================
@@ -3255,4 +3376,5 @@ model PlacementCandidate {
   request     TalentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
   @@unique([requestId, candidateId])
   @@index([requestId, stage])
+  @@index([candidateId])
 }
