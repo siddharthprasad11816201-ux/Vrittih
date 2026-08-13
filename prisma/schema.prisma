@@ -218,6 +218,9 @@ model Evaluation {
 // board has proper company hubs like a market-level portal.
 model Company {
   id           String          @id @default(cuid())
+  // Soft-hide by an admin. Reversible, unlike deletion, which removes the page and its
+  // followers (job postings reference the company by name and would be orphaned).
+  archived     Boolean         @default(false)
   slug         String          @unique
   name         String
   tagline      String?
@@ -1342,6 +1345,9 @@ model Position {
 // `userId` is optional: a sourced candidate may never have created an account.
 model Candidate {
   id              String   @id @default(cuid())
+  // Soft-hide by an admin. Distinct from mergedIntoId, which means "this person turned out
+  // to be someone we already had".
+  archived        Boolean  @default(false)
   userId          String?  @unique
   displayName     String
   primaryEmail    String?               // normalized (lib/candidate/identity)

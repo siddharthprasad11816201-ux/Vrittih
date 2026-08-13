@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { ci } from "@/lib/db"
-import { requireAdmin, requireSuperAdmin, logAction } from "@/lib/admin"
+import { logAction } from "@/lib/admin"
+import { requireAuthority, viewerCapabilities } from "@/lib/admin/authority"
 import { safeExternalUrl } from "@/lib/url"
 
 export async function GET(req: NextRequest) {
   try {
-    const admin = await requireAdmin(req)
-    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    const gate = await requireAuthority(req)
+    if (!gate.ok) return gate.response
+    const admin = gate.authority
     const { searchParams } = new URL(req.url)
     const q = searchParams.get("q") || ""
     const page = parseInt(searchParams.get("page") || "1")
@@ -22,7 +24,7 @@ export async function GET(req: NextRequest) {
       }),
       prisma.job.count({ where }),
     ])
-    return NextResponse.json({ jobs, total, pages: Math.ceil(total/limit) })
+    return NextResponse.json({ jobs, total, pages: Math.ceil(total/limit), viewer: await viewerCapabilities(req) })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }
@@ -35,8 +37,9 @@ const TYPES = ["FULLTIME", "PARTTIME", "INTERNSHIP", "CONTRACT", "FREELANCE"]
 
 export async function PATCH(req: NextRequest) {
   try {
-    const admin = await requireAdmin(req)
-    if (!admin) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    const gate = await requireAuthority(req)
+    if (!gate.ok) return gate.response
+    const admin = gate.authority
     const body = await req.json()
     const jobId = String(body?.jobId || "")
     if (!jobId) return NextResponse.json({ error: "jobId is required" }, { status: 400 })
@@ -81,8 +84,9 @@ export async function PATCH(req: NextRequest) {
 // and is what the UI offers first.
 export async function DELETE(req: NextRequest) {
   try {
-    const admin = await requireSuperAdmin(req)
-    if (!admin) return NextResponse.json({ error: "Only a super admin can permanently delete a posting. Archive it instead." }, { status: 403 })
+    const gate = await requireAuthority(req, { destructive: true })
+    if (!gate.ok) return gate.response
+    const admin = gate.authority
     const { jobId } = await req.json()
     if (!jobId) return NextResponse.json({ error: "jobId is required" }, { status: 400 })
 

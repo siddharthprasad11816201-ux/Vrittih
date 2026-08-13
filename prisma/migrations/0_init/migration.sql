@@ -101,6 +101,7 @@ CREATE TABLE "Evaluation" (
 -- CreateTable
 CREATE TABLE "Company" (
     "id" TEXT NOT NULL,
+    "archived" BOOLEAN NOT NULL DEFAULT false,
     "slug" TEXT NOT NULL,
     "name" TEXT NOT NULL,
     "tagline" TEXT,
@@ -1147,6 +1148,7 @@ CREATE TABLE "Position" (
 -- CreateTable
 CREATE TABLE "Candidate" (
     "id" TEXT NOT NULL,
+    "archived" BOOLEAN NOT NULL DEFAULT false,
     "userId" TEXT,
     "displayName" TEXT NOT NULL,
     "primaryEmail" TEXT,
