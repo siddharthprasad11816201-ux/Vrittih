@@ -42,6 +42,10 @@ export async function GET(req: NextRequest) {
 
     const mine = searchParams.get("mine") === "true"
     const where: any = { active: true }
+    // Archived postings are hidden from everyone by default. An ADMIN may opt into seeing
+    // them so they can review or restore — the privilege is checked server-side below, not
+    // taken from the query string.
+    const wantsArchived = searchParams.get("includeArchived") === "true"
     if (q) where.OR = [
       { title: ci(q) },
       { company: ci(q) },
@@ -63,12 +67,29 @@ export async function GET(req: NextRequest) {
     }
     if (searchParams.get("gov") === "true") where.AND.push({ govBody: { not: null } })
 
+    // Resolve the viewer up front: both "mine" and the admin archived view depend on it.
+    const viewerToken = req.cookies.get("er_token")?.value
+    const viewer = viewerToken ? verifyToken(viewerToken) : null
+    // Privilege comes from the DATABASE, not the token claim, so a demoted or banned admin
+    // cannot keep seeing archived postings on a still-valid 7-day session.
+    let viewerIsAdmin = false
+    let viewerRole: string | null = null
+    if (viewer && ["ADMIN", "SUPER_ADMIN"].includes(viewer.role)) {
+      const row = await prisma.user.findUnique({ where: { id: viewer.userId }, select: { role: true, banned: true } })
+      if (row && !row.banned && ["ADMIN", "SUPER_ADMIN"].includes(row.role)) {
+        viewerIsAdmin = true
+        viewerRole = row.role      // the CURRENT role, not the one baked into the token
+      }
+    }
+
     // "mine=true" — an employer's own postings (active or not)
     if (mine) {
-      const t = req.cookies.get("er_token")?.value
-      const p = t ? verifyToken(t) : null
-      if (!p) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
-      where.postedById = p.userId
+      if (!viewer) return NextResponse.json({ error: "Not authenticated" }, { status: 401 })
+      where.postedById = viewer.userId
+      delete where.active
+    } else if (wantsArchived && viewerIsAdmin) {
+      // Admin review view: show archived alongside live. A non-admin asking for this is
+      // simply ignored rather than errored, so the flag can never leak hidden postings.
       delete where.active
     }
 
@@ -119,8 +140,7 @@ export async function GET(req: NextRequest) {
 
     // If the viewer is a signed-in job seeker, attach a personalised match score.
     let jobsOut: any[] = jobs
-    const token = req.cookies.get("er_token")?.value
-    const payload = token ? verifyToken(token) : null
+    const payload = viewer
     if (payload) {
       const user = await prisma.user.findUnique({
         where: { id: payload.userId },
@@ -144,7 +164,14 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ jobs: jobsOut, total, page, pages: Math.ceil(total / limit) })
+    return NextResponse.json({
+      jobs: jobsOut,
+      total, page, pages: Math.ceil(total / limit),
+      // Server-decided. The client renders admin controls from THIS, never from its own
+      // idea of the user's role, so the UI cannot show actions the API would refuse.
+      viewer: { isAdmin: viewerIsAdmin, canDelete: viewerRole === "SUPER_ADMIN" },
+      includedArchived: wantsArchived && viewerIsAdmin,
+    })
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 })
   }

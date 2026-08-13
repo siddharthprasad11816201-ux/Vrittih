@@ -1,5 +1,5 @@
 "use client"
-import { useState, useEffect, Suspense, type FormEvent } from "react"
+import { useState, useEffect, Suspense, type FormEvent, type CSSProperties } from "react"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
 import styles from "@/styles/jobs.module.css"
@@ -9,6 +9,17 @@ import { IconBanknote, IconGlobe, IconFolder, IconUsers, IconTarget, IconBookmar
 
 const INDUSTRIES = ["All","Technology","Finance","Healthcare","Education","Manufacturing","Retail","Legal","Government","Logistics","Energy","Agriculture","Media","Other"]
 const TYPES = ["All","FULLTIME","PARTTIME","INTERNSHIP","CONTRACT","FREELANCE"]
+const adminBtn: CSSProperties = {
+  fontSize: 13, padding: "6px 12px", borderRadius: 8, border: "1px solid var(--v-line-2)",
+  background: "var(--v-surface)", color: "var(--v-ink-1)", cursor: "pointer", textDecoration: "none",
+}
+const fieldWrap: CSSProperties = { display: "flex", flexDirection: "column", gap: 5, marginBottom: 12 }
+const fieldLabel: CSSProperties = { fontSize: 13, fontWeight: 600, color: "var(--v-ink-2)" }
+const fieldInput: CSSProperties = {
+  fontSize: 14, padding: "9px 11px", borderRadius: 9,
+  border: "1px solid var(--v-line-2)", background: "var(--v-bg)", color: "var(--v-ink-1)", width: "100%",
+}
+
 const TYPE_LABELS: Record<string,string> = { FULLTIME:"Full-time", PARTTIME:"Part-time", INTERNSHIP:"Internship", CONTRACT:"Contract", FREELANCE:"Freelance" }
 
 export default function JobsPage() {
@@ -35,8 +46,15 @@ function JobsInner() {
   })
   const [remote, setRemote] = useState(sp.get("remote") === "true")
   const [saved, setSaved] = useState<Set<string>>(new Set())
+  // Admin capabilities are SERVER-decided (returned by /api/jobs), never inferred from a
+  // local idea of the role — so the UI can never offer an action the API would refuse.
+  const [admin, setAdmin] = useState<{ isAdmin: boolean; canDelete: boolean }>({ isAdmin: false, canDelete: false })
+  const [showArchived, setShowArchived] = useState(false)
+  const [editing, setEditing] = useState<any>(null)
+  const [busy, setBusy] = useState<string | null>(null)
+  const [notice, setNotice] = useState<string | null>(null)
 
-  useEffect(() => { fetchJobs() }, [industry, type, remote])
+  useEffect(() => { fetchJobs() }, [industry, type, remote, showArchived])
   useEffect(() => {
     fetch("/api/jobs/save").then(r => r.ok ? r.json() : { jobs: [] }).then(d => setSaved(new Set((d.jobs || []).map((j: any) => j.id)))).catch(() => {})
   }, [])
@@ -54,12 +72,78 @@ function JobsInner() {
       if (industry !== "All") params.set("industry", industry)
       if (type !== "All") params.set("type", type)
       if (remote) params.set("remote", "true")
+      if (showArchived) params.set("includeArchived", "true")
       const res = await fetch("/api/jobs?" + params.toString())
       const data = await res.json()
       setJobs(data.jobs || [])
       setTotal(data.total || 0)
+      setAdmin(data.viewer || { isAdmin: false, canDelete: false })
     } catch { setJobs([]); setTotal(0) }   // don't hang on 'Loading jobs…' if the request fails
     finally { setLoading(false) }
+  }
+
+  // Archive is reversible and is the DEFAULT destructive-ish action offered.
+  async function toggleArchive(job: any) {
+    setBusy(job.id); setNotice(null)
+    try {
+      const res = await fetch("/api/admin/jobs", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: job.id, active: job.active === false }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setNotice(d.error || "Could not update the posting."); return }
+      setNotice(job.active === false ? "Posting restored." : "Posting archived.")
+      fetchJobs()
+    } catch { setNotice("Could not reach the server.") }
+    finally { setBusy(null) }
+  }
+
+  // Permanent deletion also destroys every application to the posting, so the count is
+  // shown in the confirmation rather than hidden behind a generic "are you sure?".
+  async function deleteJob(job: any) {
+    const apps = job._count?.applications ?? 0
+    const warn = apps > 0
+      ? `Permanently delete "${job.title}"?
+
+This also deletes ${apps} application${apps === 1 ? "" : "s"} submitted to it. This cannot be undone.
+
+Archive instead if you only want to hide it.`
+      : `Permanently delete "${job.title}"? This cannot be undone.`
+    if (!confirm(warn)) return
+    setBusy(job.id); setNotice(null)
+    try {
+      const res = await fetch("/api/admin/jobs", {
+        method: "DELETE", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ jobId: job.id }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setNotice(d.error || "Could not delete the posting."); return }
+      setNotice(`Deleted "${job.title}"${d.deletedApplications ? ` and ${d.deletedApplications} application(s)` : ""}.`)
+      fetchJobs()
+    } catch { setNotice("Could not reach the server.") }
+    finally { setBusy(null) }
+  }
+
+  async function saveEdit(e: FormEvent) {
+    e.preventDefault()
+    if (!editing) return
+    setBusy(editing.id); setNotice(null)
+    try {
+      const res = await fetch("/api/admin/jobs", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobId: editing.id, title: editing.title, company: editing.company,
+          location: editing.location, type: editing.type, industry: editing.industry,
+          salary: editing.salary, remote: !!editing.remote, description: editing.description,
+        }),
+      })
+      const d = await res.json()
+      if (!res.ok) { setNotice(d.error || "Could not save."); return }
+      setNotice("Changes saved.")
+      setEditing(null)
+      fetchJobs()
+    } catch { setNotice("Could not reach the server.") }
+    finally { setBusy(null) }
   }
 
   function handleSearch(e: FormEvent) {
@@ -112,7 +196,7 @@ function JobsInner() {
         </aside>
 
         <main>
-          {!loading && weakProfile && (
+          {!loading && weakProfile && !admin.isAdmin && (
             <div style={{ display:"flex", alignItems:"center", gap:14, flexWrap:"wrap", background:"linear-gradient(135deg,#EAF1FE,#F1F7F4)", border:"1px solid #CFE9DF", borderRadius:14, padding:"14px 18px", marginBottom:16 }}>
               <div style={{ width:38, height:38, borderRadius:10, background:"#6495ED", color:"#fff", display:"grid", placeItems:"center", flexShrink:0 }}>
                 <IconTarget size={19} />
@@ -122,6 +206,21 @@ function JobsInner() {
                 <div style={{ fontSize:13, color:"#64748B", marginTop:2 }}>Add your skills, experience and location — matching recalculates instantly and surfaces roles that actually fit you.</div>
               </div>
               <Link href="/profile/edit" style={{ background:"#6495ED", color:"#fff", fontSize:13, fontWeight:600, padding:"9px 16px", borderRadius:9, textDecoration:"none", whiteSpace:"nowrap" }}>Complete profile</Link>
+            </div>
+          )}
+          {admin.isAdmin && (
+            <div style={{ display:"flex", alignItems:"center", gap:12, flexWrap:"wrap", background:"#FFF7ED", border:"1px solid #FED7AA", borderRadius:12, padding:"10px 14px", marginBottom:12 }}>
+              <span style={{ fontSize:12, fontWeight:700, letterSpacing:.4, color:"#9A3412", textTransform:"uppercase" }}>Admin</span>
+              <span style={{ fontSize:13, color:"#7C2D12" }}>You can edit, archive{admin.canDelete ? " and delete" : ""} any posting.</span>
+              <label style={{ display:"flex", alignItems:"center", gap:6, fontSize:13, color:"#7C2D12", marginLeft:"auto", cursor:"pointer" }}>
+                <input type="checkbox" checked={showArchived} onChange={e => setShowArchived(e.target.checked)} />
+                Show archived
+              </label>
+            </div>
+          )}
+          {notice && (
+            <div role="status" style={{ background:"#ECFDF5", border:"1px solid #A7F3D0", color:"#065F46", borderRadius:10, padding:"9px 13px", fontSize:13, marginBottom:12 }}>
+              {notice}
             </div>
           )}
           <div className={styles.listHeader}>
@@ -157,11 +256,16 @@ function JobsInner() {
                         </span>
                       )}
                       <span className={styles.typePill}>{TYPE_LABELS[job.type] || job.type}</span>
+                      {job.active === false && (
+                        <span style={{ fontSize:11, fontWeight:700, letterSpacing:.3, textTransform:"uppercase", color:"#9A3412", background:"#FFEDD5", border:"1px solid #FED7AA", borderRadius:6, padding:"3px 7px" }}>Archived</span>
+                      )}
+                      {!admin.isAdmin && (
                       <button type="button" aria-label={saved.has(job.id) ? "Remove from saved" : "Save job"}
                         onClick={e => { e.preventDefault(); e.stopPropagation(); toggleSave(job.id) }}
                         style={{ display: "grid", placeItems: "center", width: 32, height: 32, borderRadius: 8, border: "1px solid var(--v-line-2)", background: saved.has(job.id) ? "var(--brand-100)" : "var(--v-surface)", color: saved.has(job.id) ? "var(--brand-600)" : "var(--v-ink-3)", cursor: "pointer", flexShrink: 0 }}>
                         <IconBookmark size={15} />
                       </button>
+                      )}
                     </div>
                   </div>
                   <div className={styles.cardBottom}>
@@ -179,12 +283,89 @@ function JobsInner() {
                       ))}
                     </div>
                   )}
+                  {admin.isAdmin && (
+                    <div
+                      onClick={e => { e.preventDefault(); e.stopPropagation() }}
+                      style={{ display:"flex", gap:8, flexWrap:"wrap", alignItems:"center", marginTop:12, paddingTop:12, borderTop:"1px dashed var(--v-line-2)" }}
+                    >
+                      <Link
+                        href={`/jobs/${job.id}`}
+                        onClick={e => e.stopPropagation()}
+                        style={adminBtn}
+                      >View</Link>
+                      <button type="button" disabled={busy === job.id}
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); setEditing({ ...job }) }}
+                        style={adminBtn}>Edit</button>
+                      <button type="button" disabled={busy === job.id}
+                        onClick={e => { e.preventDefault(); e.stopPropagation(); toggleArchive(job) }}
+                        style={adminBtn}>{job.active === false ? "Restore" : "Archive"}</button>
+                      {admin.canDelete && (
+                        <button type="button" disabled={busy === job.id}
+                          onClick={e => { e.preventDefault(); e.stopPropagation(); deleteJob(job) }}
+                          style={{ ...adminBtn, color:"#B91C1C", borderColor:"#FECACA", background:"#FEF2F2" }}>Delete</button>
+                      )}
+                      <span style={{ marginLeft:"auto", fontSize:12, color:"var(--v-ink-3)" }}>
+                        {job.postedBy?.name ? `Posted by ${job.postedBy.name}` : "Unknown poster"}
+                      </span>
+                    </div>
+                  )}
                 </Link>
               ))}
             </div>
           )}
         </main>
       </div>
+
+      {editing && (
+        <div
+          role="dialog" aria-modal="true" aria-label="Edit posting"
+          onClick={() => setEditing(null)}
+          style={{ position:"fixed", inset:0, background:"rgba(15,23,42,.45)", display:"grid", placeItems:"center", padding:20, zIndex:50 }}
+        >
+          <form
+            onClick={e => e.stopPropagation()} onSubmit={saveEdit}
+            style={{ background:"var(--v-surface)", borderRadius:16, padding:22, width:"min(640px,100%)", maxHeight:"88vh", overflowY:"auto", border:"1px solid var(--v-line-2)" }}
+          >
+            <h2 style={{ margin:"0 0 4px", fontSize:18, fontWeight:700 }}>Edit posting</h2>
+            <p style={{ margin:"0 0 16px", fontSize:13, color:"var(--v-ink-3)" }}>
+              Editing as an administrator. The change is recorded in the audit log with the previous values.
+            </p>
+            {[
+              { k:"title", label:"Title" },
+              { k:"company", label:"Company" },
+              { k:"location", label:"Location" },
+              { k:"industry", label:"Industry" },
+              { k:"salary", label:"Salary (CHF)" },
+            ].map(({ k, label }) => (
+              <label key={k} style={fieldWrap}>
+                <span style={fieldLabel}>{label}</span>
+                <input value={editing[k] ?? ""} onChange={e => setEditing({ ...editing, [k]: e.target.value })} style={fieldInput} />
+              </label>
+            ))}
+            <label style={fieldWrap}>
+              <span style={fieldLabel}>Type</span>
+              <select value={editing.type ?? ""} onChange={e => setEditing({ ...editing, type: e.target.value })} style={fieldInput}>
+                {Object.entries(TYPE_LABELS).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+              </select>
+            </label>
+            <label style={{ ...fieldWrap, flexDirection:"row", alignItems:"center", gap:8 }}>
+              <input type="checkbox" checked={!!editing.remote} onChange={e => setEditing({ ...editing, remote: e.target.checked })} />
+              <span style={fieldLabel}>Remote</span>
+            </label>
+            <label style={fieldWrap}>
+              <span style={fieldLabel}>Description</span>
+              <textarea rows={6} value={editing.description ?? ""} onChange={e => setEditing({ ...editing, description: e.target.value })} style={{ ...fieldInput, resize:"vertical" }} />
+            </label>
+            <div style={{ display:"flex", gap:10, justifyContent:"flex-end", marginTop:16 }}>
+              <button type="button" onClick={() => setEditing(null)} style={adminBtn}>Cancel</button>
+              <button type="submit" disabled={busy === editing.id}
+                style={{ ...adminBtn, background:"var(--brand-600,#6495ED)", color:"#fff", borderColor:"transparent", fontWeight:600 }}>
+                {busy === editing.id ? "Saving…" : "Save changes"}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
     </AppShell>
   )
 }

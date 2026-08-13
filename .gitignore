@@ -64,3 +64,4 @@ ml/model/
 __pycache__/
 .tmp-drift/
 prisma/.drift-schema.prisma
+.harness-*/
