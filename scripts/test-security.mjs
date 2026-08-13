@@ -215,6 +215,51 @@ ok("swap is disabled (memory-swap equals memory)", dock.includes("--memory-swap"
 ok("host-side wall-clock kill exists", dock.includes("SIGKILL"))
 ok("languages are registry-driven, not hard-coded in the UI", Object.keys(sbxTypes.LANGUAGES).length >= 6)
 
+
+/* ---------- 8. Remaining stored secrets — encrypt vs hash ---------- */
+const ss = load("lib/crypto/storedSecret.ts")
+process.env.SECRET_ENCRYPTION_KEY = Buffer.alloc(32, 9).toString("base64")
+box._resetKeyCache()
+
+// Reversible: the webhook secret must come back intact to sign a payload.
+const whSecret = "whsec_abc123def456"
+const protectedWh = ss.protectSecret(whSecret)
+ok("webhook secret is not stored in the clear", !protectedWh.includes("abc123def456"), protectedWh.slice(0, 20))
+eq("webhook secret round-trips for signing", ss.revealSecret(protectedWh), whSecret)
+eq("a legacy plaintext webhook secret still works", ss.revealSecret(whSecret), whSecret)
+eq("an empty stored secret is safe", ss.revealSecret(null), "")
+
+// TOTP: the discriminator stays readable so login need not decrypt anything.
+const totpSecret = "JBSWY3DPEHPK3PXP"
+const storedTotp = ss.protectTotp(totpSecret)
+ok("TOTP secret is not stored in the clear", !storedTotp.includes(totpSecret), storedTotp.slice(0, 24))
+ok("the totp: discriminator stays readable without decrypting", ss.isTotp(storedTotp))
+eq("TOTP secret round-trips for verification", ss.revealTotp(storedTotp), totpSecret)
+eq("a legacy plaintext TOTP secret still verifies", ss.revealTotp("totp:" + totpSecret), totpSecret)
+eq("an email-OTP user is not mistaken for TOTP", ss.isTotp("some-email-otp-secret"), false)
+eq("revealTotp on a non-TOTP value is null", ss.revealTotp("nope"), null)
+
+// Lookup keys must be HASHED — encryption would break the query.
+const calToken = "PZ9mAbCdEfGhIjKlMnOpQrSt"
+const hashed = ss.hashLookupToken(calToken)
+ok("a lookup token is stored hashed, not encrypted", ss.isHashedToken(hashed) && !hashed.includes(calToken))
+eq("hashing is DETERMINISTIC so the row can be found", ss.hashLookupToken(calToken), hashed)
+ok("a different token hashes differently", ss.hashLookupToken(calToken + "x") !== hashed)
+ok("the supplied token matches its stored hash", ss.tokenMatches(calToken, hashed))
+ok("a wrong token does not match", !ss.tokenMatches("wrong-token-value", hashed))
+ok("a legacy plaintext stored token still matches", ss.tokenMatches(calToken, calToken))
+ok("empty input never matches", !ss.tokenMatches("", hashed) && !ss.tokenMatches(calToken, null))
+
+// The call sites actually use them.
+ok("webhook creation encrypts the secret", read("app/api/webhooks/route.ts").includes("protectSecret"))
+ok("webhook signing decrypts it", read("lib/webhooks.ts").includes("revealSecret"))
+ok("TOTP setup encrypts the secret", read("app/api/auth/totp/setup/route.ts").includes("protectTotp"))
+ok("TOTP verify decrypts it", read("app/api/auth/totp/verify/route.ts").includes("revealTotp"))
+ok("login inspects only the discriminator", read("app/api/auth/login/route.ts").includes("isTotp"))
+ok("the calendar feed looks up by hash", read("app/api/calendar/[token]/route.ts").includes("hashLookupToken"))
+ok("no route slices the raw totp: prefix any more",
+  ["app/api/auth/totp/verify/route.ts", "app/api/auth/totp/enable/route.ts", "app/api/auth/totp/disable/route.ts"]
+    .every((p) => !codeOf(p).includes("twoFactorSecret.slice(5)")))
 fs.rmSync(tmp, { recursive: true, force: true })
 console.log(`\n${pass} passed, ${fail} failed`)
 process.exit(fail ? 1 : 0)

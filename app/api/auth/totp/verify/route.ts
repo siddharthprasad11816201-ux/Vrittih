@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revealTotp } from "@/lib/crypto/storedSecret"
 import { prisma } from "@/lib/prisma"
 import { verifyTOTP } from "@/lib/totp"
 import { signToken } from "@/lib/jwt"
@@ -31,7 +32,7 @@ export async function POST(req: NextRequest) {
     if (!user) return NextResponse.json({ error: "User not found" }, { status: 404 })
     if (user.banned) return NextResponse.json({ error: "Account suspended" }, { status: 403 })
 
-    const secret = user.twoFactorSecret?.startsWith("totp:") ? user.twoFactorSecret.slice(5) : null
+    const secret = revealTotp(user?.twoFactorSecret)
     if (!user.twoFactorEnabled || !secret) {
       return NextResponse.json({ error: "Authenticator 2FA is not enabled for this account" }, { status: 400 })
     }

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revealTotp } from "@/lib/crypto/storedSecret"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { verifyTOTP } from "@/lib/totp"
@@ -21,7 +22,7 @@ export async function POST(req: NextRequest) {
       where: { id: payload.userId },
       select: { twoFactorSecret: true, twoFactorEnabled: true },
     })
-    const secret = user?.twoFactorSecret?.startsWith("totp:") ? user.twoFactorSecret.slice(5) : null
+    const secret = revealTotp(user?.twoFactorSecret)
     if (!secret || !user?.twoFactorEnabled) {
       return NextResponse.json({ error: "Authenticator 2FA is not enabled" }, { status: 400 })
     }

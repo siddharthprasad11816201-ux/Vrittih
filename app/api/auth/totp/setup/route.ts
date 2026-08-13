@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { protectTotp } from "@/lib/crypto/storedSecret"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { generateTOTPSecret, buildOtpauthURI, formatSecret } from "@/lib/totp"
@@ -16,7 +17,7 @@ export async function POST(req: NextRequest) {
     const secret = generateTOTPSecret()
     await prisma.user.update({
       where: { id: payload.userId },
-      data: { twoFactorSecret: `totp:${secret}`, twoFactorEnabled: false },
+      data: { twoFactorSecret: protectTotp(secret), twoFactorEnabled: false },
     })
 
     return NextResponse.json({

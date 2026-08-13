@@ -1,4 +1,5 @@
 import crypto from "crypto"
+import { revealSecret } from "@/lib/crypto/storedSecret"
 import { prisma } from "@/lib/prisma"
 
 /* Outbound webhooks — in-house, HMAC-signed, with backoff retries.
@@ -36,7 +37,8 @@ export async function attempt(deliveryId: string): Promise<void> {
   if (!d || !d.webhook || d.status === "delivered") return
   const wh = d.webhook
   const attempts = d.attempts + 1
-  const signature = sign(wh.secret, d.payload)
+  // Decrypt for signing. revealSecret is a no-op for rows written before encryption.
+  const signature = sign(revealSecret(wh.secret), d.payload)
 
   try {
     const res = await fetch(wh.url, {

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { revealTotp } from "@/lib/crypto/storedSecret"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { verifyTOTP } from "@/lib/totp"
@@ -20,7 +21,7 @@ export async function POST(req: NextRequest) {
       where: { id: payload.userId },
       select: { twoFactorSecret: true },
     })
-    const secret = user?.twoFactorSecret?.startsWith("totp:") ? user.twoFactorSecret.slice(5) : null
+    const secret = revealTotp(user?.twoFactorSecret)
     if (!secret) return NextResponse.json({ error: "No pending authenticator setup. Start setup first." }, { status: 400 })
 
     if (!verifyTOTP(secret, String(code))) {

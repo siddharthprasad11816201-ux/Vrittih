@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { isTotp } from "@/lib/crypto/storedSecret"
 import { prisma } from "@/lib/prisma"
 import { verifyPassword } from "@/lib/hash"
 import { signToken } from "@/lib/jwt"
@@ -48,7 +49,8 @@ export async function POST(req: NextRequest) {
     // If 2FA enabled — require a second factor.
     // "totp:" secrets use the in-house authenticator flow; otherwise email OTP.
     if (user.twoFactorEnabled) {
-      const method = user.twoFactorSecret?.startsWith("totp:") ? "totp" : "email"
+      // Only the discriminator is inspected — the secret is never decrypted here.
+      const method = isTotp(user.twoFactorSecret) ? "totp" : "email"
       return NextResponse.json({
         requires2FA: true, method, userId: user.id,
         challenge: issueChallenge(user.id, method === "totp" ? "2fa_totp" : "2fa_email"),

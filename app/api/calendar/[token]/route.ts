@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { hashLookupToken } from "@/lib/crypto/storedSecret"
 import { prisma } from "@/lib/prisma"
 import { buildICS, interviewToEvent } from "@/lib/ical"
 import { SITE } from "@/lib/site"
@@ -12,7 +13,13 @@ export const dynamic = "force-dynamic"
 export async function GET(_req: NextRequest, { params }: { params: { token: string } }) {
   const token = params.token
   if (!token || token.length < 20) return new NextResponse("Not found", { status: 404 })
-  const user = await prisma.user.findUnique({ where: { calendarToken: token }, select: { id: true, name: true } })
+  // The token is a bearer credential used as a LOOKUP KEY, so it is stored HASHED —
+  // encryption would break the query, since a random IV changes the ciphertext each time.
+  // Tokens issued before hashing still resolve via the legacy branch, so existing calendar
+  // subscriptions keep working until the user rotates.
+  const user =
+    (await prisma.user.findUnique({ where: { calendarToken: hashLookupToken(token) }, select: { id: true, name: true } })) ||
+    (await prisma.user.findUnique({ where: { calendarToken: token }, select: { id: true, name: true } }))
   if (!user) return new NextResponse("Not found", { status: 404 })
 
   const from = new Date(Date.now() - 30 * 86400000)   // last 30 days

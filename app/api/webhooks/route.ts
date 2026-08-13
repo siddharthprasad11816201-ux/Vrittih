@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { protectSecret } from "@/lib/crypto/storedSecret"
 import { prisma } from "@/lib/prisma"
 import { featureGate } from "@/lib/guard"
 import { safeExternalUrl } from "@/lib/url"
@@ -38,7 +39,8 @@ export async function POST(req: NextRequest) {
   if (active >= 20) return NextResponse.json({ error: "Webhook limit reached (20). Remove one first." }, { status: 400 })
 
   const secret = webhookSecret()
-  const wh = await prisma.webhook.create({ data: { employerId: g.user.id, url, secret, events } })
+  // Stored encrypted; the plaintext is returned once below and never again.
+  const wh = await prisma.webhook.create({ data: { employerId: g.user.id, url, secret: protectSecret(secret), events } })
   return NextResponse.json({ ok: true, id: wh.id, url: wh.url, events: wh.events, secret, note: "Save this signing secret now — it is shown only once." }, { status: 201 })
 }
 
