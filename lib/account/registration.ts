@@ -32,6 +32,18 @@ export interface RegistrationSubject {
 
 export type RequirementKey = "signed_in" | "email_verified" | "name" | "profile_basics" | "evidence"
 
+/**
+ * Email verification is OFF by default.
+ *
+ * The machinery is built and tested, but enforcing it while SMTP is unconfigured would lock
+ * every new user out of applying — the code would be created and never delivered. So it is
+ * opt-in: set REQUIRE_EMAIL_VERIFICATION=true once mail is actually sending, and the
+ * requirement appears in the checklist and starts being enforced with no code change.
+ */
+export function emailVerificationRequired(): boolean {
+  return String(process.env.REQUIRE_EMAIL_VERIFICATION || "").toLowerCase() === "true"
+}
+
 export interface Requirement {
   key: RequirementKey
   label: string
@@ -72,6 +84,8 @@ export function registrationStatus(user: RegistrationSubject | null | undefined)
     (user?.educationCount ?? 0) > 0 ||
     !!user?.resumeUrl
 
+  const requireVerification = emailVerificationRequired()
+
   const requirements: Requirement[] = [
     {
       key: "signed_in",
@@ -110,21 +124,25 @@ export function registrationStatus(user: RegistrationSubject | null | undefined)
     },
   ]
 
-  const missing = requirements.filter((r) => !r.met).map((r) => r.key)
-  const met = requirements.length - missing.length
+  // Filtered rather than conditionally pushed, so the ORDER of the checklist stays stable
+  // whichever way the flag is set.
+  const active = requirements.filter((r) => r.key !== "email_verified" || requireVerification)
+
+  const missing = active.filter((r) => !r.met).map((r) => r.key)
+  const met = active.length - missing.length
 
   return {
     complete: missing.length === 0,
     signedIn,
-    requirements,
+    requirements: active,
     missing,
-    progress: +(met / requirements.length).toFixed(2),
+    progress: +(met / active.length).toFixed(2),
     summary: !signedIn
       ? "Sign in to apply."
       : missing.length === 0
         ? "Your account is ready to apply."
         : missing.length === 1
-          ? `One step left: ${requirements.find((r) => !r.met)!.label.toLowerCase()}.`
+          ? `One step left: ${active.find((r) => !r.met)!.label.toLowerCase()}.`
           : `${missing.length} steps left before you can apply.`,
   }
 }

@@ -30,7 +30,7 @@
     "test": "node scripts/test-edurank.mjs",
     "test:e2e": "node scripts/test-edurank-e2e.mjs",
     "test:social": "node scripts/test-social-e2e.mjs",
-    "test:all": "node scripts/db-migrations-check.mjs && node scripts/db-schema-audit.mjs && node scripts/test-edurank.mjs && node scripts/test-security.mjs && node scripts/test-interview.mjs && node scripts/test-candidate.mjs && node scripts/test-org.mjs && node scripts/test-tiers.mjs && node scripts/test-db-integrity.mjs && node scripts/test-edurank-e2e.mjs && node scripts/test-social-e2e.mjs && node scripts/test-interview-e2e.mjs && node scripts/test-candidate-e2e.mjs && node scripts/test-apply-gate.mjs && node scripts/test-admin-jobs.mjs",
+    "test:all": "node scripts/db-migrations-check.mjs && node scripts/db-schema-audit.mjs && node scripts/test-edurank.mjs && node scripts/test-security.mjs && node scripts/test-interview.mjs && node scripts/test-candidate.mjs && node scripts/test-org.mjs && node scripts/test-tiers.mjs && node scripts/test-db-integrity.mjs && node scripts/test-edurank-e2e.mjs && node scripts/test-social-e2e.mjs && node scripts/test-interview-e2e.mjs && node scripts/test-candidate-e2e.mjs && node scripts/test-apply-gate.mjs && node scripts/test-recovery.mjs && node scripts/test-admin-jobs.mjs",
     "test:security": "node scripts/test-security.mjs",
     "db:drift": "node scripts/db-drift.mjs",
     "db:migrate:deploy": "prisma migrate deploy",
@@ -45,7 +45,8 @@
     "test:db": "node scripts/test-db-integrity.mjs",
     "test:admin": "node scripts/test-admin-jobs.mjs",
     "test:tiers": "node scripts/test-tiers.mjs",
-    "test:gate": "node scripts/test-apply-gate.mjs"
+    "test:gate": "node scripts/test-apply-gate.mjs",
+    "test:recovery": "node scripts/test-recovery.mjs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -54,6 +54,11 @@ model User {
   // Set when the address is proven. Applying requires it — an unverified address means
   // interview invitations and decisions go nowhere.
   emailVerified    DateTime?
+  // Knowledge factors for account recovery when there is no email channel.
+  dateOfBirth      DateTime?
+  recoveryAttempts Int            @default(0)   // wrong recovery attempts; locks the flow
+  recoveryLockedAt DateTime?
+  securityAnswers  SecurityAnswer[]
   timezone         String         @default("UTC")
   candidate        Candidate?
   // Personal-data back-relations. These exist so a user deletion CASCADES instead of
@@ -2860,6 +2865,21 @@ model OtpChallenge {
   @@index([userId, purpose])
   @@index([expiresAt])
   user      User     @relation("UserOtpChallenge", fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// A hashed answer to a security question. Answers are credentials, so they are bcrypt
+// hashed exactly like a password — never stored readable — and normalised before hashing
+// so harmless differences in spacing or case do not lock someone out.
+model SecurityAnswer {
+  id          String   @id @default(cuid())
+  userId      String
+  questionKey String                    // see lib/auth/recovery SECURITY_QUESTIONS
+  answerHash  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  @@unique([userId, questionKey])
+  @@index([userId])
 }
 
 // Distributed fixed-window rate-limit counter. Lives in the DB (not process memory) so

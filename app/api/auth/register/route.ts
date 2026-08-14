@@ -1,5 +1,10 @@
 import { NextRequest, NextResponse } from "next/server"
 import { createOtp } from "@/lib/auth/otp"
+import { encryptVector } from "@/lib/faceVector"
+import { emailVerificationRequired } from "@/lib/account/registration"
+
+/** Control-flow marker: verification is switched off, so no code is sent. Not an error. */
+class SkipVerification extends Error {}
 import { sendMail } from "@/lib/smtp"
 import { prisma } from "@/lib/prisma"
 import { hashPassword } from "@/lib/hash"
@@ -83,6 +88,17 @@ export async function POST(req: NextRequest) {
       paid: user.paid,
     })
 
+    // OPTIONAL face enrolment at sign-up. Capturing it here means the second factor is
+    // armed from the very first login instead of being a step most people skip.
+    // The vector is encrypted at rest; the photo itself is never stored.
+    const faceVector = (body as any)?.faceVector
+    if (Array.isArray(faceVector) && faceVector.length === 128 && faceVector.every((n: any) => typeof n === "number" && isFinite(n))) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { faceVector: encryptVector(faceVector), faceVectorUpdatedAt: new Date() },
+      }).catch((e: any) => console.error("[REGISTER FACE]", e?.message || e))
+    }
+
     await setAuthCookie(token)
 
     // Send the verification code immediately. Registration still signs the user in — they
@@ -90,6 +106,9 @@ export async function POST(req: NextRequest) {
     // to be proven (lib/account/registration), so the sooner this lands the better.
     // Best-effort: a mail outage must not fail the registration itself.
     try {
+      // Only when verification is actually enforced — otherwise this is a confusing email
+      // asking for a step the product does not require.
+      if (!emailVerificationRequired()) throw new SkipVerification()
       const code = await createOtp(user.id, "email_verify")
       await sendMail({
         to: user.email,
@@ -108,10 +127,10 @@ export async function POST(req: NextRequest) {
           </div>`,
       })
     } catch (e: any) {
-      console.error("[REGISTER VERIFY MAIL]", e?.message || e)
+      if (!(e instanceof SkipVerification)) console.error("[REGISTER VERIFY MAIL]", e?.message || e)
     }
 
-    return NextResponse.json({ success: true, user, emailVerificationSent: true }, { status: 201 })
+    return NextResponse.json({ success: true, user, emailVerificationSent: emailVerificationRequired() }, { status: 201 })
   } catch (err: any) {
     console.error("[REGISTER]", err)
     return NextResponse.json(

@@ -34,6 +34,9 @@ CREATE TABLE "User" (
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
     "emailVerified" TIMESTAMP(3),
+    "dateOfBirth" TIMESTAMP(3),
+    "recoveryAttempts" INTEGER NOT NULL DEFAULT 0,
+    "recoveryLockedAt" TIMESTAMP(3),
     "timezone" TEXT NOT NULL DEFAULT 'UTC',
     "calendarToken" TEXT,
     "trialStartedAt" TIMESTAMP(3),
@@ -2561,6 +2564,18 @@ CREATE TABLE "OtpChallenge" (
 );
 
 -- CreateTable
+CREATE TABLE "SecurityAnswer" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "questionKey" TEXT NOT NULL,
+    "answerHash" TEXT NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "SecurityAnswer_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "RateHit" (
     "key" TEXT NOT NULL,
     "windowStart" TIMESTAMP(3) NOT NULL,
@@ -3954,6 +3969,12 @@ CREATE INDEX "OtpChallenge_userId_purpose_idx" ON "OtpChallenge"("userId", "purp
 CREATE INDEX "OtpChallenge_expiresAt_idx" ON "OtpChallenge"("expiresAt");
 
 -- CreateIndex
+CREATE INDEX "SecurityAnswer_userId_idx" ON "SecurityAnswer"("userId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "SecurityAnswer_userId_questionKey_key" ON "SecurityAnswer"("userId", "questionKey");
+
+-- CreateIndex
 CREATE INDEX "RateHit_expiresAt_idx" ON "RateHit"("expiresAt");
 
 -- CreateIndex
@@ -4585,6 +4606,9 @@ ALTER TABLE "CoachTurn" ADD CONSTRAINT "CoachTurn_userId_fkey" FOREIGN KEY ("use
 
 -- AddForeignKey
 ALTER TABLE "OtpChallenge" ADD CONSTRAINT "OtpChallenge_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "SecurityAnswer" ADD CONSTRAINT "SecurityAnswer_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "QuotaUsage" ADD CONSTRAINT "QuotaUsage_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;

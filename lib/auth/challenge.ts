@@ -23,7 +23,7 @@ if (process.env.NODE_ENV === "production" && SECRET === DEV_SECRET) {
 }
 
 /** Which second factor the challenge authorises. A token for one stage cannot be used for another. */
-export type ChallengeStage = "2fa_email" | "2fa_totp" | "face"
+export type ChallengeStage = "2fa_email" | "2fa_totp" | "face" | "password_reset"
 
 /** Short by design: a step-up window is minutes, not days. */
 export const CHALLENGE_TTL_SECONDS = 10 * 60

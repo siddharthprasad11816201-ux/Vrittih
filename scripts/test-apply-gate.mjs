@@ -46,16 +46,28 @@ ok("anonymous is not reported as signed in", anon.signedIn === false)
 ok("the response is a checklist, not a dead end", anon.requirements.length >= 4)
 ok("every unmet step says where to go", anon.requirements.every((r) => !!r.href && !!r.hint))
 
+// Email verification is OFF by default — enforcing it with SMTP unconfigured would lock
+// every new user out of applying.
+ok("email verification is off unless explicitly switched on", reg.emailVerificationRequired() === false)
 const bare = reg.registrationStatus({ id: "u1", name: "A B", email: "a@b.com" })
-ok("a signed-in but unverified account cannot apply", !bare.complete)
-ok("the missing email verification is named", bare.missing.includes("email_verified"))
+ok("an unverified account is NOT blocked on verification by default", !bare.missing.includes("email_verified"))
+ok("but an empty profile still cannot apply", !bare.complete)
+ok("the checklist omits verification when it is off", !bare.requirements.some((r) => r.key === "email_verified"))
 
-const verifiedOnly = reg.registrationStatus({ id: "u1", name: "A B", emailVerified: new Date() })
-ok("verified email alone is not enough", !verifiedOnly.complete)
-ok("profile basics are still required", verifiedOnly.missing.includes("profile_basics"))
+// Flip the flag and the requirement reappears with no code change.
+process.env.REQUIRE_EMAIL_VERIFICATION = "true"
+const enforced = reg.registrationStatus({ id: "u1", name: "A B", emailVerified: null, headline: "h", location: "l", skillCount: 1 })
+ok("with the flag on, an unverified account is blocked", !enforced.complete && enforced.missing.includes("email_verified"))
+const enforcedOk = reg.registrationStatus({ id: "u1", name: "A B", emailVerified: new Date(), headline: "h", location: "l", skillCount: 1 })
+ok("with the flag on, a verified account passes", enforcedOk.complete, JSON.stringify(enforcedOk.missing))
+delete process.env.REQUIRE_EMAIL_VERIFICATION
+
+const nameOnly = reg.registrationStatus({ id: "u1", name: "A B" })
+ok("a name alone is not enough", !nameOnly.complete)
+ok("profile basics are still required", nameOnly.missing.includes("profile_basics"))
 
 const full = reg.registrationStatus({
-  id: "u1", name: "Priya Sharma", emailVerified: new Date(),
+  id: "u1", name: "Priya Sharma",
   headline: "Backend Engineer", location: "Zurich", skillCount: 3,
 })
 ok("a verified, completed profile CAN apply", full.complete, JSON.stringify(full.missing))
@@ -68,14 +80,14 @@ for (const [label, extra] of [
   ["education", { educationCount: 1 }],
   ["a résumé", { resumeUrl: "/r.pdf" }],
 ]) {
-  const s = reg.registrationStatus({ id: "u", name: "A B", emailVerified: new Date(), headline: "h", location: "l", ...extra })
+  const s = reg.registrationStatus({ id: "u", name: "A B", headline: "h", location: "l", ...extra })
   ok(`${label} alone satisfies the evidence requirement`, s.complete, JSON.stringify(s.missing))
 }
-const noEvidence = reg.registrationStatus({ id: "u", name: "A B", emailVerified: new Date(), headline: "h", location: "l" })
+const noEvidence = reg.registrationStatus({ id: "u", name: "A B", headline: "h", location: "l" })
 ok("an empty profile does NOT satisfy it", !noEvidence.complete && noEvidence.missing.includes("evidence"))
 
 // A blank name must not pass as a name.
-ok("whitespace is not a name", !reg.registrationStatus({ id: "u", name: "   ", emailVerified: new Date(), headline: "h", location: "l", skillCount: 1 }).complete)
+ok("whitespace is not a name", !reg.registrationStatus({ id: "u", name: "   ", headline: "h", location: "l", skillCount: 1 }).complete)
 
 const blocked = reg.applyBlockedResponse(bare)
 ok("the API refusal carries a machine-readable code", blocked.code === "REGISTRATION_INCOMPLETE")
@@ -112,12 +124,12 @@ try {
     skillCount: fresh._count.skills, experienceCount: fresh._count.experience, educationCount: fresh._count.education,
   })
   ok("a newly registered account cannot apply yet", !freshStatus.complete)
-  ok("email verification is one of the reasons", freshStatus.missing.includes("email_verified"))
+  ok("it is blocked on the profile, not on email verification", freshStatus.missing.includes("profile_basics") && !freshStatus.missing.includes("email_verified"))
 
   // Complete the account the way a real user would.
   await prisma.user.update({
     where: { id: seeker.id },
-    data: { emailVerified: new Date(), headline: "Backend Engineer", location: "Zurich" },
+    data: { headline: "Backend Engineer", location: "Zurich" },
   })
   const skill = await prisma.skill.upsert({ where: { name: "Node.js" }, create: { name: "Node.js" }, update: {} })
   await prisma.userSkill.create({ data: { userId: seeker.id, skillId: skill.id } })
@@ -132,7 +144,7 @@ try {
     location: done.location, resumeUrl: done.resumeUrl,
     skillCount: done._count.skills, experienceCount: done._count.experience, educationCount: done._count.education,
   })
-  ok("once verified and completed, the account can apply", doneStatus.complete, JSON.stringify(doneStatus.missing))
+  ok("once the profile is completed, the account can apply", doneStatus.complete, JSON.stringify(doneStatus.missing))
 
   // The gate is enforced on the SERVER, not merely in the UI.
   const applyRoute = fs.readFileSync(path.join(ROOT, "app/api/applications/route.ts"), "utf8")
