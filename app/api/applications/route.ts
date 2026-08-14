@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
+import { registrationStatus, applyBlockedResponse } from "@/lib/account/registration"
 import { prisma } from "@/lib/prisma"
 import { verifyToken } from "@/lib/jwt"
 import { createNotification } from "@/lib/notify"
@@ -62,6 +63,27 @@ export async function POST(req: NextRequest) {
     if (!payload) return NextResponse.json({ error: "Invalid session" }, { status: 401 })
     const { jobId, coverLetter, answers, documents, snapshot, resumeUrl } = await req.json()
     if (!jobId) return NextResponse.json({ error: "Job ID required" }, { status: 400 })
+
+    // FULL REGISTRATION GATE. Viewing a role is public — a shared link opens for anyone —
+    // but applying writes a real record into an employer's pipeline, so the account must be
+    // verified and complete. Enforced HERE, on the server: the UI hides the button, but the
+    // button is not the control.
+    const regUser = await prisma.user.findUnique({
+      where: { id: payload.userId },
+      select: {
+        id: true, name: true, email: true, emailVerified: true, headline: true, location: true, resumeUrl: true,
+        _count: { select: { skills: true, experience: true, education: true } },
+      },
+    })
+    if (!regUser) return NextResponse.json({ error: "Account not found" }, { status: 401 })
+    const reg = registrationStatus({
+      id: regUser.id, name: regUser.name, email: regUser.email, emailVerified: regUser.emailVerified,
+      headline: regUser.headline, location: regUser.location, resumeUrl: regUser.resumeUrl,
+      skillCount: regUser._count.skills, experienceCount: regUser._count.experience, educationCount: regUser._count.education,
+    })
+    // 403, not 400: the request is well-formed, the account simply is not eligible yet.
+    if (!reg.complete) return NextResponse.json(applyBlockedResponse(reg), { status: 403 })
+
     const existing = await prisma.application.findFirst({ where:{ userId:payload.userId, jobId } })
     if (existing) return NextResponse.json({ error: "Already applied" }, { status: 409 })
 

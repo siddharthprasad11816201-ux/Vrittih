@@ -19,6 +19,12 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
   const [job, setJob] = useState<any>(null)
   const [loading, setLoading] = useState(true)
   const [applying, setApplying] = useState(false)
+  // Apply eligibility. The posting itself is PUBLIC — a shared link opens for anyone — so
+  // this only decides what the apply control says, never whether the page renders.
+  const [regStatus, setRegStatus] = useState<any>(null)
+  useEffect(() => {
+    fetch("/api/me/registration").then((r) => r.json()).then((d) => setRegStatus(d.status || null)).catch(() => setRegStatus(null))
+  }, [])
   const [applied, setApplied] = useState(false)
   const [coverLetter, setCoverLetter] = useState("")
   const [showForm, setShowForm] = useState(false)
@@ -236,10 +242,33 @@ export default function JobDetailClient({ params }: { params: { id: string } }) 
               {/* The full application: profile prefilled but editable, plus any
                   questions, documents or assessment this employer requires. */}
               {!job.aggregated && (
-                <Link href={`/jobs/${id}/apply`} style={{ ...A.primary, textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
-                  <span style={A.optMain}>Apply on Vrittih</span>
-                  <span style={A.optSubOn}>Your profile fills it in · tracked live through all 7 stages</span>
-                </Link>
+                regStatus && !regStatus.signedIn ? (
+                  // Anonymous: the role is readable, applying is not.
+                  <Link href={`/login?next=${encodeURIComponent(`/jobs/${id}/apply`)}`} style={{ ...A.primary, textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                    <span style={A.optMain}>Sign in to apply</span>
+                    <span style={A.optSubOn}>Free to create an account · takes a minute</span>
+                  </Link>
+                ) : regStatus && !regStatus.complete ? (
+                  // Signed in but not apply-ready: show exactly what is left, with links,
+                  // instead of letting them hit a refusal at the end of the form.
+                  <div style={{ border: "1px solid #FED7AA", background: "#FFF7ED", borderRadius: 12, padding: 16 }}>
+                    <div style={{ fontSize: 14.5, fontWeight: 650, color: "#9A3412" }}>Finish setting up your account to apply</div>
+                    <div style={{ fontSize: 13, color: "#7C2D12", margin: "4px 0 10px" }}>{regStatus.summary}</div>
+                    <ol style={{ margin: 0, paddingLeft: 18, display: "grid", gap: 6 }}>
+                      {regStatus.requirements.filter((r: any) => !r.met).map((r: any) => (
+                        <li key={r.key} style={{ fontSize: 13, color: "#7C2D12" }}>
+                          <Link href={r.href} style={{ color: "#9A3412", fontWeight: 600 }}>{r.label}</Link>
+                          <span style={{ display: "block", color: "#A16207", fontSize: 12.5 }}>{r.hint}</span>
+                        </li>
+                      ))}
+                    </ol>
+                  </div>
+                ) : (
+                  <Link href={`/jobs/${id}/apply`} style={{ ...A.primary, textDecoration: "none", display: "flex", flexDirection: "column", alignItems: "flex-start" }}>
+                    <span style={A.optMain}>Apply on Vrittih</span>
+                    <span style={A.optSubOn}>Your profile fills it in · tracked live through all 7 stages</span>
+                  </Link>
+                )
               )}
 
               {job.aggregated && !job.govUrl && !job.applyUrl && (

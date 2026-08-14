@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
+import { createOtp } from "@/lib/auth/otp"
+import { sendMail } from "@/lib/smtp"
 import { prisma } from "@/lib/prisma"
 import { hashPassword } from "@/lib/hash"
 import { signToken } from "@/lib/jwt"
@@ -83,7 +85,33 @@ export async function POST(req: NextRequest) {
 
     await setAuthCookie(token)
 
-    return NextResponse.json({ success: true, user }, { status: 201 })
+    // Send the verification code immediately. Registration still signs the user in — they
+    // can browse and build their profile straight away — but APPLYING requires the address
+    // to be proven (lib/account/registration), so the sooner this lands the better.
+    // Best-effort: a mail outage must not fail the registration itself.
+    try {
+      const code = await createOtp(user.id, "email_verify")
+      await sendMail({
+        to: user.email,
+        subject: "Verify your email — Vrittih",
+        html: `
+          <div style="font-family:-apple-system,sans-serif;max-width:520px;margin:0 auto;padding:28px 22px;background:#F8F8FC;border-radius:14px">
+            <div style="background:#fff;border-radius:12px;padding:26px;border:1px solid rgba(0,0,0,.08)">
+              <h2 style="font-size:19px;margin:0 0 8px;color:#0A0A0F">Welcome to Vrittih</h2>
+              <p style="font-size:14px;color:#3D3D4E;line-height:1.6;margin:0 0 18px">
+                Enter this code to confirm your email. You will need a verified address before you can apply to a role —
+                it is where interview invitations and decisions are sent.
+              </p>
+              <div style="background:#EAF1FE;border-radius:10px;padding:18px;text-align:center;font-size:30px;font-weight:700;letter-spacing:8px;color:#2C5FCC">${code}</div>
+              <p style="font-size:12px;color:#9ca3af;margin-top:14px">The code expires in 10 minutes.</p>
+            </div>
+          </div>`,
+      })
+    } catch (e: any) {
+      console.error("[REGISTER VERIFY MAIL]", e?.message || e)
+    }
+
+    return NextResponse.json({ success: true, user, emailVerificationSent: true }, { status: 201 })
   } catch (err: any) {
     console.error("[REGISTER]", err)
     return NextResponse.json(

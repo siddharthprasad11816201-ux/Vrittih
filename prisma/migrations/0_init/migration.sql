@@ -33,6 +33,7 @@ CREATE TABLE "User" (
     "banned" BOOLEAN NOT NULL DEFAULT false,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
+    "emailVerified" TIMESTAMP(3),
     "timezone" TEXT NOT NULL DEFAULT 'UTC',
     "calendarToken" TEXT,
     "trialStartedAt" TIMESTAMP(3),

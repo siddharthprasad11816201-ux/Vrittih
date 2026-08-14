@@ -51,6 +51,9 @@ model User {
   notifications    Notification[]
   // IANA zone for rendering times in THIS user's local clock (notifications, reminders,
   // calendar). Previously nothing existed and the server formatted with a hardcoded locale.
+  // Set when the address is proven. Applying requires it — an unverified address means
+  // interview invitations and decisions go nowhere.
+  emailVerified    DateTime?
   timezone         String         @default("UTC")
   candidate        Candidate?
   // Personal-data back-relations. These exist so a user deletion CASCADES instead of
