@@ -211,6 +211,49 @@ export default function Home() {
         </div>
       </section>
 
+      {/* GUARANTEED HIRE — employer premium pack. Homepage only, by request. */}
+      <section className="sec" style={{ background: "linear-gradient(135deg,#0F172A,#1E293B)", color: "#fff" }}>
+        <div className="wrap">
+          <p className="eyebrow" style={{ color: "#93C5FD" }}>For employers · Premium</p>
+          <h2 className="h2" style={{ color: "#fff", maxWidth: 780 }}>
+            We fill the role — or you pay nothing.
+          </h2>
+          <p className="lede" style={{ color: "#CBD5E1", maxWidth: 720 }}>
+            Guaranteed Hire is a managed search built around your exact requirement. A dedicated
+            recruiter sources, screens and assesses candidates against verified skills, and delivers
+            a shortlist you can actually hire from. If we do not fill it inside the agreed window,
+            you owe nothing and we keep searching.
+          </p>
+          <div style={{ display: "flex", gap: 28, flexWrap: "wrap", margin: "22px 0 6px" }}>
+            {[
+              ["From CHF 150", "Custom-quoted to the role, seniority and headcount"],
+              ["Fill-or-free", "Miss the agreed window and the fee is waived"],
+              ["90-day replacement", "If the hire leaves, we replace them free"],
+            ].map(([t, d]) => (
+              <div key={t} style={{ minWidth: 210, flex: "1 1 210px" }}>
+                <div style={{ fontSize: 19, fontWeight: 700, color: "#fff" }}>{t}</div>
+                <div style={{ fontSize: 14, color: "#94A3B8", marginTop: 4 }}>{d}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 20 }}>
+            <Link href="/hire" style={{ background: "#6495ED", color: "#fff", padding: "12px 22px", borderRadius: 10, fontWeight: 600, textDecoration: "none" }}>
+              Tell us the role you need
+            </Link>
+            <Link href="/pricing" style={{ border: "1px solid #475569", color: "#E2E8F0", padding: "12px 22px", borderRadius: 10, fontWeight: 600, textDecoration: "none" }}>
+              See pricing
+            </Link>
+          </div>
+          {/* The promise is strong, so the terms that make it deliverable are stated with it
+              rather than buried — an unqualified absolute claim would be unenforceable. */}
+          <p style={{ fontSize: 12.5, color: "#64748B", marginTop: 16, maxWidth: 720 }}>
+            The guarantee window is agreed in writing before the search starts and pauses while we
+            are waiting on interview slots or feedback. It does not apply if the role is withdrawn
+            or materially changed after acceptance. All fees in CHF.
+          </p>
+        </div>
+      </section>
+
       {/* JOURNEY */}
       <section className="sec">
         <div className="wrap">

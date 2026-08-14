@@ -32,9 +32,28 @@ function Keystone({ size = 26 }: { size?: number }) {
 }
 
 // Capability-driven, curated to fit without scrolling. Each item has a UNIQUE icon.
-function buildNav(caps: Set<string>): Section[] {
-  const emp = caps.has("jobs.post")
+//
+// `signedIn` is passed explicitly rather than inferred from the capability set.
+// deriveCapabilities returns an EMPTY set for an anonymous visitor, and this function used
+// to read that as "a job seeker with no add-ons" — so a signed-out visitor was shown the
+// entire member navigation (Career AI, Academy, Mentoring, Applications, Account) plus a
+// Sign out button.
+function buildNav(caps: Set<string>, signedIn: boolean): Section[] {
   const can = (c: string) => caps.has(c)
+
+  // Anonymous: only what a visitor can actually use without an account.
+  if (!signedIn) {
+    return [{
+      items: [
+        { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> },
+        { href: "/companies", label: "Companies", icon: <IconLayers size={18} /> },
+        { href: "/pricing", label: "Pricing", icon: <IconStar size={18} /> },
+        { href: "/login", label: "Sign in", icon: <IconUser size={18} /> },
+      ],
+    }]
+  }
+
+  const emp = caps.has("jobs.post")
   const sections: Section[] = [{ items: [{ href: "/dashboard", label: "Overview", icon: <IconHome size={18} /> }] }]
 
   if (emp) {
@@ -79,26 +98,37 @@ function buildNav(caps: Set<string>): Section[] {
     // if (can("mail.send")) comms.push({ href: "/mail", label: "Mail", icon: <IconMail size={18} /> })
     sections.push({ title: "Communication", items: comms })
   } else {
-    sections.push({ title: "Career", items: [
-      { href: "/get-placed", label: "Get placed", icon: <IconTarget size={18} /> }, // managed placement — candidate side
-      { href: "/career", label: "Career AI", icon: <IconActivity size={18} /> },
-      { href: "/competencies", label: "Competencies", icon: <IconTarget size={18} /> }, // ELTOS competency framework
-      { href: "/academy", label: "Academy", icon: <IconMonitor size={18} /> },   // ELTOS courses + learning paths
-      { href: "/tutor", label: "AI Tutor", icon: <IconZap size={18} /> },         // ELTOS in-house tutor (AIOS)
-      { href: "/mentoring", label: "Mentoring", icon: <IconUsers size={18} /> },   // ELTOS mentor discovery/matching
-      { href: "/learning-analytics", label: "Growth", icon: <IconTrendingUp size={18} /> }, // ELTOS learning analytics
-      { href: "/research", label: "Research", icon: <IconActivity size={18} /> },   // ERIP research lifecycle
-      { href: "/innovation", label: "Innovation", icon: <IconZap size={18} /> },     // ERIP grants + challenges
-      { href: "/learn", label: "Learn", icon: <IconBookmark size={18} /> },      // internships (learn & earn)
-      { href: "/internship", label: "Internship", icon: <IconCheckCircle size={18} /> }, // active programme + roadmap
-      { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> }, // full-time / contract / freelance (earn)
-      { href: "/opportunities", label: "Opportunities", icon: <IconLayers size={18} /> }, // ICAE: related role groups + multi-apply
+    // BASIC = the fundamentals of landing a job: find, match, apply, track, résumé.
+    // Exactly what the Basic plan advertises, and nothing beyond it.
+    const career: Item[] = [
+      { href: "/jobs", label: "Find jobs", icon: <IconBriefcase size={18} /> },
       { href: "/jobs/match", label: "Matched", icon: <IconTarget size={18} /> },
+      { href: "/internship", label: "Internship", icon: <IconCheckCircle size={18} /> },
       { href: "/applications", label: "Applications", icon: <IconFileText size={18} /> },
       { href: "/offers", label: "Offers", icon: <IconAward size={18} /> },
       { href: "/jobs/saved", label: "Saved", icon: <IconBookmark size={18} /> },
       { href: "/resume", label: "Résumé", icon: <IconClipboard size={18} /> },
-    ] })
+    ]
+    // ADVANCED (Pro and up). These were previously shown to EVERY tier, which is why
+    // Basic effectively had the whole product unlocked.
+    if (can("career.advanced")) career.splice(1, 0,
+      { href: "/get-placed", label: "Get placed", icon: <IconTarget size={18} /> },
+      { href: "/career", label: "Career AI", icon: <IconActivity size={18} /> },
+      { href: "/opportunities", label: "Opportunities", icon: <IconLayers size={18} /> },
+    )
+    if (can("learning.advanced")) career.push(
+      { href: "/competencies", label: "Competencies", icon: <IconTarget size={18} /> },
+      { href: "/academy", label: "Academy", icon: <IconMonitor size={18} /> },
+      { href: "/tutor", label: "AI Tutor", icon: <IconZap size={18} /> },
+      { href: "/mentoring", label: "Mentoring", icon: <IconUsers size={18} /> },
+      { href: "/learning-analytics", label: "Growth", icon: <IconTrendingUp size={18} /> },
+      { href: "/learn", label: "Learn", icon: <IconBookmark size={18} /> },
+    )
+    if (can("research.access")) career.push(
+      { href: "/research", label: "Research", icon: <IconActivity size={18} /> },
+      { href: "/innovation", label: "Innovation", icon: <IconZap size={18} /> },
+    )
+    sections.push({ title: "Career", items: career })
     // Professional networking (Feed/Network/Community) is an advanced-tier feature;
     // Messages stays available to everyone (core to recruiter communication).
     const net: Item[] = []
@@ -109,15 +139,20 @@ function buildNav(caps: Set<string>): Section[] {
     )
     net.push({ href: "/messages", label: "Messages", icon: <IconMessage size={18} /> })
     sections.push({ title: "Network", items: net })
-    sections.push({ title: "Resources", items: [
-      { href: "/projects", label: "Projects", icon: <IconLayers size={18} /> }, // Phase 5 personal project workspace
+    // Assessments stay fundamental — they produce the verified skills that drive ranking.
+    // The rest of the advanced suite is Pro and up.
+    const resources: Item[] = [
       { href: "/tests", label: "Assessments", icon: <IconAward size={18} /> },
-      { href: "/marketplace", label: "Marketplace", icon: <IconStar size={18} /> }, // Phase 11 AI Marketplace
-      { href: "/automation", label: "Automation", icon: <IconZap size={18} /> }, // Phase 13 Automation
-      { href: "/twin", label: "Digital Twin", icon: <IconActivity size={18} /> }, // Phase 14 Digital Twin
-      { href: "/autonomy", label: "Autonomous AI", icon: <IconShield size={18} /> }, // Phase 15 Autonomous AI
       { href: "/tools", label: "Tools", icon: <IconZap size={18} /> },
-    ] })
+    ]
+    if (can("career.advanced")) resources.unshift({ href: "/projects", label: "Projects", icon: <IconLayers size={18} /> })
+    if (can("advanced.ai")) resources.push(
+      { href: "/marketplace", label: "Marketplace", icon: <IconStar size={18} /> },
+      { href: "/automation", label: "Automation", icon: <IconZap size={18} /> },
+      { href: "/twin", label: "Digital Twin", icon: <IconActivity size={18} /> },
+      { href: "/autonomy", label: "Autonomous AI", icon: <IconShield size={18} /> },
+    )
+    sections.push({ title: "Resources", items: resources })
   }
 
   // Account & security is always reachable; admin/developer only with the capability.
@@ -182,19 +217,28 @@ export default function AppShell({ children, title }: { children: ReactNode; tit
   }, [])
 
   const isEmployer = caps.has("jobs.post")
-  const sections = buildNav(caps)
+  const sections = buildNav(caps, !!user)
   const tabs = bottomTabs(caps)
   const active = (href: string) => (href === "/dashboard" ? pathname === "/dashboard" : pathname === href || pathname.startsWith(href + "/"))
   const activeTab = tabs.findIndex((t) => active(t.href))
   const initials = (user?.name || "?").split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()
   const signOut = async () => { try { await fetch("/api/auth/logout", { method: "POST" }) } catch {} ; window.location.href = "/login" }
+  // Offering "Sign out" to someone who was never signed in is nonsense, and it rendered
+  // unconditionally. A visitor is offered "Sign in" instead, returning to where they were.
   const SignOutRow = () => (
+    !user ? (
+      <Link href={`/login?next=${encodeURIComponent(pathname || "/jobs")}`} className="ks-nav" style={{ ...S.signOut, color: "var(--v-accent)" }} aria-label="Sign in">
+        <span style={{ display: "inline-flex", width: 18, height: 18 }}><IconUser size={18} /></span>
+        Sign in
+      </Link>
+    ) : (
     <button onClick={signOut} className="ks-nav" style={S.signOut} aria-label="Sign out">
       <span style={{ display: "inline-flex", width: 18, height: 18, color: "var(--danger)" }}>
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
       </span>
       Sign out
     </button>
+    )
   )
 
   const NavRow = ({ it }: { it: Item }) => {

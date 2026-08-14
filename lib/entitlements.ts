@@ -9,7 +9,10 @@
 //
 // Tiers (lib/plans.ts):  emp_starter (49) < emp_growth (149) < emp_scale (349, max).
 
-export type Feature = "interviews" | "hrms" | "payroll" | "tasks" | "crm" | "mail" | "api" | "network"
+export type Feature =
+  | "interviews" | "hrms" | "payroll" | "tasks" | "crm" | "mail" | "api" | "network"
+  // Seeker-side bundles. Basic keeps the fundamentals of landing a job; these are Pro.
+  | "career_advanced" | "learning_advanced" | "research" | "advanced_ai"
 
 type UserLike = { role?: string | null; plan?: string | null } | null | undefined
 
@@ -29,9 +32,22 @@ export const FEATURE_PLANS: Record<Feature, string[]> = {
   api: ["emp_scale"],
   // Advanced tiers (individual Pro + advanced employer): professional networking.
   network: ["pro", "emp_growth", "emp_scale"],
+
+  // ---- Seeker bundles ----
+  // BASIC deliberately gets none of these. It covers the fundamentals it advertises:
+  // find, match, apply, track, saved jobs, résumé and assessments. Everything below was
+  // previously visible to every tier, which left nothing for Pro to sell.
+  career_advanced: ["pro", "emp_growth", "emp_scale"],     // Career AI, managed placement, opportunity groups, projects
+  learning_advanced: ["pro", "emp_growth", "emp_scale"],   // Academy, AI Tutor, mentoring, competencies, growth analytics
+  research: ["pro", "emp_scale"],                          // research lifecycle + innovation/grants
+  advanced_ai: ["pro", "emp_scale"],                       // marketplace, automation, digital twin, autonomous AI
 }
 
 export const FEATURE_LABEL: Record<Feature, string> = {
+  career_advanced: "Career intelligence",
+  learning_advanced: "Academy & mentoring",
+  research: "Research & innovation",
+  advanced_ai: "Advanced AI tools",
   interviews: "Video interviews",
   hrms: "HRMS",
   payroll: "Payroll",
@@ -44,6 +60,10 @@ export const FEATURE_LABEL: Record<Feature, string> = {
 
 // The plan a feature upgrades toward, for the upgrade prompt (lowest tier that unlocks it).
 export const FEATURE_UPGRADE: Record<Feature, { plan: string; name: string }> = {
+  career_advanced: { plan: "pro", name: "Pro" },
+  learning_advanced: { plan: "pro", name: "Pro" },
+  research: { plan: "pro", name: "Pro" },
+  advanced_ai: { plan: "pro", name: "Pro" },
   hrms: { plan: "emp_growth", name: "Growth" },
   payroll: { plan: "emp_growth", name: "Growth" },
   tasks: { plan: "emp_growth", name: "Growth" },

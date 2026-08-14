@@ -12,6 +12,7 @@ const NAV: [string, string, ReactNode][] = [
   ["Companies", "/admin/companies", <IconBriefcase key="i" size={15} />],
   ["Applications", "/admin/applications", <IconUsers key="i" size={15} />],
   ["Candidates", "/admin/candidates", <IconUsers key="i" size={15} />],
+  ["Guaranteed Hire", "/admin/guaranteed-hire", <IconAward key="i" size={15} />],
   ["Partners", "/admin/partners", <IconKey key="i" size={15} />],
   ["Import", "/admin/import", <IconUpload key="i" size={15} />],
   ["Payments", "/admin/payments", <IconCreditCard key="i" size={15} />],

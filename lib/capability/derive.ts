@@ -10,6 +10,10 @@ const FEATURE_CAP: [Feature, string][] = [
   ["hrms", "hrms.view"], ["payroll", "payroll.view"], ["tasks", "tasks.view"],
   ["crm", "crm.view"], ["mail", "mail.send"], ["interviews", "interviews.host"], ["api", "api.keys"],
   ["network", "network.access"],   // professional networking — advanced tiers
+  ["career_advanced", "career.advanced"],
+  ["learning_advanced", "learning.advanced"],
+  ["research", "research.access"],
+  ["advanced_ai", "advanced.ai"],
 ]
 
 /** Compute the capability keys a subject holds. Pure + deterministic. */
@@ -31,7 +35,7 @@ export function deriveCapabilities(user: SubjectEvidence): Set<string> {
   if (role === "ADMIN" || role === "SUPER_ADMIN") {
     for (const k of ["admin.access", "ai.ops.view", "ai.governance.review"]) caps.add(k)
     // admins can operate employer + workforce surfaces for support.
-    for (const k of ["jobs.post", "candidates.view", "pipeline.manage", "company.manage", "hrms.view", "payroll.view", "tasks.view", "crm.view", "mail.send", "interviews.host", "api.keys"]) caps.add(k)
+    for (const k of ["jobs.post", "candidates.view", "pipeline.manage", "company.manage", "hrms.view", "payroll.view", "tasks.view", "crm.view", "mail.send", "interviews.host", "api.keys", "career.advanced", "learning.advanced", "research.access", "advanced.ai"]) caps.add(k)
   }
   if (role === "SUPER_ADMIN") caps.add("admin.super")
 
